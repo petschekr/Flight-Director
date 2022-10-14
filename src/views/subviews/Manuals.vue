@@ -6,7 +6,7 @@
 		</div>
 		<CardList :files="files" v-if="overviewDisplayed === RenderType.Overview" />
 		<File :file="fileRendered" v-if="overviewDisplayed === RenderType.File" />
-		<FileList :items="directoryRendered" v-if="overviewDisplayed === RenderType.Directory" />
+		<FileList :root="directoryRendered" v-if="overviewDisplayed === RenderType.Directory" />
 	</div>
 </template>
 
@@ -44,7 +44,7 @@ function setFileRendered(newFileRendered: FileRender) {
 	}
 	fileRendered.value = newFileRendered;
 }
-const directoryRendered: Ref<(FileDisplay | DirectoryDisplay)[]> = ref([]);
+const directoryRendered: Ref<FileSystemDirectoryHandle | null> = ref(null);
 
 const router = useRouter();
 const route = useRoute();
@@ -92,45 +92,7 @@ async function loadLocation() {
 	if (foundHandle?.kind === "directory") {
 		overviewDisplayed.value = RenderType.Directory;
 
-		let directoryRenderList: (FileDisplay | DirectoryDisplay)[] = [];
-		for await (const item of foundHandle.values()) {
-			if (item.kind === "directory") {
-				let subitems = 0;
-				for await (const subitem of item.values()) {
-					subitems++;
-				}
-				directoryRenderList.push({
-					kind: "directory",
-					id: item.name,
-					name: item.name,
-					href: "", //subitems > 0 ? "/" + [...pathVisited, item.name].join("/") : "",
-					subitems,
-				});
-			}
-			else {
-				const file = await item.getFile();
-				directoryRenderList.push({
-					kind: "file",
-					id: item.name,
-					name: item.name,
-					href: "", //"/" + [...pathVisited, item.name].join("/"),
-					lastModified: new Date(file.lastModified),
-					size: file.size,
-					type: file.type,
-				});
-			}
-		}
-		// Sort item list alphabetically by directory then by file
-		directoryRenderList.sort((a, b) => {
-			if (a.kind === "directory" && b.kind === "file") {
-				return -1;
-			}
-			if (a.kind === "file" && b.kind === "directory") {
-				return 1;
-			}
-			return a.name.localeCompare(b.name);
-		});
-		directoryRendered.value = directoryRenderList;
+		directoryRendered.value = foundHandle;
 	}
 	else if (foundHandle?.kind === "file") {
 		overviewDisplayed.value = RenderType.File;
