@@ -27,7 +27,7 @@
 				<div class="ml-4 mt-2">
 					<div class="flex items-center">
 						<RectangleStackIcon class="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
-						<p class="text-sm text-gray-500">20 items</p>
+						<p class="text-sm text-gray-500">{{items.length}} item{{items.length !== 1 ? 's' : ''}}</p>
 					</div>
 				</div>
 			</div>
@@ -63,7 +63,7 @@
 							<div class="ml-5 flex-shrink-0 inline-flex">
 								<div v-if="item.kind === 'directory'" class="flex items-center text-sm text-gray-500 truncate">
 									<RectangleStackIcon class="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
-									<p>{{item.subitems}} items</p>
+									<p>{{item.subitems}} item{{item.subitems !== 1 ? 's' : ''}}</p>
 								</div>
 								<div v-else class="flex items-center text-sm text-gray-500 truncate">
 									<CalendarIcon class="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
