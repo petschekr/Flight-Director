@@ -1,8 +1,3 @@
-export interface PathItem {
-	name: string;
-	href: string;
-}
-
 interface Display {
 	id: string | number;
 	kind: "file" | "directory";

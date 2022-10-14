@@ -4,19 +4,19 @@
 			<div class="-ml-4 -mt-2 flex flex-nowrap items-center justify-between truncate">
 				<div class="ml-4 mt-2 truncate">
 					<div class="flex items-center">
-						<RouterLink :to="'/'" class="mt-0.5 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
+						<RouterLink :to="getBackPath()" class="mt-0.5 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
 							<ChevronLeftIcon />
 						</RouterLink>
 						<div class="ml-4 truncate">
 							<nav class="flex" aria-label="Breadcrumb">
 								<ol role="list" class="flex items-center space-x-1">
-									<li v-for="pathItem in pathWithIndex" :key="pathItem.name">
+									<li v-for="pathItem in path" :key="pathItem.name">
 										<div class="flex items-center">
 											<svg v-if="pathItem.index !== 0" class="h-5 w-5 flex-shrink-0 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
 												viewBox="0 0 20 20" aria-hidden="true">
 												<path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
 											</svg>
-											<a :href="pathItem.href" class="ml-1 text-lg font-medium truncate text-gray-800 transition-colors hover:text-sky-700">{{ pathItem.name }}</a>
+											<RouterLink :to="pathItem.href" class="ml-1 text-lg font-medium truncate text-gray-800 transition-colors hover:text-sky-700">{{ pathItem.name }}</RouterLink>
 										</div>
 									</li>
 								</ol>
@@ -33,7 +33,7 @@
 			</div>
 		</div>
 
-		<div v-if="items.length === 0" class="flex justify-center items-center">
+		<div v-if="items.length === 0" class="flex justify-center items-center my-8">
 			<svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none"
 				viewBox="0 0 24 24">
 				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -84,7 +84,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watchEffect, type Ref } from "vue";
-import type { FileDisplay, DirectoryDisplay, PathItem } from "@/models/file-explorer";
+import { useRoute } from "vue-router";
+import type { FileDisplay, DirectoryDisplay } from "@/models/file-explorer";
 
 import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
@@ -96,16 +97,25 @@ const props = defineProps<{
 	root: FileSystemDirectoryHandle | null,
 }>();
 
-const path: Ref<PathItem[]> = ref([]);
-const pathWithIndex = computed(() => path.value.map((pathItem, index) => ({...pathItem, index })));
-// TEMP
-path.value.push({
-	name: "Manuals",
-	href: "/manuals",
-});
-path.value.push({
-	name: "Manuals",
-	href: "/manuals",
+const route = useRoute();
+function getBackPath(): string {
+	// Make a root path for browser and append to the current tab name
+	return "/" + route.params.path[0];
+}
+function stringToArray(input: string[] | string): string[] {
+	if (Array.isArray(input)) return [...input];
+	if (input === "") return [];
+	return [input];
+}
+
+const path = computed(() => {
+	let path = stringToArray(route.params.path);
+	let root = path.shift(); // Remove tab locator
+	return path.map((pathItem, index) => ({
+		name: pathItem,
+		href: `/${root}/${path.slice(0, index + 1).join("/")}`,
+		index
+	}));
 });
 
 const items: Ref<(FileDisplay | DirectoryDisplay)[]> = ref([]);
@@ -115,9 +125,11 @@ const currentDirectory: Ref<FileSystemDirectoryHandle | null> = ref(props.root);
 watchEffect(() => currentDirectory.value = props.root);
 // Update list items when the current directory changes
 watchEffect(async () => {
+	if (!currentDirectory.value) return;
+
 	items.value = []; // Clear the list so we can regenerate it
 	let newItems: (FileDisplay | DirectoryDisplay)[] = []; // Wait to finish loading before presenting
-	for await (const item of currentDirectory.value?.values() ?? []) {
+	for await (const item of currentDirectory.value.values()) {
 		if (item.kind === "directory") {
 			let subitems = 0;
 			for await (const subitem of item.values()) {
@@ -127,7 +139,7 @@ watchEffect(async () => {
 				kind: "directory",
 				id: item.name,
 				name: item.name,
-				href: "", //subitems > 0 ? "/" + [...pathVisited, item.name].join("/") : "",
+				href: `/${stringToArray(route.params.path).join("/")}/${item.name}`,
 				subitems,
 			});
 		}
@@ -137,7 +149,7 @@ watchEffect(async () => {
 				kind: "file",
 				id: item.name,
 				name: item.name,
-				href: "", //"/" + [...pathVisited, item.name].join("/"),
+				href: `/${stringToArray(route.params.path).join("/")}/${item.name}`,
 				lastModified: new Date(file.lastModified),
 				size: file.size,
 				type: file.type,
