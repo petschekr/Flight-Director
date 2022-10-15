@@ -1,13 +1,4 @@
 <template>
-	<!-- <div class="h-full">
-		<div class="flex flex-1 flex-col">
-			<div>
-				<h1>It's a file!</h1>
-				<h2>{{props.file?.name}}</h2>
-			</div>
-			<embed :src="props.fileURL ?? ''" type="application/pdf" class="flex-grow" />
-		</div>
-	</div> -->
 	<div class="bg-white sm:rounded-lg sm:shadow h-full flex flex-col">
 		<div class="border-b border-gray-200 bg-white px-4 py-5 sm:px-6 sm:rounded-t-lg">
 			<div class="-ml-4 -mt-2 flex flex-nowrap items-center justify-between truncate">
