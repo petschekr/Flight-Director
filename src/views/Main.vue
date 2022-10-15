@@ -1,5 +1,5 @@
 <template>
-	<Nav @navigate="navigateTo">
+	<Nav @navigate="navigateTo" @search="searchOpen = true">
 		<Permissions v-if="!hasPermissions" @select-folder="obtainPermissions" />
 
 		<FileTab tab-name="Daily Ops" v-if="hasPermissions && currentView === 'DailyOps'">
@@ -19,11 +19,13 @@
 			<h2 class="text-sm font-medium text-gray-500">Non-critical documents and references</h2>
 		</FileTab>
 		<FileTab tab-name="All Files" v-if="hasPermissions && currentView === 'AllFiles'" />
+
+		<SearchPalette :open="searchOpen" @closed="searchOpen = false" />
 	</Nav>
 </template>
 
 <script setup lang="ts">
-import { provide, computed, ref, type Ref } from "vue";
+import { provide, computed, ref, type Ref, onMounted, onUnmounted } from "vue";
 
 import toml from "toml";
 
@@ -31,7 +33,9 @@ import Nav from "@/components/Nav.vue";
 import Permissions from "@/components/Permissions.vue";
 import FileTab from "@/views/subviews/FileTab.vue";
 import type { Configuration } from "@/models/configuration";
+import SearchPalette from "../components/SearchPalette.vue";
 
+const searchOpen = ref(false);
 const hasPermissions = ref(false);
 const rootDirectoryHandle: Ref<FileSystemDirectoryHandle | null> = ref(null);
 const configuration: Ref<Configuration | null> = ref(null);
@@ -66,4 +70,12 @@ function navigateTo(component: string) {
 	currentView.value = component;
 }
 
+function handleKeys(e: KeyboardEvent) {
+	if (e.ctrlKey && e.key === "k") {
+		e.preventDefault();
+		searchOpen.value = true;
+	}
+}
+onMounted(() => document.addEventListener("keydown", handleKeys));
+onUnmounted(() => document.removeEventListener("keydown", handleKeys));
 </script>

@@ -84,11 +84,11 @@
 							<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center">
 								<MagnifyingGlassIcon class="h-5 w-5" aria-hidden="true" />
 							</div>
-							<input id="search-field"
+							<input id="search-field" ref="searchField"
 								class="block h-full w-full border-transparent py-2 pl-8 pr-3 text-gray-900 placeholder-gray-500 focus:border-transparent focus:placeholder-gray-400 focus:outline-none focus:ring-0 sm:text-lg"
 								placeholder="Search" type="search" name="search" />
 							<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center">
-								<p class="px-1 font-semibold">Ctrl+K</p>
+								<kbd class="px-1 font-semibold">Ctrl+K</kbd>
 							</div>
 						</div>
 					</form>
@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, watch, computed } from 'vue';
+	import { ref, type Ref, watch, computed, onMounted } from "vue";
 	import { useRoute, useRouter } from "vue-router";
 
 	import {
@@ -131,6 +131,7 @@
 
 	const emit = defineEmits<{
 		(e: "navigate", component: string): void;
+		(e: "search"): void;
 	}>();
 
 	const router = useRouter();
@@ -170,4 +171,13 @@
 	}
 	updateSelectedTab();
 	watch(() => route.params, updateSelectedTab);
+
+	const searchField: Ref<HTMLInputElement | null> = ref(null);
+	onMounted(() => {
+		if (!searchField.value) return;
+		searchField.value.addEventListener("focus", () => {
+			searchField.value?.blur();
+			emit("search");
+		});
+	});
 </script>
