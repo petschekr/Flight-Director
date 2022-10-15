@@ -4,7 +4,7 @@
 			<div class="-ml-4 -mt-2 flex flex-nowrap items-center justify-between truncate">
 				<div class="ml-4 mt-2 truncate">
 					<div class="flex items-center">
-						<RouterLink :to="getBackPath()" class="mt-0.5 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
+						<RouterLink :to="getBackPath()" class="self-start mt-1 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
 							<ChevronLeftIcon />
 						</RouterLink>
 						<div class="ml-4 truncate">
@@ -12,11 +12,11 @@
 								<ol role="list" class="flex items-center space-x-1">
 									<li v-for="pathItem in path" :key="pathItem.name">
 										<div class="flex items-center">
-											<svg v-if="pathItem.index !== 0" class="h-5 w-5 flex-shrink-0 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+											<svg v-if="pathItem.index !== 0" class="mr-1 h-5 w-5 flex-shrink-0 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
 												viewBox="0 0 20 20" aria-hidden="true">
 												<path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
 											</svg>
-											<RouterLink :to="pathItem.href" class="ml-1 text-lg font-medium truncate text-gray-800 transition-colors hover:text-sky-700">{{ pathItem.name }}</RouterLink>
+											<RouterLink :to="pathItem.href" class="text-lg font-medium truncate text-gray-800 transition-colors hover:text-sky-700">{{ pathItem.name }}</RouterLink>
 										</div>
 									</li>
 								</ol>

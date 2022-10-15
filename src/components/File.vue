@@ -13,7 +13,7 @@
 			<div class="-ml-4 -mt-2 flex flex-nowrap items-center justify-between truncate">
 				<div class="ml-4 mt-2 truncate">
 					<div class="flex items-center">
-						<RouterLink :to="getBackPath()" class="h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
+						<RouterLink :to="props.file?.backLink ?? getBackPath()" class="self-start mt-1 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
 							<ChevronLeftIcon />
 						</RouterLink>
 						<div class="ml-4 truncate">

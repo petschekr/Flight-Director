@@ -22,4 +22,5 @@ export interface FileRender {
 	path: string[];
 	commonName: string;
 	blobURL: string;
+	backLink?: string;
 }
