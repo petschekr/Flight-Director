@@ -4,7 +4,7 @@
 			<div class="-ml-4 -mt-2 flex flex-nowrap items-center justify-between truncate">
 				<div class="ml-4 mt-2 truncate">
 					<div class="flex items-center">
-						<RouterLink :to="props.directory?.backLink ?? getBackPath()" class="self-start mt-1 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
+						<RouterLink :to="getBackPath()" class="self-start mt-1 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
 							<ChevronLeftIcon />
 						</RouterLink>
 						<div class="ml-4 truncate">
@@ -45,7 +45,7 @@
 		</div>
 		<div v-if="emptyDirectory" class="flex flex-col justify-center items-center my-8">
 			<p class="italic mb-4">Empty directory</p>
-			<RouterLink :to="props.directory?.backLink ?? getBackPath()"
+			<RouterLink :to="getBackPath()"
 				class="inline-flex items-center rounded-md border border-transparent bg-sky-600 px-3 py-2 text-sm font-medium leading-4 text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
 				Back
 				<ArrowUturnUpIcon class="ml-2 -mr-0.5 h-4 w-4" aria-hidden="true" />
@@ -108,8 +108,11 @@ const props = defineProps<{
 
 const route = useRoute();
 function getBackPath(): string {
-	// Make a root path for browser and append to the current tab name
-	return "/" + route.params.path[0];
+	let path = [...route.params.path];
+	if (path.length > 1) {
+		path.pop();
+	}
+	return "/" + path.map(encodeURIComponent).join("/");
 }
 function stringToArray(input: string[] | string): string[] {
 	if (Array.isArray(input)) return [...input];
@@ -118,22 +121,26 @@ function stringToArray(input: string[] | string): string[] {
 }
 
 const path = computed(() => {
+	if (!props.directory) return [];
+
+	let pathItems = [];
 	let path = stringToArray(route.params.path);
 	let root = path.shift(); // Remove tab locator
-	if (path.length === 0) {
-		return [{
+	if (props.directory.location.fromRoot) {
+		pathItems.push({
 			name: "All Files",
 			href: "/" + root,
 			index: 0,
-		}];
+		});
 	}
-	else {
-		return path.map((pathItem, index) => ({
+	for (let [index, pathItem] of path.entries()) {
+		pathItems.push({
 			name: pathItem,
-			href: `/${root}/${path.slice(0, index + 1).join("/")}`,
-			index
-		}));
+			href: "/" + root + "/" + path.slice(0, index + 1).map(encodeURIComponent).join("/"),
+			index: props.directory.location.fromRoot ? index + 1 : index,
+		});
 	}
+	return pathItems;
 });
 
 const items: Ref<(FileDisplay | DirectoryDisplay)[]> = ref([]);
@@ -156,7 +163,7 @@ watchEffect(async () => {
 				kind: "directory",
 				id: item.name,
 				name: item.name,
-				href: `/${stringToArray(route.params.path).join("/")}/${item.name}`,
+				href: `/${stringToArray(route.params.path).map(encodeURIComponent).join("/")}/${encodeURIComponent(item.name)}`,
 				subitems,
 			});
 		}
@@ -166,7 +173,7 @@ watchEffect(async () => {
 				kind: "file",
 				id: item.name,
 				name: item.name,
-				href: `/${stringToArray(route.params.path).join("/")}/${item.name}`,
+				href: `/${stringToArray(route.params.path).map(encodeURIComponent).join("/")}/${encodeURIComponent(item.name)}`,
 				lastModified: new Date(file.lastModified),
 				size: file.size,
 				type: file.type,

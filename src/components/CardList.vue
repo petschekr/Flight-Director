@@ -4,7 +4,7 @@
 			<a v-if="isExternal(file)" :href="file.path" target="_blank" class="contents">
 				<Card :file="file" />
 			</a>
-			<RouterLink v-if="!isExternal(file)" :to="getPath(file.path)" class="contents">
+			<RouterLink v-if="!isExternal(file)" :to="getPath(file.name)" class="contents">
 				<Card :file="file" />
 			</RouterLink>
 		</li>
@@ -26,7 +26,7 @@ const route = useRoute();
 
 function getPath(filePath: string): string {
 	// Make a root path for browser and append to the current tab name
-	return "/" + route.params.path[0] + "/" + filePath;
+	return "/" + route.params.path[0] + "/" + encodeURIComponent(filePath);
 }
 function isExternal(file: File): boolean {
 	return file.path.startsWith("http");

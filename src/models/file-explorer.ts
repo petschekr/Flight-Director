@@ -22,9 +22,11 @@ export interface FileRender {
 	path: string[];
 	commonName: string;
 	blobURL: string;
-	backLink?: string;
 }
 export interface DirectoryRender {
-	directory: FileSystemDirectoryHandle,
-	backLink?: string;
+	directory: FileSystemDirectoryHandle;
+	location: {
+		path: string[];
+		fromRoot: boolean;
+	};
 }

@@ -4,7 +4,7 @@
 			<div class="-ml-4 -mt-2 flex flex-nowrap items-center justify-between truncate">
 				<div class="ml-4 mt-2 truncate">
 					<div class="flex items-center">
-						<RouterLink :to="props.file?.backLink ?? getBackPath()" class="self-start mt-1 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
+						<RouterLink :to="getBackPath()" class="self-start mt-1 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
 							<ChevronLeftIcon />
 						</RouterLink>
 						<div class="ml-4 truncate">
@@ -42,8 +42,11 @@ const props = defineProps<{
 const route = useRoute();
 
 function getBackPath(): string {
-	// Make a root path for browser and append to the current tab name
-	return "/" + route.params.path[0];
+	let path = [...route.params.path];
+	if (path.length > 1) {
+		path.pop();
+	}
+	return "/" + path.map(encodeURIComponent).join("/");
 }
 function formatDate(d: Date | number, time: boolean = false): string {
 	const date = dayjs(d);

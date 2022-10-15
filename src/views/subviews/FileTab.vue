@@ -98,12 +98,11 @@ function setFileRendered(newFileRendered: FileRender) {
 	fileRendered.value = newFileRendered;
 }
 const directoryRendered: Ref<DirectoryRender | null> = ref(null);
-const previousDirectoryPath: Ref<string[][]> = ref([]); // Array of array of path items
 
 const router = useRouter();
 const route = useRoute();
-async function loadLocation() {
-	if (!rootDirectoryHandle?.value) {
+watchEffect(async () => {
+	if (!configuration?.value || !rootDirectoryHandle?.value) {
 		renderType.value = RenderType.Overview;
 		return;
 	}
@@ -113,21 +112,38 @@ async function loadLocation() {
 		if (input === "") return [];
 		return [input];
 	}
-	let filePath = stringToArray(route.params.path);
-	filePath.shift(); // Remove first part of path that refers to selected sidebar tab
-	if (filePath.length === 0 && props.tabName !== "All Files") {
-		previousDirectoryPath.value = [];
-		renderType.value = RenderType.Overview;
-		return;
+	let routePath = stringToArray(route.params.path);
+	routePath.shift(); // Remove first part of path that refers to selected sidebar tab
+
+	let filePath: string[] = [];
+	if (props.tabName !== "All Files") {
+		// Need to look up entry to find beginning of real path
+		let entryName = routePath.shift();
+		if (!entryName) {
+			renderType.value = RenderType.Overview;
+			return;
+		}
+		else {
+			let fileEntry = configuration.value[props.tabName].files
+				.map(mapPathIdentifiers)
+				.find(file => file.name === entryName);
+			if (!fileEntry) {
+				alert(`Couldn't find file/directory in configuration file: ${entryName}`);
+				router.push("/" + route.params.path[0]); // Navigate to root of the tab
+				return;
+			}
+			filePath = fileEntry.path.split("/");
+		}
 	}
-	let originalFilePath = [...filePath];
+	filePath = filePath.concat(routePath); // If routePath still has items on it, they're subitems of the looked-up filePath
 
 	let rootHandle: FileSystemDirectoryHandle = rootDirectoryHandle.value;
 	let foundHandle: FileSystemDirectoryHandle | FileSystemFileHandle | null = rootHandle;
 
-	while (filePath.length > 0) {
+	let currentFilePath = [...filePath];
+	while (currentFilePath.length > 0) {
 		foundHandle = null;
-		let currentPathItem = filePath.shift();
+		let currentPathItem = currentFilePath.shift();
 		for await (const handle of rootHandle.values()) {
 			if (handle.name === currentPathItem) {
 				foundHandle = handle;
@@ -136,7 +152,7 @@ async function loadLocation() {
 		}
 		if (!foundHandle) {
 			// Specified file or folder not found
-			alert(`Couldn't find file/directory: ${originalFilePath.join("/")}`);
+			alert(`Couldn't find specified file/directory: ${filePath.join("/")}`);
 			router.push("/" + route.params.path[0]); // Navigate to root of the tab
 			return;
 		}
@@ -146,22 +162,12 @@ async function loadLocation() {
 	}
 
 	if (foundHandle?.kind === "directory") {
-		// A last visited path in the chain should not contain a deeper one
-		// This happens when clicking back button from a filelist to another filelist
-		// Only go up the chain
-		previousDirectoryPath.value = previousDirectoryPath.value.filter(path => {
-			return !originalFilePath.every((pathItem, index) => pathItem === path[index]);
-		});
-
-		let backLink = "/" + route.params.path[0]; // Default back link is to tab root
-		if (previousDirectoryPath.value.length > 0) {
-			// If we reached this filelist via a filelist, go back to the last filelist
-			backLink += "/" + previousDirectoryPath.value[previousDirectoryPath.value.length - 1].join("/");
-		}
-		previousDirectoryPath.value.push(originalFilePath);
 		directoryRendered.value = {
 			directory: foundHandle,
-			backLink,
+			location: {
+				path: filePath,
+				fromRoot: props.tabName === "All Files",
+			},
 		};
 
 		renderType.value = RenderType.Directory;
@@ -173,29 +179,19 @@ async function loadLocation() {
 		if (configuration?.value && props.tabName !== "All Files") {
 			commonName = configuration.value[props.tabName].files
 				.map(mapPathIdentifiers)
-				.find(file => file.path === originalFilePath.join("/"))?.name
+				.find(file => file.path === filePath.join("/"))?.name
 				?? file.name;
-		}
-
-		let backLink = "/" + route.params.path[0]; // Default back link is to tab root
-		if (renderType.value === RenderType.Directory && previousDirectoryPath.value.length > 0) {
-			// If we reached this file via filelist, go back to the last filelist
-			backLink += "/" + (previousDirectoryPath.value.pop() ?? []).join("/");
 		}
 
 		let newFileRendered: FileRender = {
 			file,
-			path: originalFilePath,
+			path: filePath,
 			commonName,
 			blobURL: URL.createObjectURL(file),
-			backLink,
 		};
 		setFileRendered(newFileRendered);
 
 		renderType.value = RenderType.File;
 	}
-}
-loadLocation().catch(err => console.error(err));
-watch(() => route.params, loadLocation);
-
+});
 </script>
