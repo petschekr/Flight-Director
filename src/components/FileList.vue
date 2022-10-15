@@ -9,7 +9,7 @@
 						</RouterLink>
 						<div class="ml-4 truncate">
 							<nav class="flex" aria-label="Breadcrumb">
-								<ol role="list" class="flex items-center space-x-1">
+								<ol role="list" class="flex flex-wrap items-center space-x-1">
 									<li v-for="pathItem in path" :key="pathItem.name">
 										<div class="flex items-center">
 											<svg v-if="pathItem.index !== 0" class="mr-1 h-5 w-5 flex-shrink-0 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
