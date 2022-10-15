@@ -120,11 +120,20 @@ function stringToArray(input: string[] | string): string[] {
 const path = computed(() => {
 	let path = stringToArray(route.params.path);
 	let root = path.shift(); // Remove tab locator
-	return path.map((pathItem, index) => ({
-		name: pathItem,
-		href: `/${root}/${path.slice(0, index + 1).join("/")}`,
-		index
-	}));
+	if (path.length === 0) {
+		return [{
+			name: "All Files",
+			href: "/" + root,
+			index: 0,
+		}];
+	}
+	else {
+		return path.map((pathItem, index) => ({
+			name: pathItem,
+			href: `/${root}/${path.slice(0, index + 1).join("/")}`,
+			index
+		}));
+	}
 });
 
 const items: Ref<(FileDisplay | DirectoryDisplay)[]> = ref([]);

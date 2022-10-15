@@ -1,6 +1,6 @@
 <template>
 	<div class="h-full">
-		<div v-if="overviewDisplayed === RenderType.Overview"
+		<div v-if="renderType === RenderType.Overview"
 			class="flex flex-1 items-center flex-wrap justify-start sm:flex-nowrap sm:justify-between">
 			<div class="mr-2">
 				<slot />
@@ -22,9 +22,9 @@
 				</div>
 			</div>
 		</div>
-		<CardList :files="files" v-if="overviewDisplayed === RenderType.Overview" />
-		<File :file="fileRendered" v-if="overviewDisplayed === RenderType.File" />
-		<FileList :directory="directoryRendered" v-if="overviewDisplayed === RenderType.Directory" />
+		<CardList :files="files" v-if="renderType === RenderType.Overview" />
+		<File :file="fileRendered" v-if="renderType === RenderType.File" />
+		<FileList :directory="directoryRendered" v-if="renderType === RenderType.Directory" />
 	</div>
 </template>
 
@@ -58,7 +58,7 @@ const callsigns = computed(() => {
 
 const files = computed(() => {
 	if (!configuration || !configuration.value) return [];
-	return configuration.value[props.tabName].files;
+	return configuration.value[props.tabName]?.files ?? [];
 });
 
 enum RenderType {
@@ -66,7 +66,7 @@ enum RenderType {
 	File,
 	Directory,
 }
-const overviewDisplayed: Ref<RenderType> = ref(RenderType.Overview);
+const renderType: Ref<RenderType> = ref(RenderType.Overview);
 
 const fileRendered: Ref<FileRender| null> = ref(null);
 function setFileRendered(newFileRendered: FileRender) {
@@ -83,7 +83,7 @@ const router = useRouter();
 const route = useRoute();
 async function loadLocation() {
 	if (!rootDirectoryHandle?.value) {
-		overviewDisplayed.value = RenderType.Overview;
+		renderType.value = RenderType.Overview;
 		return;
 	}
 
@@ -94,15 +94,16 @@ async function loadLocation() {
 	}
 	let filePath = stringToArray(route.params.path);
 	filePath.shift(); // Remove first part of path that refers to selected sidebar tab
-	if (filePath.length === 0) {
+	if (filePath.length === 0 && props.tabName !== "All Files") {
 		previousDirectoryPath.value = [];
-		overviewDisplayed.value = RenderType.Overview;
+		renderType.value = RenderType.Overview;
 		return;
 	}
 	let originalFilePath = [...filePath];
 
 	let rootHandle: FileSystemDirectoryHandle = rootDirectoryHandle.value;
-	let foundHandle: FileSystemDirectoryHandle | FileSystemFileHandle | null = null;
+	let foundHandle: FileSystemDirectoryHandle | FileSystemFileHandle | null = rootHandle;
+
 	while (filePath.length > 0) {
 		foundHandle = null;
 		let currentPathItem = filePath.shift();
@@ -142,18 +143,18 @@ async function loadLocation() {
 			backLink,
 		};
 
-		overviewDisplayed.value = RenderType.Directory;
+		renderType.value = RenderType.Directory;
 	}
 	else if (foundHandle?.kind === "file") {
 		let file = await foundHandle.getFile();
 		// Find common name for this file from configuration's name for it
 		let commonName = file.name;
-		if (configuration?.value) {
+		if (configuration?.value && props.tabName !== "All Files") {
 			commonName = configuration.value[props.tabName].files.find(file => file.path === originalFilePath.join("/"))?.name ?? file.name;
 		}
 
 		let backLink = "/" + route.params.path[0]; // Default back link is to tab root
-		if (overviewDisplayed.value === RenderType.Directory && previousDirectoryPath.value.length > 0) {
+		if (renderType.value === RenderType.Directory && previousDirectoryPath.value.length > 0) {
 			// If we reached this file via filelist, go back to the last filelist
 			backLink += "/" + (previousDirectoryPath.value.pop() ?? []).join("/");
 		}
@@ -167,7 +168,7 @@ async function loadLocation() {
 		};
 		setFileRendered(newFileRendered);
 
-		overviewDisplayed.value = RenderType.File;
+		renderType.value = RenderType.File;
 	}
 }
 loadLocation().catch(err => console.error(err));

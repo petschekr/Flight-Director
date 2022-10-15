@@ -20,4 +20,7 @@ export interface Configuration {
 	"Other": {
 		files: File[];
 	};
+	"All Files": {
+		files: File[]; // Just to satisfy type checker; TOML file does not contain this entry
+	};
 }

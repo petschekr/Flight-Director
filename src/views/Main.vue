@@ -18,6 +18,7 @@
 			<h1 class="text-2xl font-semibold text-gray-900">Other Resources</h1>
 			<h2 class="text-sm font-medium text-gray-500">Non-critical documents and references</h2>
 		</FileTab>
+		<FileTab tab-name="All Files" v-if="hasPermissions && currentView === 'AllFiles'" />
 	</Nav>
 </template>
 
