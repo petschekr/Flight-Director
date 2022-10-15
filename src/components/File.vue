@@ -24,13 +24,24 @@
 				</div>
 			</div>
 		</div>
-		<embed :src="props.file?.blobURL ?? ''" type="application/pdf" class="w-full sm:rounded-b-lg flex-grow" />
+		<!-- Are you sure you want to preview this? Preview anyway -->
+		<embed v-if="shouldPreview" :src="props.file?.blobURL ?? ''" :type="props.file?.file.type" class="w-full sm:rounded-b-lg flex-grow object-scale-down" />
+		<div v-else class="flex flex-col flex-grow justify-center items-center shadow-inner">
+			<p class="text-lg font-medium mb-2">We don't recognize this file type yet. It likely won't display correctly in your browser.</p>
+			<code class="text-sm mb-4">{{props.file?.file.type || "Unknown file type"}}</code>
+			<button @click="shouldPreview = true"
+				class="inline-flex items-center rounded-md border border-transparent bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+				Preview anyway
+				<RocketLaunchIcon class="ml-2 -mr-1 h-5 w-5" />
+			</button>
+		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
+import { ref, watchEffect, type Ref } from "vue";
 import { useRoute } from "vue-router";
-import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid'
+import { ChevronLeftIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon } from '@heroicons/vue/24/solid'
 import dayjs from "dayjs";
 
 import type { FileRender } from "@/models/file-explorer";
@@ -40,6 +51,12 @@ const props = defineProps<{
 }>();
 
 const route = useRoute();
+
+const shouldPreview: Ref<boolean> = ref(false);
+const knownFileTypes = ["application/pdf", "text/plain", "text/xml", "image/png", "image/jpeg", "image/gif", "image/svg+xml", "image/tiff"];
+watchEffect(() => {
+	shouldPreview.value = knownFileTypes.includes(props.file?.file.type ?? "");
+});
 
 function getBackPath(): string {
 	let path = [...route.params.path];

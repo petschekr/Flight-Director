@@ -6,7 +6,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "lib": ["ESNext.AsyncIterable", "DOM", "ES2019"],
+    "lib": ["ESNext.AsyncIterable", "DOM", "ES2019", "ES2016.Array.Include"],
     "strict": true
   },
 
