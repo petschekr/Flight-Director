@@ -33,7 +33,8 @@
 			</div>
 		</div>
 
-		<div v-if="items.length === 0" class="flex justify-center items-center my-8">
+		<!-- Loading spinny -->
+		<div v-if="items.length === 0 && !emptyDirectory" class="flex justify-center items-center my-8">
 			<svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none"
 				viewBox="0 0 24 24">
 				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -41,6 +42,14 @@
 					d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
 				</path>
 			</svg>
+		</div>
+		<div v-if="emptyDirectory" class="flex flex-col justify-center items-center my-8">
+			<p class="italic mb-4">Empty directory</p>
+			<RouterLink :to="props.directory?.backLink ?? getBackPath()"
+				class="inline-flex items-center rounded-md border border-transparent bg-sky-600 px-3 py-2 text-sm font-medium leading-4 text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+				Back
+				<ArrowUturnUpIcon class="ml-2 -mr-0.5 h-4 w-4" aria-hidden="true" />
+			</RouterLink>
 		</div>
 		<div class="overflow-hidden bg-white sm:rounded-md">
 			<ul role="list" class="divide-y divide-gray-200">
@@ -88,7 +97,7 @@ import { useRoute } from "vue-router";
 import type { FileDisplay, DirectoryDisplay, DirectoryRender } from "@/models/file-explorer";
 
 import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
-import { ChevronRightIcon } from '@heroicons/vue/20/solid';
+import { ChevronRightIcon, ArrowUturnUpIcon } from '@heroicons/vue/20/solid';
 import { DocumentTextIcon, FolderIcon, CalendarIcon, RectangleStackIcon } from '@heroicons/vue/24/outline';
 
 import dayjs from "dayjs";
@@ -119,12 +128,14 @@ const path = computed(() => {
 });
 
 const items: Ref<(FileDisplay | DirectoryDisplay)[]> = ref([]);
+const emptyDirectory: Ref<boolean> = ref(false);
 
 // Update list items when the current directory changes
 watchEffect(async () => {
 	if (!props.directory) return;
 
 	items.value = []; // Clear the list so we can regenerate it
+	emptyDirectory.value = false;
 	let newItems: (FileDisplay | DirectoryDisplay)[] = []; // Wait to finish loading before presenting
 	for await (const item of props.directory.directory.values()) {
 		if (item.kind === "directory") {
@@ -164,6 +175,7 @@ watchEffect(async () => {
 		return a.name.localeCompare(b.name);
 	});
 	items.value = newItems;
+	emptyDirectory.value = newItems.length === 0;
 });
 
 function formatDate(d: Date, time: boolean = false): string {
