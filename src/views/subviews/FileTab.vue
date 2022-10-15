@@ -1,8 +1,26 @@
 <template>
 	<div class="h-full">
-		<div v-if="overviewDisplayed === RenderType.Overview">
-			<h1 class="text-2xl font-semibold text-gray-900">Manuals</h1>
-			<h2 class="text-sm font-medium text-gray-500">Some subtitle text goes here</h2>
+		<div v-if="overviewDisplayed === RenderType.Overview"
+			class="flex flex-1 items-center flex-wrap justify-start sm:flex-nowrap sm:justify-between">
+			<div class="mr-2">
+				<slot />
+			</div>
+			<div class="flex flex-1 justify-start mt-2 sm:justify-end sm:mt-0">
+				<div class="w-full sm:w-40">
+					<label for="callsign" class="block text-sm font-medium text-gray-700">Callsign:</label>
+					<select id="callsign" v-model="selectedCallsign"
+						class="mt-1 block w-full rounded-md font-bold border-gray-300 py-2 pl-3 pr-10 text-base focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
+						<option v-for="callsign in callsigns" :key="callsign.id">{{callsign.callsign}}</option>
+					</select>
+				</div>
+				<div class="ml-5 w-full sm:w-40">
+					<label for="takeoff-date" class="block text-sm font-medium text-gray-700">Take-off Date:</label>
+					<div class="mt-1">
+						<input type="date" id="takeoff-date" v-model="selectedDate"
+							class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
+					</div>
+				</div>
+			</div>
 		</div>
 		<CardList :files="files" v-if="overviewDisplayed === RenderType.Overview" />
 		<File :file="fileRendered" v-if="overviewDisplayed === RenderType.File" />
@@ -21,12 +39,26 @@ import CardList from "@/components/CardList.vue";
 import File from "@/components/File.vue";
 import FileList from "@/components/FileList.vue";
 
+const props = defineProps<{
+	tabName: keyof Configuration;
+}>();
+
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const rootDirectoryHandle = inject<Ref<FileSystemDirectoryHandle | null>>("rootDirectoryHandle");
 
+const selectedCallsign = ref(localStorage.getItem("callsign"));
+watch(selectedCallsign, () => {
+	localStorage.setItem("callsign", selectedCallsign.value || "");
+});
+const selectedDate = ref(new Date().toISOString().split("T")[0]); // Returns today's date
+const callsigns = computed(() => {
+	if (!configuration || !configuration.value) return [];
+	return configuration.value["Daily Ops"].callsigns.map((callsign, index) => ({ id: index, callsign }));
+});
+
 const files = computed(() => {
 	if (!configuration || !configuration.value) return [];
-	return configuration.value["Manuals"].files;
+	return configuration.value[props.tabName].files;
 });
 
 enum RenderType {
@@ -117,7 +149,7 @@ async function loadLocation() {
 		// Find common name for this file from configuration's name for it
 		let commonName = file.name;
 		if (configuration?.value) {
-			commonName = configuration.value["Manuals"].files.find(file => file.path === originalFilePath.join("/"))?.name ?? file.name;
+			commonName = configuration.value[props.tabName].files.find(file => file.path === originalFilePath.join("/"))?.name ?? file.name;
 		}
 
 		let backLink = "/" + route.params.path[0]; // Default back link is to tab root

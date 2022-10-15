@@ -44,7 +44,7 @@ import dayjs from "dayjs";
 
 import type { FileRender } from "@/models/file-explorer";
 
-let props = defineProps<{
+const props = defineProps<{
 	file: FileRender | null;
 }>();
 

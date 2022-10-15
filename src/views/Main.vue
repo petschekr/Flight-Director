@@ -1,29 +1,36 @@
 <template>
 	<Nav @navigate="navigateTo">
 		<Permissions v-if="!hasPermissions" @select-folder="obtainPermissions" />
-		<DailyOps v-if="hasPermissions && currentView === 'DailyOps'" />
-		<Manuals v-if="hasPermissions && currentView === 'Manuals'" />
-		<OpsRef v-if="hasPermissions && currentView === 'OpsRef'" />
-		<Other v-if="hasPermissions && currentView === 'Other'" />
+
+		<FileTab tab-name="Daily Ops" v-if="hasPermissions && currentView === 'DailyOps'">
+			<h1 class="text-2xl font-semibold text-gray-900">Daily Ops</h1>
+			<h2 class="text-sm font-medium text-gray-500">Make sure callsign and take-off date are correct</h2>
+		</FileTab>
+		<FileTab tab-name="Manuals" v-if="hasPermissions && currentView === 'Manuals'">
+			<h1 class="text-2xl font-semibold text-gray-900">Manuals</h1>
+			<h2 class="text-sm font-medium text-gray-500">Technical Orders for the MQ-9A</h2>
+		</FileTab>
+		<FileTab tab-name="Operational Reference" v-if="hasPermissions && currentView === 'OpsRef'">
+			<h1 class="text-2xl font-semibold text-gray-900">Operational Reference</h1>
+			<h2 class="text-sm font-medium text-gray-500">Resources to keep handy for all flying operations</h2>
+		</FileTab>
+		<FileTab tab-name="Other" v-if="hasPermissions && currentView === 'Other'">
+			<h1 class="text-2xl font-semibold text-gray-900">Other Resources</h1>
+			<h2 class="text-sm font-medium text-gray-500">Non-critical documents and references</h2>
+		</FileTab>
 	</Nav>
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, provide, computed, ref, type Ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { provide, computed, ref, type Ref } from "vue";
 
 import toml from "toml";
 
 import Nav from "@/components/Nav.vue";
 import Permissions from "@/components/Permissions.vue";
-import DailyOps from "@/views/subviews/DailyOps.vue";
-import Manuals from "@/views/subviews/Manuals.vue";
-import OpsRef from "@/views/subviews/OpsRef.vue";
-import Other from "@/views/subviews/Other.vue";
+import FileTab from "@/views/subviews/FileTab.vue";
 import type { Configuration } from "@/models/configuration";
 
-const router = useRouter();
-const route = useRoute();
 const hasPermissions = ref(false);
 const rootDirectoryHandle: Ref<FileSystemDirectoryHandle | null> = ref(null);
 const configuration: Ref<Configuration | null> = ref(null);
@@ -51,8 +58,6 @@ async function obtainPermissions() {
 		window.location.reload();
 		return;
 	}
-
-	// loadFiles(rootDirectoryHandle.value, stringToArray(route.params.path));
 }
 
 const currentView = ref("DailyOps");
