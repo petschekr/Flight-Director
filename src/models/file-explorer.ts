@@ -24,3 +24,7 @@ export interface FileRender {
 	blobURL: string;
 	backLink?: string;
 }
+export interface DirectoryRender {
+	directory: FileSystemDirectoryHandle,
+	backLink?: string;
+}

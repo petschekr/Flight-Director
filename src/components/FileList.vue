@@ -4,7 +4,7 @@
 			<div class="-ml-4 -mt-2 flex flex-nowrap items-center justify-between truncate">
 				<div class="ml-4 mt-2 truncate">
 					<div class="flex items-center">
-						<RouterLink :to="getBackPath()" class="self-start mt-1 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
+						<RouterLink :to="props.directory?.backLink ?? getBackPath()" class="self-start mt-1 h-7 w-7 text-gray-400 transition-colors hover:text-gray-600 shrink-0">
 							<ChevronLeftIcon />
 						</RouterLink>
 						<div class="ml-4 truncate">
@@ -85,7 +85,7 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, type Ref } from "vue";
 import { useRoute } from "vue-router";
-import type { FileDisplay, DirectoryDisplay } from "@/models/file-explorer";
+import type { FileDisplay, DirectoryDisplay, DirectoryRender } from "@/models/file-explorer";
 
 import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
@@ -94,7 +94,7 @@ import { DocumentTextIcon, FolderIcon, CalendarIcon, RectangleStackIcon } from '
 import dayjs from "dayjs";
 
 const props = defineProps<{
-	root: FileSystemDirectoryHandle | null,
+	directory: DirectoryRender | null;
 }>();
 
 const route = useRoute();
@@ -119,17 +119,14 @@ const path = computed(() => {
 });
 
 const items: Ref<(FileDisplay | DirectoryDisplay)[]> = ref([]);
-const currentDirectory: Ref<FileSystemDirectoryHandle | null> = ref(props.root);
 
-// Set current directory to the requested root direction when it's updated
-watchEffect(() => currentDirectory.value = props.root);
 // Update list items when the current directory changes
 watchEffect(async () => {
-	if (!currentDirectory.value) return;
+	if (!props.directory) return;
 
 	items.value = []; // Clear the list so we can regenerate it
 	let newItems: (FileDisplay | DirectoryDisplay)[] = []; // Wait to finish loading before presenting
-	for await (const item of currentDirectory.value.values()) {
+	for await (const item of props.directory.directory.values()) {
 		if (item.kind === "directory") {
 			let subitems = 0;
 			for await (const subitem of item.values()) {

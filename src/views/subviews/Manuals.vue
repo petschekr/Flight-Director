@@ -6,7 +6,7 @@
 		</div>
 		<CardList :files="files" v-if="overviewDisplayed === RenderType.Overview" />
 		<File :file="fileRendered" v-if="overviewDisplayed === RenderType.File" />
-		<FileList :root="directoryRendered" v-if="overviewDisplayed === RenderType.Directory" />
+		<FileList :directory="directoryRendered" v-if="overviewDisplayed === RenderType.Directory" />
 	</div>
 </template>
 
@@ -15,7 +15,7 @@ import { inject, ref, watch, computed, type Ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
 import type { Configuration } from "@/models/configuration";
-import type { DirectoryDisplay, FileDisplay, FileRender } from "@/models/file-explorer";
+import type { FileRender, DirectoryRender } from "@/models/file-explorer";
 
 import CardList from "@/components/CardList.vue";
 import File from "@/components/File.vue";
@@ -44,7 +44,8 @@ function setFileRendered(newFileRendered: FileRender) {
 	}
 	fileRendered.value = newFileRendered;
 }
-const directoryRendered: Ref<FileSystemDirectoryHandle | null> = ref(null);
+const directoryRendered: Ref<DirectoryRender | null> = ref(null);
+const previousDirectoryPath: Ref<string[][]> = ref([]); // Array of array of path items
 
 const router = useRouter();
 const route = useRoute();
@@ -62,7 +63,8 @@ async function loadLocation() {
 	let filePath = stringToArray(route.params.path);
 	filePath.shift(); // Remove first part of path that refers to selected sidebar tab
 	if (filePath.length === 0) {
-		overviewDisplayed.value = RenderType.Overview
+		previousDirectoryPath.value = [];
+		overviewDisplayed.value = RenderType.Overview;
 		return;
 	}
 	let originalFilePath = [...filePath];
@@ -90,13 +92,27 @@ async function loadLocation() {
 	}
 
 	if (foundHandle?.kind === "directory") {
-		overviewDisplayed.value = RenderType.Directory;
+		// A last visited path in the chain should not contain a deeper one
+		// This happens when clicking back button from a filelist to another filelist
+		// Only go up the chain
+		previousDirectoryPath.value = previousDirectoryPath.value.filter(path => {
+			return !originalFilePath.every((pathItem, index) => pathItem === path[index]);
+		});
 
-		directoryRendered.value = foundHandle;
+		let backLink = "/" + route.params.path[0]; // Default back link is to tab root
+		if (previousDirectoryPath.value.length > 0) {
+			// If we reached this filelist via a filelist, go back to the last filelist
+			backLink += "/" + previousDirectoryPath.value[previousDirectoryPath.value.length - 1].join("/");
+		}
+		previousDirectoryPath.value.push(originalFilePath);
+		directoryRendered.value = {
+			directory: foundHandle,
+			backLink,
+		};
+
+		overviewDisplayed.value = RenderType.Directory;
 	}
 	else if (foundHandle?.kind === "file") {
-		overviewDisplayed.value = RenderType.File;
-
 		let file = await foundHandle.getFile();
 		// Find common name for this file from configuration's name for it
 		let commonName = file.name;
@@ -104,13 +120,22 @@ async function loadLocation() {
 			commonName = configuration.value["Manuals"].files.find(file => file.path === originalFilePath.join("/"))?.name ?? file.name;
 		}
 
+		let backLink = "/" + route.params.path[0]; // Default back link is to tab root
+		if (overviewDisplayed.value === RenderType.Directory && previousDirectoryPath.value.length > 0) {
+			// If we reached this file via filelist, go back to the last filelist
+			backLink += "/" + (previousDirectoryPath.value.pop() ?? []).join("/");
+		}
+
 		let newFileRendered: FileRender = {
 			file,
 			path: originalFilePath,
 			commonName,
 			blobURL: URL.createObjectURL(file),
+			backLink,
 		};
 		setFileRendered(newFileRendered);
+
+		overviewDisplayed.value = RenderType.File;
 	}
 }
 loadLocation().catch(err => console.error(err));
