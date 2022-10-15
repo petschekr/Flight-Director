@@ -29,15 +29,17 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, watch, computed, type Ref } from "vue";
+import { inject, ref, watch, computed, type Ref, watchEffect } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
-import type { Configuration } from "@/models/configuration";
+import type { File as ConfigFileEntry, Configuration } from "@/models/configuration";
 import type { FileRender, DirectoryRender } from "@/models/file-explorer";
 
 import CardList from "@/components/CardList.vue";
 import File from "@/components/File.vue";
 import FileList from "@/components/FileList.vue";
+
+import dayjs from "dayjs";
 
 const props = defineProps<{
 	tabName: keyof Configuration;
@@ -46,7 +48,14 @@ const props = defineProps<{
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const rootDirectoryHandle = inject<Ref<FileSystemDirectoryHandle | null>>("rootDirectoryHandle");
 
-const selectedCallsign = ref(localStorage.getItem("callsign"));
+const selectedCallsign: Ref<string> = ref(localStorage.getItem("callsign") ?? "");
+watchEffect(() => {
+	if (configuration?.value) {
+		if (configuration?.value?.["Daily Ops"].callsigns.indexOf(selectedCallsign.value) === -1) {
+			selectedCallsign.value = configuration?.value?.["Daily Ops"].callsigns[0];
+		}
+	}
+});
 watch(selectedCallsign, () => {
 	localStorage.setItem("callsign", selectedCallsign.value || "");
 });
@@ -56,9 +65,21 @@ const callsigns = computed(() => {
 	return configuration.value["Daily Ops"].callsigns.map((callsign, index) => ({ id: index, callsign }));
 });
 
+function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
+	const date = dayjs(selectedDate.value);
+	let path = file.path;
+	path = path.replace(/<callsign>/gi, selectedCallsign.value);
+	path = path.replace(/<(.*?)>/gi, (_, format) => {
+		return date.format(format);
+	});
+	return {
+		...file,
+		path,
+	};
+}
 const files = computed(() => {
 	if (!configuration || !configuration.value) return [];
-	return configuration.value[props.tabName]?.files ?? [];
+	return configuration.value[props.tabName]?.files.map(mapPathIdentifiers) ?? [];
 });
 
 enum RenderType {
@@ -150,7 +171,10 @@ async function loadLocation() {
 		// Find common name for this file from configuration's name for it
 		let commonName = file.name;
 		if (configuration?.value && props.tabName !== "All Files") {
-			commonName = configuration.value[props.tabName].files.find(file => file.path === originalFilePath.join("/"))?.name ?? file.name;
+			commonName = configuration.value[props.tabName].files
+				.map(mapPathIdentifiers)
+				.find(file => file.path === originalFilePath.join("/"))?.name
+				?? file.name;
 		}
 
 		let backLink = "/" + route.params.path[0]; // Default back link is to tab root
