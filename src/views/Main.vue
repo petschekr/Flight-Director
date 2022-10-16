@@ -46,8 +46,8 @@ const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
 watchEffect(() => {
 	if (!configuration?.value) return;
 	// If selectedCallsign is invalid, set it to the first in the list
-	if (!configuration.value.callsigns.includes(selectedCallsign.value)) {
-		selectedCallsign.value = configuration.value.callsigns[0];
+	if (!configuration.value.callsigns.map(cs => cs.callsign).includes(selectedCallsign.value)) {
+		selectedCallsign.value = configuration.value.callsigns[0].callsign;
 	}
 	localStorage.setItem("callsign", selectedCallsign.value);
 });

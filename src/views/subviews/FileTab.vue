@@ -55,7 +55,7 @@ const rootDirectoryHandle = inject<Ref<FileSystemDirectoryHandle | null>>("rootD
 const selectedDate = ref(new Date().toISOString().split("T")[0]); // Returns today's date
 const callsigns = computed(() => {
 	if (!configuration || !configuration.value) return [];
-	return configuration.value.callsigns;
+	return configuration.value.callsigns.map(cs => cs.callsign);
 });
 function callsignChange(event: Event) {
 	let target = event.target as HTMLSelectElement;
@@ -65,6 +65,7 @@ function callsignChange(event: Event) {
 function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
 	const date = dayjs(selectedDate.value);
 	let path = file.path;
+	path = path.replace(/<callsign-path>/gi, (configuration?.value?.callsigns ?? []).find(cs => cs.callsign === props.selectedCallsign)?.path ?? ""); // Can contain replacements itself so must go first
 	path = path.replace(/<callsign>/gi, props.selectedCallsign);
 	path = path.replace(/<(.*?)>/gi, (_, format) => {
 		return date.format(format);

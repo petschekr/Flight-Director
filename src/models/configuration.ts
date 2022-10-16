@@ -9,7 +9,10 @@ export interface File {
 
 export interface Configuration {
 	root: string;
-	callsigns: string[];
+	callsigns: {
+		callsign: string;
+		path: string;
+	}[];
 
 	tabs: {
 		// name: string;

@@ -139,10 +139,12 @@ const filteredCallsigns = computed(() => {
 	if (!configuration?.value) return [];
 
 	if (rawQuery.value === "!") {
-		return configuration.value.callsigns;
+		return configuration.value.callsigns.map(cs => cs.callsign);
 	}
 	else if (query.value !== "") {
-		return configuration.value.callsigns.filter(callsign => callsign.toLowerCase().includes(query.value.trim()));
+		return configuration.value.callsigns
+			.filter(callsign => callsign.callsign.toLowerCase().includes(query.value.trim()))
+			.map(cs => cs.callsign);
 	}
 	return [];
 });
@@ -184,7 +186,7 @@ const filteredDirectories = computed((): ConfigFileEntry[] => {
 });
 
 function onSelect(selection: string) {
-	if (configuration?.value?.callsigns.includes(selection)) {
+	if (configuration?.value?.callsigns.map(cs => cs.callsign).includes(selection)) {
 		emit("setCallsign", selection);
 	}
 	close();
