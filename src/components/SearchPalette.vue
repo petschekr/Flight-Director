@@ -39,9 +39,10 @@
 									<ul class="-mx-4 mt-2 text-sm text-gray-700">
 										<ComboboxOption v-for="file in filteredFiles" :key="file.name" :value="file.name" as="template" v-slot="{ active }">
 											<li :class="['flex cursor-default select-none items-center px-4 py-2', active && 'bg-sky-600 text-white']">
-												<!-- <DocumentTextIcon :class="['h-6 w-6 flex-none', active ? 'text-white' : 'text-gray-400']" /> -->
-												<DocumentTextIcon :class="['h-6 w-6 flex-none', file.color.replace('bg', 'text')]" />
-												<span class="ml-3 flex-auto truncate ">{{ file.name }}</span>
+												<DocumentTextIcon :class="['h-6 w-6 flex-none', active ? 'text-white' : 'text-gray-400']" />
+												<span :class="['ml-2 w-4 h-4 rounded-full border-white border-2', file.color]"></span>
+												<!-- <DocumentTextIcon :class="['h-6 w-6 flex-none', file.color.replace('bg', 'text')]" /> -->
+												<span class="ml-2 flex-auto leading-none !overflow-visible truncate">{{ file.name }}</span>
 											</li>
 										</ComboboxOption>
 									</ul>
