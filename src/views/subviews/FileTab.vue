@@ -22,7 +22,7 @@
 				</div>
 			</div>
 		</div>
-		<CardList :files="files" v-if="renderType === RenderType.Overview" />
+		<CardList :file-groups="fileGroups" v-if="renderType === RenderType.Overview" />
 		<File :file="fileRendered" v-if="renderType === RenderType.File" />
 		<FileList :directory="directoryRendered" v-if="renderType === RenderType.Directory" />
 	</div>
@@ -76,9 +76,15 @@ function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
 	};
 }
 // Files for grid list overview
-const files = computed(() => {
-	if (!configuration || !configuration.value || props.tabName === "All Files") return [];
-	return configuration.value.tabs[props.tabName]?.files.map(mapPathIdentifiers) ?? [];
+const fileGroups = computed(() => {
+	if (!configuration || !configuration.value || props.tabName === "All Files" || !configuration.value.tabs[props.tabName]) return [];
+
+	return Object.entries(configuration.value.tabs[props.tabName]).map(entry => {
+		return {
+			name: entry[0],
+			files: entry[1].map(mapPathIdentifiers),
+		};
+	});
 });
 
 enum RenderType {
@@ -123,7 +129,8 @@ watchPostEffect(async () => {
 			return;
 		}
 		else {
-			let fileEntry = configuration.value.tabs[props.tabName].files
+			let fileEntry = Object.values(configuration.value.tabs[props.tabName])
+				.flat()
 				.map(mapPathIdentifiers)
 				.find(file => file.name === entryName);
 			if (!fileEntry) {
@@ -178,7 +185,8 @@ watchPostEffect(async () => {
 		// Find common name for this file from configuration's name for it
 		let commonName = file.name;
 		if (configuration?.value && props.tabName !== "All Files") {
-			commonName = configuration.value.tabs[props.tabName].files
+			commonName = Object.values(configuration.value.tabs[props.tabName])
+				.flat()
 				.map(mapPathIdentifiers)
 				.find(file => file.path.toLowerCase() === foundFilePath.join("/").toLowerCase())?.name
 				?? file.name;

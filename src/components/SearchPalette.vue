@@ -160,20 +160,17 @@ const filteredFiles = computed((): ConfigFileEntry[] => {
 	if (query.value === "" || rawQuery.value.startsWith("!")) {
 		return [];
 	}
-	let files: ConfigFileEntry[] = [];
 	let q = query.value.toLowerCase().trim();
-	files = files.concat(configuration.value.tabs["Daily Ops"].files.filter(entry => {
-		return entry.name.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q) || entry.searchTerms?.toLowerCase().includes(q) || entry.path.toLowerCase().includes(q);
-	}));
-	files = files.concat(configuration.value.tabs["Manuals"].files.filter(entry => {
-		return entry.name.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q) || entry.searchTerms?.toLowerCase().includes(q) || entry.path.toLowerCase().includes(q);
-	}));
-	files = files.concat(configuration.value.tabs["Operational Reference"].files.filter(entry => {
-		return entry.name.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q) || entry.searchTerms?.toLowerCase().includes(q) || entry.path.toLowerCase().includes(q);
-	}));
-	files = files.concat(configuration.value.tabs["Other"].files.filter(entry => {
-		return entry.name.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q) || entry.searchTerms?.toLowerCase().includes(q) || entry.path.toLowerCase().includes(q);
-	}));
+
+	let allFiles = Object.values(configuration.value.tabs).map(tab => Object.values(tab)).flat(2);
+	let files: ConfigFileEntry[] = allFiles
+		.filter(entry => {
+			return entry.name.toLowerCase().includes(q)
+				|| entry.description.toLowerCase().includes(q)
+				|| entry.searchTerms?.toLowerCase().includes(q)
+				|| entry.path.toLowerCase().includes(q);
+		});
+		// .sort();
 	return files;
 });
 const filteredDirectories = computed((): ConfigFileEntry[] => {

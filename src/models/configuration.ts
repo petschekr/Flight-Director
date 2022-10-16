@@ -18,16 +18,16 @@ export interface Configuration {
 		// name: string;
 		// files: File[];
 		"Daily Ops": {
-			files: File[];
+			[fileGroup: string]: File[];
 		};
 		"Manuals": {
-			files: File[];
+			[fileGroup: string]: File[];
 		};
 		"Operational Reference": {
-			files: File[];
+			[fileGroup: string]: File[];
 		};
 		"Other": {
-			files: File[];
+			[fileGroup: string]: File[];
 		};
 	};
 }
