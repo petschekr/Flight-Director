@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, watch, computed, type Ref, watchEffect } from "vue";
+import { inject, ref, watch, computed, type Ref, watchPostEffect } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
 import type { File as ConfigFileEntry, Configuration } from "@/models/configuration";
@@ -50,7 +50,7 @@ const configuration = inject<Ref<Configuration | null>>("configuration");
 const rootDirectoryHandle = inject<Ref<FileSystemDirectoryHandle | null>>("rootDirectoryHandle");
 
 const selectedCallsign = ref("");
-watchEffect(() => {
+watchPostEffect(() => {
 	selectedCallsign.value = props.selectedCallsign;
 	if (!configuration?.value) return;
 	// If selectedCallsign is invalid, set it to the first in the list
@@ -103,7 +103,7 @@ const directoryRendered: Ref<DirectoryRender | null> = ref(null);
 
 const router = useRouter();
 const route = useRoute();
-watchEffect(async () => {
+watchPostEffect(async () => {
 	if (!configuration?.value || !rootDirectoryHandle?.value) {
 		renderType.value = RenderType.Overview;
 		return;

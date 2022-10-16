@@ -9,7 +9,10 @@
 						</RouterLink>
 						<div class="ml-4 truncate">
 							<h3 class="text-lg font-medium leading-6 text-gray-900 truncate">{{props.file?.commonName}}</h3>
-							<p class="text-sm text-gray-500 truncate" :title="props.file?.path.join('/')">{{props.file?.file.name}}</p>
+							<RouterLink :to="'/files/' + props.file?.path.slice(0, -1).join('/')" :title="props.file?.file.name"
+								class="text-sm text-gray-500 whitespace-normal transition-color hover:text-sky-700 ">
+								{{props.file?.path.join('/')}}
+							</RouterLink>
 						</div>
 					</div>
 				</div>
