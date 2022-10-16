@@ -142,13 +142,15 @@ watchEffect(async () => {
 	let rootHandle: FileSystemDirectoryHandle = rootDirectoryHandle.value;
 	let foundHandle: FileSystemDirectoryHandle | FileSystemFileHandle | null = rootHandle;
 
-	let currentFilePath = [...filePath];
+	let currentFilePath = [...filePath]; // Create a copy because array is modified during traversal
+	let foundFilePath: string[] = []; // Has correct capitalization because it's built during directory traversal
 	while (currentFilePath.length > 0) {
 		foundHandle = null;
 		let currentPathItem = currentFilePath.shift();
 		for await (const handle of rootHandle.values()) {
-			if (handle.name === currentPathItem) {
+			if (handle.name.toLowerCase() === currentPathItem?.toLowerCase()) {
 				foundHandle = handle;
+				foundFilePath.push(foundHandle.name);
 				break;
 			}
 		}
@@ -167,7 +169,7 @@ watchEffect(async () => {
 		directoryRendered.value = {
 			directory: foundHandle,
 			location: {
-				path: filePath,
+				path: foundFilePath,
 				fromRoot: props.tabName === "All Files",
 			},
 		};
@@ -181,13 +183,13 @@ watchEffect(async () => {
 		if (configuration?.value && props.tabName !== "All Files") {
 			commonName = configuration.value[props.tabName].files
 				.map(mapPathIdentifiers)
-				.find(file => file.path === filePath.join("/"))?.name
+				.find(file => file.path.toLowerCase() === foundFilePath.join("/").toLowerCase())?.name
 				?? file.name;
 		}
 
 		let newFileRendered: FileRender = {
 			file,
-			path: filePath,
+			path: foundFilePath,
 			commonName,
 			blobURL: URL.createObjectURL(file),
 		};
