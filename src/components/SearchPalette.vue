@@ -138,10 +138,10 @@ const filteredCallsigns = computed(() => {
 	if (!configuration?.value) return [];
 
 	if (rawQuery.value === "!") {
-		return configuration.value["Daily Ops"].callsigns;
+		return configuration.value.callsigns;
 	}
 	else if (query.value !== "") {
-		return configuration.value["Daily Ops"].callsigns.filter(callsign => callsign.toLowerCase().includes(query.value.trim()));
+		return configuration.value.callsigns.filter(callsign => callsign.toLowerCase().includes(query.value.trim()));
 	}
 	return [];
 });
@@ -159,16 +159,16 @@ const filteredFiles = computed((): ConfigFileEntry[] => {
 	}
 	let files: ConfigFileEntry[] = [];
 	let q = query.value.toLowerCase().trim();
-	files = files.concat(configuration.value["Daily Ops"].files.filter(entry => {
+	files = files.concat(configuration.value.tabs["Daily Ops"].files.filter(entry => {
 		return entry.name.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q) || entry.searchTerms?.toLowerCase().includes(q) || entry.path.toLowerCase().includes(q);
 	}));
-	files = files.concat(configuration.value["Manuals"].files.filter(entry => {
+	files = files.concat(configuration.value.tabs["Manuals"].files.filter(entry => {
 		return entry.name.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q) || entry.searchTerms?.toLowerCase().includes(q) || entry.path.toLowerCase().includes(q);
 	}));
-	files = files.concat(configuration.value["Operational Reference"].files.filter(entry => {
+	files = files.concat(configuration.value.tabs["Operational Reference"].files.filter(entry => {
 		return entry.name.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q) || entry.searchTerms?.toLowerCase().includes(q) || entry.path.toLowerCase().includes(q);
 	}));
-	files = files.concat(configuration.value["Other"].files.filter(entry => {
+	files = files.concat(configuration.value.tabs["Other"].files.filter(entry => {
 		return entry.name.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q) || entry.searchTerms?.toLowerCase().includes(q) || entry.path.toLowerCase().includes(q);
 	}));
 	return files;
@@ -183,7 +183,7 @@ const filteredDirectories = computed((): ConfigFileEntry[] => {
 });
 
 function onSelect(selection: string) {
-	if (configuration?.value?.["Daily Ops"].callsigns.includes(selection)) {
+	if (configuration?.value?.callsigns.includes(selection)) {
 		emit("setCallsign", selection);
 	}
 	close();

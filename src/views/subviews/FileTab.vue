@@ -42,7 +42,7 @@ import FileList from "@/components/FileList.vue";
 import dayjs from "dayjs";
 
 const props = defineProps<{
-	tabName: keyof Configuration;
+	tabName: keyof Configuration["tabs"] | "All Files";
 	selectedCallsign: string;
 }>();
 
@@ -54,8 +54,8 @@ watchPostEffect(() => {
 	selectedCallsign.value = props.selectedCallsign;
 	if (!configuration?.value) return;
 	// If selectedCallsign is invalid, set it to the first in the list
-	if (!configuration.value["Daily Ops"].callsigns.includes(selectedCallsign.value)) {
-		selectedCallsign.value = configuration?.value?.["Daily Ops"].callsigns[0];
+	if (!configuration.value.callsigns.includes(selectedCallsign.value)) {
+		selectedCallsign.value = configuration.value.callsigns[0];
 	}
 });
 watch(selectedCallsign, () => {
@@ -64,7 +64,7 @@ watch(selectedCallsign, () => {
 const selectedDate = ref(new Date().toISOString().split("T")[0]); // Returns today's date
 const callsigns = computed(() => {
 	if (!configuration || !configuration.value) return [];
-	return configuration.value["Daily Ops"].callsigns;
+	return configuration.value.callsigns;
 });
 
 function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
@@ -79,9 +79,10 @@ function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
 		path,
 	};
 }
+// Files for grid list overview
 const files = computed(() => {
-	if (!configuration || !configuration.value) return [];
-	return configuration.value[props.tabName]?.files.map(mapPathIdentifiers) ?? [];
+	if (!configuration || !configuration.value || props.tabName === "All Files") return [];
+	return configuration.value.tabs[props.tabName]?.files.map(mapPathIdentifiers) ?? [];
 });
 
 enum RenderType {
@@ -126,7 +127,7 @@ watchPostEffect(async () => {
 			return;
 		}
 		else {
-			let fileEntry = configuration.value[props.tabName].files
+			let fileEntry = configuration.value.tabs[props.tabName].files
 				.map(mapPathIdentifiers)
 				.find(file => file.name === entryName);
 			if (!fileEntry) {
@@ -181,7 +182,7 @@ watchPostEffect(async () => {
 		// Find common name for this file from configuration's name for it
 		let commonName = file.name;
 		if (configuration?.value && props.tabName !== "All Files") {
-			commonName = configuration.value[props.tabName].files
+			commonName = configuration.value.tabs[props.tabName].files
 				.map(mapPathIdentifiers)
 				.find(file => file.path.toLowerCase() === foundFilePath.join("/").toLowerCase())?.name
 				?? file.name;
