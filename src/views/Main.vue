@@ -20,6 +20,8 @@
 		</FileTab>
 		<FileTab v-if="hasPermissions && currentView === 'AllFiles'" tab-name="All Files" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign" />
 
+		<Settings v-if="hasPermissions && currentView === 'Settings'" />
+
 		<SearchPalette :open="searchOpen" @closed="searchOpen = false" @set-callsign="(callsign) => selectedCallsign = callsign" />
 	</Nav>
 </template>
@@ -32,6 +34,7 @@ import toml from "toml";
 import Nav from "@/components/Nav.vue";
 import Permissions from "@/components/Permissions.vue";
 import FileTab from "@/views/subviews/FileTab.vue";
+import Settings from "./subviews/Settings.vue";
 import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
 
