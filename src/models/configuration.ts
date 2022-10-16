@@ -4,6 +4,7 @@ export interface File {
 	abbreviation: string;
 	color: string;
 	path: string;
+	searchTerms?: string; // Comma separated
 }
 
 export interface Configuration {

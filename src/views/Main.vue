@@ -2,25 +2,25 @@
 	<Nav @navigate="navigateTo" @search="searchOpen = true">
 		<Permissions v-if="!hasPermissions" @select-folder="obtainPermissions" />
 
-		<FileTab tab-name="Daily Ops" v-if="hasPermissions && currentView === 'DailyOps'">
+		<FileTab tab-name="Daily Ops" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'DailyOps'">
 			<h1 class="text-2xl font-semibold text-gray-900">Daily Ops</h1>
 			<h2 class="text-sm font-medium text-gray-500">Make sure callsign and take-off date are correct</h2>
 		</FileTab>
-		<FileTab tab-name="Manuals" v-if="hasPermissions && currentView === 'Manuals'">
+		<FileTab tab-name="Manuals" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'Manuals'">
 			<h1 class="text-2xl font-semibold text-gray-900">Manuals</h1>
 			<h2 class="text-sm font-medium text-gray-500">Technical Orders for the MQ-9A</h2>
 		</FileTab>
-		<FileTab tab-name="Operational Reference" v-if="hasPermissions && currentView === 'OpsRef'">
+		<FileTab tab-name="Operational Reference" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'OpsRef'">
 			<h1 class="text-2xl font-semibold text-gray-900">Operational Reference</h1>
 			<h2 class="text-sm font-medium text-gray-500">Resources to keep handy for all flying operations</h2>
 		</FileTab>
-		<FileTab tab-name="Other" v-if="hasPermissions && currentView === 'Other'">
+		<FileTab tab-name="Other" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'Other'">
 			<h1 class="text-2xl font-semibold text-gray-900">Other Resources</h1>
 			<h2 class="text-sm font-medium text-gray-500">Non-critical documents and references</h2>
 		</FileTab>
-		<FileTab tab-name="All Files" v-if="hasPermissions && currentView === 'AllFiles'" />
+		<FileTab tab-name="All Files" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'AllFiles'" />
 
-		<SearchPalette :open="searchOpen" @closed="searchOpen = false" />
+		<SearchPalette :open="searchOpen" @closed="searchOpen = false" @set-callsign="(callsign) => selectedCallsign = callsign" />
 	</Nav>
 </template>
 
@@ -36,6 +36,7 @@ import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
 
 const searchOpen = ref(false);
+const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
 const hasPermissions = ref(false);
 const rootDirectoryHandle: Ref<FileSystemDirectoryHandle | null> = ref(null);
 const configuration: Ref<Configuration | null> = ref(null);

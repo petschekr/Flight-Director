@@ -10,7 +10,7 @@
 					<label for="callsign" class="block text-sm font-medium text-gray-700">Callsign:</label>
 					<select id="callsign" v-model="selectedCallsign"
 						class="mt-1 block w-full rounded-md font-bold border-gray-300 py-2 pl-3 pr-10 text-base focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
-						<option v-for="callsign in callsigns" :key="callsign.id">{{callsign.callsign}}</option>
+						<option v-for="callsign in callsigns" :key="callsign">{{callsign}}</option>
 					</select>
 				</div>
 				<div class="ml-5 w-full sm:w-40">
@@ -43,17 +43,19 @@ import dayjs from "dayjs";
 
 const props = defineProps<{
 	tabName: keyof Configuration;
+	selectedCallsign: string;
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const rootDirectoryHandle = inject<Ref<FileSystemDirectoryHandle | null>>("rootDirectoryHandle");
 
-const selectedCallsign: Ref<string> = ref(localStorage.getItem("callsign") ?? "");
+const selectedCallsign = ref("");
 watchEffect(() => {
-	if (configuration?.value) {
-		if (configuration?.value?.["Daily Ops"].callsigns.indexOf(selectedCallsign.value) === -1) {
-			selectedCallsign.value = configuration?.value?.["Daily Ops"].callsigns[0];
-		}
+	selectedCallsign.value = props.selectedCallsign;
+	if (!configuration?.value) return;
+	// If selectedCallsign is invalid, set it to the first in the list
+	if (!configuration.value["Daily Ops"].callsigns.includes(selectedCallsign.value)) {
+		selectedCallsign.value = configuration?.value?.["Daily Ops"].callsigns[0];
 	}
 });
 watch(selectedCallsign, () => {
@@ -62,7 +64,7 @@ watch(selectedCallsign, () => {
 const selectedDate = ref(new Date().toISOString().split("T")[0]); // Returns today's date
 const callsigns = computed(() => {
 	if (!configuration || !configuration.value) return [];
-	return configuration.value["Daily Ops"].callsigns.map((callsign, index) => ({ id: index, callsign }));
+	return configuration.value["Daily Ops"].callsigns;
 });
 
 function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
