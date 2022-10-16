@@ -8,7 +8,7 @@
 			<div class="flex flex-1 justify-start mt-2 sm:justify-end sm:mt-0">
 				<div class="w-full sm:w-40">
 					<label for="callsign" class="block text-sm font-medium text-gray-700">Callsign:</label>
-					<select id="callsign" v-model="selectedCallsign"
+					<select id="callsign" :value="selectedCallsign" @change="callsignChange"
 						class="mt-1 block w-full rounded-md font-bold border-gray-300 py-2 pl-3 pr-10 text-base focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
 						<option v-for="callsign in callsigns" :key="callsign">{{callsign}}</option>
 					</select>
@@ -45,32 +45,27 @@ const props = defineProps<{
 	tabName: keyof Configuration["tabs"] | "All Files";
 	selectedCallsign: string;
 }>();
+const emit = defineEmits<{
+	(e: "setCallsign", callsign: string): void;
+}>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const rootDirectoryHandle = inject<Ref<FileSystemDirectoryHandle | null>>("rootDirectoryHandle");
 
-const selectedCallsign = ref("");
-watchPostEffect(() => {
-	selectedCallsign.value = props.selectedCallsign;
-	if (!configuration?.value) return;
-	// If selectedCallsign is invalid, set it to the first in the list
-	if (!configuration.value.callsigns.includes(selectedCallsign.value)) {
-		selectedCallsign.value = configuration.value.callsigns[0];
-	}
-});
-watch(selectedCallsign, () => {
-	localStorage.setItem("callsign", selectedCallsign.value || "");
-});
 const selectedDate = ref(new Date().toISOString().split("T")[0]); // Returns today's date
 const callsigns = computed(() => {
 	if (!configuration || !configuration.value) return [];
 	return configuration.value.callsigns;
 });
+function callsignChange(event: Event) {
+	let target = event.target as HTMLSelectElement;
+	emit("setCallsign", target.value);
+}
 
 function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
 	const date = dayjs(selectedDate.value);
 	let path = file.path;
-	path = path.replace(/<callsign>/gi, selectedCallsign.value);
+	path = path.replace(/<callsign>/gi, props.selectedCallsign);
 	path = path.replace(/<(.*?)>/gi, (_, format) => {
 		return date.format(format);
 	});

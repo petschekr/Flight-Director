@@ -2,30 +2,30 @@
 	<Nav @navigate="navigateTo" @search="searchOpen = true">
 		<Permissions v-if="!hasPermissions" @select-folder="obtainPermissions" />
 
-		<FileTab tab-name="Daily Ops" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'DailyOps'">
+		<FileTab v-if="hasPermissions && currentView === 'DailyOps'" tab-name="Daily Ops" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
 			<h1 class="text-2xl font-semibold text-gray-900">Daily Ops</h1>
 			<h2 class="text-sm font-medium text-gray-500">Make sure callsign and take-off date are correct</h2>
 		</FileTab>
-		<FileTab tab-name="Manuals" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'Manuals'">
+		<FileTab v-if="hasPermissions && currentView === 'Manuals'" tab-name="Manuals" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
 			<h1 class="text-2xl font-semibold text-gray-900">Manuals</h1>
 			<h2 class="text-sm font-medium text-gray-500">Technical Orders for the MQ-9A</h2>
 		</FileTab>
-		<FileTab tab-name="Operational Reference" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'OpsRef'">
+		<FileTab v-if="hasPermissions && currentView === 'OpsRef'" tab-name="Operational Reference" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
 			<h1 class="text-2xl font-semibold text-gray-900">Operational Reference</h1>
 			<h2 class="text-sm font-medium text-gray-500">Resources to keep handy for all flying operations</h2>
 		</FileTab>
-		<FileTab tab-name="Other" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'Other'">
+		<FileTab v-if="hasPermissions && currentView === 'Other'" tab-name="Other" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
 			<h1 class="text-2xl font-semibold text-gray-900">Other Resources</h1>
 			<h2 class="text-sm font-medium text-gray-500">Non-critical documents and references</h2>
 		</FileTab>
-		<FileTab tab-name="All Files" :selected-callsign="selectedCallsign" v-if="hasPermissions && currentView === 'AllFiles'" />
+		<FileTab v-if="hasPermissions && currentView === 'AllFiles'" tab-name="All Files" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign" />
 
 		<SearchPalette :open="searchOpen" @closed="searchOpen = false" @set-callsign="(callsign) => selectedCallsign = callsign" />
 	</Nav>
 </template>
 
 <script setup lang="ts">
-import { provide, computed, ref, type Ref, onMounted, onUnmounted } from "vue";
+import { provide, computed, ref, type Ref, onMounted, onUnmounted, watchEffect } from "vue";
 
 import toml from "toml";
 
@@ -36,12 +36,21 @@ import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
 
 const searchOpen = ref(false);
-const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
 const hasPermissions = ref(false);
 const rootDirectoryHandle: Ref<FileSystemDirectoryHandle | null> = ref(null);
 const configuration: Ref<Configuration | null> = ref(null);
 provide("configuration", configuration);
 provide("rootDirectoryHandle", rootDirectoryHandle);
+
+const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
+watchEffect(() => {
+	if (!configuration?.value) return;
+	// If selectedCallsign is invalid, set it to the first in the list
+	if (!configuration.value.callsigns.includes(selectedCallsign.value)) {
+		selectedCallsign.value = configuration.value.callsigns[0];
+	}
+	localStorage.setItem("callsign", selectedCallsign.value);
+});
 
 async function obtainPermissions() {
 	try {
