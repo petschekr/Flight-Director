@@ -88,7 +88,7 @@
 								class="block h-full w-full border-transparent py-2 pl-8 pr-3 text-gray-900 placeholder-gray-500 focus:border-transparent focus:placeholder-gray-400 focus:outline-none focus:ring-0 sm:text-lg"
 								placeholder="Search" type="search" name="search" />
 							<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center">
-								<kbd class="px-1 font-semibold">Ctrl+K</kbd>
+								<kbd class="px-1 font-semibold">Ctrl+Space</kbd>
 							</div>
 						</div>
 					</form>

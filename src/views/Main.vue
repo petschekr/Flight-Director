@@ -72,7 +72,7 @@ function navigateTo(component: string) {
 }
 
 function handleKeys(e: KeyboardEvent) {
-	if (e.ctrlKey && e.key === "k") {
+	if (e.ctrlKey && (e.key === " " || e.key === "k")) {
 		e.preventDefault();
 		searchOpen.value = true;
 	}
