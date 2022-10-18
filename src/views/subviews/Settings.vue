@@ -1,6 +1,6 @@
 <template>
 	<div class="text-center">
-		<code>Flight Director v0.1.0 @ {{commitHash}}</code>
+		<code>Flight Director v0.2.0 @ {{commitHash}}</code>
 	</div>
 	<div class="flex justify-center items-center">
 		<RocketLaunchIcon class="w-6 h-6 mr-3" />

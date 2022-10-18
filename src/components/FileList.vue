@@ -185,7 +185,6 @@ watchEffect(async () => {
 				href: `/${stringToArray(route.params.path).map(encodeURIComponent).join("/")}/${encodeURIComponent(item.name)}`,
 				lastModified: new Date(item.lastModified),
 				size: item.size,
-				type: item.type,
 			});
 		}
 	}

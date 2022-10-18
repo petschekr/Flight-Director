@@ -7,7 +7,6 @@ interface Display {
 export interface FileDisplay extends Display {
 	kind: "file";
 	name: string;
-	type: string;
 	size: number;
 	lastModified: Date;
 }
@@ -22,7 +21,6 @@ export interface FileFromAPI {
 	name: string;
 	lastModified: number;
 	size: number;
-	type: string;
 }
 export interface DirectoryFromAPI {
 	kind: "directory";

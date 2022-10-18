@@ -27,7 +27,7 @@
 				</div>
 			</div>
 		</div>
-		<embed v-if="shouldPreview" :src="'/download/' + props.file?.path.join('/') ?? ''" :type="props.file?.file.type" class="w-full sm:rounded-b-lg flex-grow object-scale-down" />
+		<embed v-if="shouldPreview" :src="'/download/' + props.file?.path.join('/') ?? ''" class="w-full sm:rounded-b-lg flex-grow object-scale-down" />
 		<div v-else class="flex flex-col flex-grow justify-center items-center shadow-inner">
 			<RocketLaunchIconOutline class="h-10 w-10" />
 			<p class="text-lg font-medium my-4">Opening in your default app...</p>
@@ -43,8 +43,8 @@
 <script setup lang="ts">
 import { ref, type Ref, inject, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { ChevronLeftIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon } from '@heroicons/vue/24/solid'
-import { RocketLaunchIcon as RocketLaunchIconOutline, ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid'
+import { RocketLaunchIcon as RocketLaunchIconOutline } from "@heroicons/vue/24/outline";
 import dayjs from "dayjs";
 
 import type { Configuration } from "@/models/configuration";
@@ -64,13 +64,13 @@ async function openExternally() {
 }
 
 const shouldPreview: Ref<boolean> = ref(false);
-const nativeFileTypes = ["application/pdf", "text/plain", "text/xml", "image/png", "image/jpeg", "image/gif", "image/svg+xml", "image/tiff"];
+const nativeFileExtensions = [".pdf", ".txt", ".xml", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".tiff", ".tif"];
 
 onMounted(() => {
 	// File is being viewed, determine if we should open it externally
 	if (!configuration?.value || !props.file) return;
 
-	shouldPreview.value = nativeFileTypes.includes(props.file.file.type);
+	shouldPreview.value = nativeFileExtensions.some(ext => props.file?.file.name.toLowerCase().endsWith(ext.toLowerCase()));
 
 	if (!shouldPreview.value) {
 		openExternally();

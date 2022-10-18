@@ -1,11 +1,17 @@
+#################################################################################
+# If you're reading this, you probably meant to right click > Run with PowerShell
+#################################################################################
+
+$hostLocation = "http://localhost:5050/"
+
 $http = [System.Net.HttpListener]::New()
-$http.Prefixes.Add("http://localhost:5050/")
+$http.Prefixes.Add($hostLocation)
 # $http.AuthenticationSchemes = [System.Net.AuthenticationSchemes]::IntegratedWindowsAuthentication
 $http.Start()
 
 New-PSDrive -Name FileServe -PSProvider FileSystem -Root "C:\Users\petsc\Pictures"
-# [System.Diagnostics.Process]::Start("msedge", "http://localhost:5050") # Or "chrome"
-#Start-Process "http://localhost:5050"
+# [System.Diagnostics.Process]::Start("msedge", $hostLocation) # Or "chrome"
+Start-Process $hostLocation
 
 if ($http.IsListening) {
 	Write-Host "Flight Director started on http://localhost:5050"
@@ -15,7 +21,7 @@ if ($http.IsListening) {
 try {
 	while ($http.IsListening) {
 		$contextTask = $http.GetContextAsync()
-		# Waits in 200ms increments allowing pipeline stops to be processed (i.e. CTRL+C)
+		# Waits in increments allowing pipeline stops to be processed (i.e. CTRL+C)
 		while (-not $contextTask.AsyncWaitHandle.WaitOne(50)) { }
 		$context = $contextTask.GetAwaiter().GetResult()
 		$req = $context.Request
@@ -46,7 +52,6 @@ try {
 							$info["kind"] = "file"
 							$info["size"] = $subitem.Length
 							$info["lastModified"] = $subitem.LastWriteTime | Get-Date -Format "s"
-							$info["type"] = [System.Web.MimeMapping]::GetMimeMapping($subitem.Name)
 						}
 						else {
 							$info["kind"] = "directory"
@@ -70,7 +75,6 @@ try {
 						name = $item.Name
 						size = $item.Length
 						lastModified = $item.LastWriteTime | Get-Date -Format "s"
-						type = [System.Web.MimeMapping]::GetMimeMapping($item.Name)
 					}
 					$content = $info | ConvertTo-Json
 				}
@@ -88,7 +92,12 @@ try {
 			elseif ($path.StartsWith("/download")) {
 				$path = $path.Replace("/download", "");
 				$item = Get-Item -LiteralPath "FileServe:\$path" -Force -ErrorAction Stop
-				$res.ContentType = [System.Web.MimeMapping]::GetMimeMapping($item.FullName)
+				try {
+					$res.ContentType = [System.Web.MimeMapping]::GetMimeMapping($item.FullName)
+				}
+				catch {
+					$res.ContentType = "application/octet-stream"
+				}
 				$content = [System.IO.File]::ReadAllBytes($item.FullName)
 			}
 			else {
@@ -109,3 +118,4 @@ try {
 finally {
 	$http.Stop()
 }
+[Console]::ReadKey()
