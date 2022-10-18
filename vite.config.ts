@@ -19,6 +19,22 @@ export default defineConfig({
   define: {
     __COMMIT_HASH__: JSON.stringify(commitHash),
   },
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:5050/api",
+        changeOrigin: true,
+      },
+      "/open": {
+        target: "http://localhost:5050/open",
+        changeOrigin: true,
+      },
+      "/download": {
+        target: "http://localhost:5050/download",
+        changeOrigin: true,
+      },
+    }
+  },
   appType: "spa",
   base: "./",
 });

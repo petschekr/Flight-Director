@@ -33,7 +33,7 @@ import { inject, ref, watch, computed, type Ref, watchPostEffect } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
 import type { File as ConfigFileEntry, Configuration } from "@/models/configuration";
-import type { FileRender, DirectoryRender } from "@/models/file-explorer";
+import type { FileRender, DirectoryRender, FileFromAPI, DirectoryFromAPI } from "@/models/file-explorer";
 
 import CardList from "@/components/CardList.vue";
 import File from "@/components/File.vue";
@@ -50,7 +50,6 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
-const rootDirectoryHandle = inject<Ref<FileSystemDirectoryHandle | null>>("rootDirectoryHandle");
 
 const selectedDate = ref(new Date().toISOString().split("T")[0]); // Returns today's date
 const callsigns = computed(() => {
@@ -95,19 +94,12 @@ enum RenderType {
 const renderType: Ref<RenderType> = ref(RenderType.Overview);
 
 const fileRendered: Ref<FileRender| null> = ref(null);
-function setFileRendered(newFileRendered: FileRender) {
-	// Unload the old object URL before creating a new one to prevent memory leaks
-	if (fileRendered.value) {
-		URL.revokeObjectURL(fileRendered.value.blobURL);
-	}
-	fileRendered.value = newFileRendered;
-}
 const directoryRendered: Ref<DirectoryRender | null> = ref(null);
 
 const router = useRouter();
 const route = useRoute();
 watchPostEffect(async () => {
-	if (!configuration?.value || !rootDirectoryHandle?.value) {
+	if (!configuration?.value) {
 		renderType.value = RenderType.Overview;
 		return;
 	}
@@ -143,64 +135,45 @@ watchPostEffect(async () => {
 	}
 	filePath = filePath.concat(routePath); // If routePath still has items on it, they're subitems of the looked-up filePath
 
-	let rootHandle: FileSystemDirectoryHandle = rootDirectoryHandle.value;
-	let foundHandle: FileSystemDirectoryHandle | FileSystemFileHandle | null = rootHandle;
+	let itemInfoResponse = await fetch("/api/" + filePath.join("/"));
+	if (itemInfoResponse.status === 200) {
+		let itemInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await itemInfoResponse.json();
+		if (Array.isArray(itemInfo)) {
+			// Directory
+			directoryRendered.value = {
+				directory: itemInfo,
+				location: {
+					path: filePath,
+					fromRoot: props.tabName === "All Files",
+				},
+			};
 
-	let currentFilePath = [...filePath]; // Create a copy because array is modified during traversal
-	let foundFilePath: string[] = []; // Has correct capitalization because it's built during directory traversal
-	while (currentFilePath.length > 0) {
-		foundHandle = null;
-		let currentPathItem = currentFilePath.shift();
-		for await (const handle of rootHandle.values()) {
-			if (handle.name.toLowerCase() === currentPathItem?.toLowerCase()) {
-				foundHandle = handle;
-				foundFilePath.push(foundHandle.name);
-				break;
+			renderType.value = RenderType.Directory;
+		}
+		else {
+			// Find common name for this file from configuration's name for it
+			let commonName = itemInfo.name;
+			if (configuration?.value && props.tabName !== "All Files") {
+				commonName = Object.values(configuration.value.tabs[props.tabName])
+					.flat()
+					.map(mapPathIdentifiers)
+					.find(file => file.path.toLowerCase() === filePath.join("/").toLowerCase())?.name
+					?? itemInfo.name;
 			}
-		}
-		if (!foundHandle) {
-			// Specified file or folder not found
-			alert(`Couldn't find specified file/directory: ${filePath.join("/")}`);
-			router.push("/" + route.params.path[0]); // Navigate to root of the tab
-			return;
-		}
-		if (foundHandle.kind === "directory") {
-			rootHandle = foundHandle;
+
+			fileRendered.value = {
+				file: itemInfo,
+				path: filePath,
+				commonName,
+			};
+
+			renderType.value = RenderType.File;
 		}
 	}
-
-	if (foundHandle?.kind === "directory") {
-		directoryRendered.value = {
-			directory: foundHandle,
-			location: {
-				path: foundFilePath,
-				fromRoot: props.tabName === "All Files",
-			},
-		};
-
-		renderType.value = RenderType.Directory;
-	}
-	else if (foundHandle?.kind === "file") {
-		let file = await foundHandle.getFile();
-		// Find common name for this file from configuration's name for it
-		let commonName = file.name;
-		if (configuration?.value && props.tabName !== "All Files") {
-			commonName = Object.values(configuration.value.tabs[props.tabName])
-				.flat()
-				.map(mapPathIdentifiers)
-				.find(file => file.path.toLowerCase() === foundFilePath.join("/").toLowerCase())?.name
-				?? file.name;
-		}
-
-		let newFileRendered: FileRender = {
-			file,
-			path: foundFilePath,
-			commonName,
-			blobURL: URL.createObjectURL(file),
-		};
-		setFileRendered(newFileRendered);
-
-		renderType.value = RenderType.File;
+	else {
+		// Specified file or folder not found
+		alert(`Couldn't find specified file/directory: ${filePath.join("/")}`);
+		router.push("/" + route.params.path[0]); // Navigate to root of the tab
 	}
 });
 </script>

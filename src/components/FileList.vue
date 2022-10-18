@@ -21,6 +21,9 @@
 									</li>
 								</ol>
 							</nav>
+							<button @click="openExternally" class="text-sm text-gray-500 whitespace-normal transition-color hover:text-sky-700 block">
+								{{props.directory?.location.path.join('/')}}
+							</button>
 						</div>
 					</div>
 				</div>
@@ -94,7 +97,7 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, type Ref } from "vue";
 import { useRoute } from "vue-router";
-import type { FileDisplay, DirectoryDisplay, DirectoryRender } from "@/models/file-explorer";
+import type { FileDisplay, DirectoryDisplay, DirectoryRender, FileFromAPI, DirectoryFromAPI } from "@/models/file-explorer";
 
 import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 import { ChevronRightIcon, ArrowUturnUpIcon } from '@heroicons/vue/20/solid';
@@ -118,6 +121,10 @@ function stringToArray(input: string[] | string): string[] {
 	if (Array.isArray(input)) return [...input];
 	if (input === "") return [];
 	return [input];
+}
+async function openExternally() {
+	if (!props.directory) return;
+	return fetch("/open/" + props.directory.location.path.join("/"));
 }
 
 const path = computed(() => {
@@ -153,11 +160,14 @@ watchEffect(async () => {
 	items.value = []; // Clear the list so we can regenerate it
 	emptyDirectory.value = false;
 	let newItems: (FileDisplay | DirectoryDisplay)[] = []; // Wait to finish loading before presenting
-	for await (const item of props.directory.directory.values()) {
+	for (const item of props.directory.directory.values()) {
+		console.log(item);
 		if (item.kind === "directory") {
 			let subitems = 0;
-			for await (const subitem of item.values()) {
-				subitems++;
+			let subitemInfoResponse = await fetch("/api/" + props.directory.location.path.join("/"));
+			if (subitemInfoResponse.status === 200) {
+				let itemInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await subitemInfoResponse.json();
+				subitems = Array.isArray(itemInfo) ? itemInfo.length : 0;
 			}
 			newItems.push({
 				kind: "directory",
@@ -168,19 +178,19 @@ watchEffect(async () => {
 			});
 		}
 		else {
-			const file = await item.getFile();
 			newItems.push({
 				kind: "file",
 				id: item.name,
 				name: item.name,
 				href: `/${stringToArray(route.params.path).map(encodeURIComponent).join("/")}/${encodeURIComponent(item.name)}`,
-				lastModified: new Date(file.lastModified),
-				size: file.size,
-				type: file.type,
+				lastModified: new Date(item.lastModified),
+				size: item.size,
+				type: item.type,
 			});
 		}
 	}
 	// Sort item list alphabetically by directory then by file
+	const collator = new Intl.Collator([], { numeric: true }); // Sorts things numerically like Windows does by default
 	newItems.sort((a, b) => {
 		if (a.kind === "directory" && b.kind === "file") {
 			return -1;
@@ -188,7 +198,7 @@ watchEffect(async () => {
 		if (a.kind === "file" && b.kind === "directory") {
 			return 1;
 		}
-		return a.name.localeCompare(b.name);
+		return collator.compare(a.name, b.name);
 	});
 	items.value = newItems;
 	emptyDirectory.value = newItems.length === 0;

@@ -8,7 +8,6 @@ export interface File {
 }
 
 export interface Configuration {
-	root: string;
 	callsigns: {
 		callsign: string;
 		path: string;
