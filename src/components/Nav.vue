@@ -30,13 +30,15 @@
 						</div>
 						<div class="mt-5 h-0 flex-1 overflow-y-auto">
 							<nav class="space-y-1 px-2">
-								<RouterLink v-for="item in navigation" :key="item.name" :to="item.href"
-									:class="[item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white', 'group flex items-center px-2 py-2 text-base font-medium rounded-md']">
-									<component :is="item.icon"
-										:class="[item.current ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300', 'mr-4 flex-shrink-0 h-6 w-6']"
-										aria-hidden="true" />
-									{{ item.name }}
-								</RouterLink>
+								<template v-for="item in navigation" :key="item.index">
+									<RouterLink v-if="item.name" :to="item.href ?? ''"
+										:class="[item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white', 'group flex items-center px-2 py-2 text-base font-medium rounded-md']">
+										<component :is="item.icon"
+											:class="[item.current ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300', 'mr-4 flex-shrink-0 h-6 w-6']"
+											aria-hidden="true" />
+										{{ item.name }}
+									</RouterLink>
+								</template>
 							</nav>
 						</div>
 					</DialogPanel>
@@ -57,13 +59,16 @@
 			</div>
 			<div class="flex flex-1 flex-col overflow-y-auto">
 				<nav class="flex-1 space-y-1 px-2 py-4">
-					<RouterLink v-for="item in navigation" :key="item.name" :to="item.href"
-						:class="[item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
-						<component :is="item.icon"
-							:class="[item.current ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300', 'mr-3 flex-shrink-0 h-6 w-6']"
-							aria-hidden="true" />
-						{{ item.name }}
-					</RouterLink>
+					<div v-for="item in navigation" :key="item.index">
+						<RouterLink v-if="item.name" :to="item.href ?? ''"
+							:class="[item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+							<component :is="item.icon"
+								:class="[item.current ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300', 'mr-3 flex-shrink-0 h-6 w-6']"
+								aria-hidden="true" />
+							{{ item.name }}
+						</RouterLink>
+						<div v-else style="height: 2px" class="bg-gray-500 my-3"></div>
+					</div>
 				</nav>
 			</div>
 		</div>
@@ -146,28 +151,30 @@
 		{ name: "Manuals", href: "/manuals", icon: DocumentTextIcon, component: "Manuals" },
 		{ name: "Operational Reference", href: "/opsref", icon: CursorArrowRaysIcon, component: "OpsRef" },
 		{ name: "Other", href: "/other", icon: BriefcaseIcon, component: "Other" },
-
+		null,
 		{ name: 'All Files', href: "/files", icon: ArchiveBoxIcon, component: "AllFiles" },
 		{ name: 'Settings', href: "/settings", icon: Cog6ToothIcon, component: "Settings" },
 	];
+
 	const navigation = computed(() => {
 		return navigationItems.map((item, index) => {
 			return {
 				...item,
+				index,
 				current: index === selectedIndex.value,
 			};
 		})
 	});
 
 	function updateSelectedTab() {
-		let newIndex = navigationItems.findIndex(navItem => navItem.href.substring(1) === route.params.path[0]);
+		let newIndex = navigationItems.findIndex(navItem => navItem?.href.substring(1) === route.params.path[0]);
 		if (newIndex === -1) {
 			newIndex = 0;
-			router.push(navigationItems[newIndex].href);
+			router.push(navigationItems[newIndex]!.href);
 		}
 		selectedIndex.value = newIndex;
 		sidebarOpen.value = false;
-		emit("navigate", navigationItems[newIndex].component);
+		emit("navigate", navigationItems[newIndex]!.component);
 	}
 	updateSelectedTab();
 	watch(() => route.params, updateSelectedTab);
