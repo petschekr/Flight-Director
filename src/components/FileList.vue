@@ -161,10 +161,9 @@ watchEffect(async () => {
 	emptyDirectory.value = false;
 	let newItems: (FileDisplay | DirectoryDisplay)[] = []; // Wait to finish loading before presenting
 	for (const item of props.directory.directory.values()) {
-		console.log(item);
 		if (item.kind === "directory") {
 			let subitems = 0;
-			let subitemInfoResponse = await fetch("/api/" + props.directory.location.path.join("/"));
+			let subitemInfoResponse = await fetch(`/api/${props.directory.location.path.join("/")}/${item.name}`);
 			if (subitemInfoResponse.status === 200) {
 				let itemInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await subitemInfoResponse.json();
 				subitems = Array.isArray(itemInfo) ? itemInfo.length : 0;
