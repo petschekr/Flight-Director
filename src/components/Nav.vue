@@ -168,7 +168,7 @@
 
 	function updateSelectedTab() {
 		let newIndex = navigationItems.findIndex(navItem => navItem?.href.substring(1) === route.params.path[0]);
-		if (newIndex === -1) {
+		if (newIndex === -1 || !route.params.path) {
 			newIndex = 0;
 			router.push(navigationItems[newIndex]!.href);
 		}
