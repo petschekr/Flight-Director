@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { ref, type Ref, inject, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid'
 import { RocketLaunchIcon as RocketLaunchIconOutline } from "@heroicons/vue/24/outline";
 import dayjs from "dayjs";
@@ -56,6 +56,7 @@ const props = defineProps<{
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
 
+const router = useRouter();
 const route = useRoute();
 
 async function openExternally() {
@@ -70,10 +71,16 @@ onMounted(() => {
 	// File is being viewed, determine if we should open it externally
 	if (!configuration?.value || !props.file) return;
 
-	shouldPreview.value = nativeFileExtensions.some(ext => props.file?.file.name.toLowerCase().endsWith(ext.toLowerCase()));
-
-	if (!shouldPreview.value) {
+	if (localStorage.getItem("previewEnabled") === "false") {
+		// Previewing disabled
 		openExternally();
+		router.back();
+	}
+	else {
+		shouldPreview.value = nativeFileExtensions.some(ext => props.file?.file.name.toLowerCase().endsWith(ext.toLowerCase()));
+		if (!shouldPreview.value) {
+			openExternally();
+		}
 	}
 });
 
