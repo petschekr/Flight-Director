@@ -12,7 +12,7 @@
 			</Switch>
 		</SwitchGroup>
 		<div class="text-center text-lg mt-2">
-			<code>Flight Director v0.2.0 @ {{commitHash}}</code>
+			<code>Flight Director v0.2.1 @ {{commitHash}}</code>
 		</div>
 		<div class="flex justify-center items-center mt-2">
 			<RocketLaunchIcon class="w-6 h-6 mr-3" />
@@ -29,9 +29,9 @@ import { ref, type Ref, watchEffect } from "vue";
 import { Switch, SwitchDescription, SwitchGroup, SwitchLabel } from "@headlessui/vue"
 import { RocketLaunchIcon } from "@heroicons/vue/24/outline";
 
-const previewEnabled: Ref<boolean | null> = ref(null);
+const previewEnabled: Ref<boolean | undefined> = ref(undefined);
 watchEffect(() => {
-	if (previewEnabled.value === null) {
+	if (previewEnabled.value === undefined) {
 		let savedSetting = localStorage.getItem("previewEnabled");
 		if (savedSetting === null) {
 			previewEnabled.value = true; // Default
