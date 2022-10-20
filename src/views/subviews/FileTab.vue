@@ -51,7 +51,10 @@ const emit = defineEmits<{
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
 
-const selectedDate = ref(new Date().toISOString().split("T")[0]); // Returns today's date
+const selectedDate = ref(localStorage.getItem("selectedDate") ?? new Date().toISOString().split("T")[0]); // Returns today's date
+watch(selectedDate, () => {
+	localStorage.setItem("selectedDate", selectedDate.value);
+});
 const callsigns = computed(() => {
 	if (!configuration || !configuration.value) return [];
 	return configuration.value.callsigns.map(cs => cs.callsign);
