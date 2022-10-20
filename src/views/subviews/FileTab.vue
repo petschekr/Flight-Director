@@ -25,6 +25,7 @@
 		<CardList :file-groups="fileGroups" v-if="renderType === RenderType.Overview" />
 		<File :file="fileRendered" v-if="renderType === RenderType.File" />
 		<FileList :directory="directoryRendered" v-if="renderType === RenderType.Directory" />
+		<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
 	</div>
 </template>
 
@@ -38,6 +39,7 @@ import type { FileRender, DirectoryRender, FileFromAPI, DirectoryFromAPI } from 
 import CardList from "@/components/CardList.vue";
 import File from "@/components/File.vue";
 import FileList from "@/components/FileList.vue";
+import Alert from "@/components/Alert.vue";
 
 import dayjs from "dayjs";
 
@@ -50,6 +52,23 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+
+const alert: Ref<{
+	open: boolean;
+	title?: string;
+	message?: string;
+	okText?: string;
+}> = ref({ open: false });
+function openAlert(title: string, message: string, okText = "OK"): Promise<void> {
+	return new Promise((resolve, reject) => {
+		alert.value = { title, message, okText, open: true };
+		watch(alert.value, () => {
+			if (!alert.value.open) {
+				resolve();
+			}
+		});
+	});
+}
 
 const selectedDate = ref(localStorage.getItem("selectedDate") ?? new Date().toISOString().split("T")[0]); // Returns today's date
 watch(selectedDate, () => {
@@ -129,7 +148,10 @@ watchPostEffect(async () => {
 				.map(mapPathIdentifiers)
 				.find(file => file.name === entryName);
 			if (!fileEntry) {
-				alert(`Couldn't find file/directory in configuration file: ${entryName}`);
+				await openAlert(
+					"Entry not found in configuration",
+					`Couldn't find entry in the configuration: ${entryName}`
+				);
 				router.push("/" + route.params.path[0]); // Navigate to root of the tab
 				return;
 			}
@@ -175,7 +197,20 @@ watchPostEffect(async () => {
 	}
 	else {
 		// Specified file or folder not found
-		alert(`Couldn't find specified file/directory: ${filePath.join("/")}`);
+		await openAlert(
+			"File or directory not found",
+			`Couldn't find file or directory as specified in the configuration: ${filePath.join("/")}. Going to the folder that might contain it.`
+		);
+
+		// Recurse upwards until we find a folder that exists
+		while (filePath.length > 0) {
+			filePath.pop();
+			let itemInfoResponse = await fetch("/api/" + filePath.join("/"));
+			if (itemInfoResponse.status === 200) {
+				router.push("/files/" + filePath.join("/"));
+				return;
+			}
+		}
 		router.push("/" + route.params.path[0]); // Navigate to root of the tab
 	}
 });
