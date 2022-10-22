@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref, computed, watchEffect } from "vue";
+import { ref, type Ref, computed, watchEffect, onMounted, onUnmounted } from "vue";
 
 import toml from "toml";
 
@@ -131,18 +131,21 @@ const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "5
 const fuelFlow = ref(parseInt(localStorage.getItem("fuelFlow") ?? "200"));
 const altitude = ref(parseInt(localStorage.getItem("altitude") ?? "20000"));
 
-function interpolateFromData(feathered: boolean, tableName: keyof Performance, rowKey: string, rowValue: string, compareValue: number): number {
-	if (!performance.value) return NaN;
+function interpolateFromData(feathered: boolean, tableName: keyof Performance, rowKey: string, rowValue: string, compareValue: number): number | null {
+	if (!performance.value) return null;
 	let dragIndexWithProp = dragIndex.value + (feathered ? performance.value.Propeller.feathered : performance.value.Propeller.unfeathered);
 
 	let dragIndices = Object.keys(performance.value[tableName]).map(key => parseInt(key));
 	let topIndex = dragIndices.findIndex(value => value >= dragIndexWithProp);
 	if (topIndex === -1) {
-		return NaN; // Value too big
+		return null; // Value too big
 	}
 	let bottomIndex = topIndex - 1;
 	if (dragIndexWithProp === dragIndices[topIndex]) {
 		bottomIndex = topIndex;
+	}
+	if (bottomIndex < 0) {
+		return null; // Value too small
 	}
 
 	function scale(n: number, inMin: number, inMax: number, outMin: number = 0, outMax: number = 1): number {
@@ -157,11 +160,14 @@ function interpolateFromData(feathered: boolean, tableName: keyof Performance, r
 	let topRow: any[] = Object.values(performance.value[tableName])[topIndex];
 	topIndex = topRow.findIndex(value => value[rowKey] >= compareValue);
 	if (topIndex === -1) {
-		return NaN; // Value too big
+		return null; // Value too big
 	}
 	bottomIndex = topIndex - 1;
 	if (compareValue === topRow[topIndex][rowKey]) {
 		bottomIndex = topIndex;
+	}
+	if (bottomIndex < 0) {
+		return null; // Value too small
 	}
 
 	let weightRatio = scale(compareValue, bottomRow[bottomIndex][rowKey], bottomRow[topIndex][rowKey]);
@@ -177,23 +183,47 @@ function interpolateFromData(feathered: boolean, tableName: keyof Performance, r
 
 	return speed;
 }
-function bestGlideSpeed(feathered: boolean): number {
+function bestGlideSpeed(feathered: boolean): number | null {
 	return interpolateFromData(feathered, "Glide Speed", "weight", "speed", aircraftWeight.value);
 }
-const bestGlideSpeedFeathered = computed(() => bestGlideSpeed(true).toFixed(0));
-const bestGlideSpeedUnfeathered = computed(() => bestGlideSpeed(false).toFixed(0));
-function bestGlideRange(feathered: boolean): number {
+const bestGlideSpeedFeathered = computed(() => bestGlideSpeed(true)?.toFixed(0) ?? "--");
+const bestGlideSpeedUnfeathered = computed(() => bestGlideSpeed(false)?.toFixed(0) ?? "--");
+function bestGlideRange(feathered: boolean): number | null {
 	return interpolateFromData(feathered, "Glide Range", "altitude", "range", altitude.value);
 }
-const bestGlideRangeFeathered = computed(() => bestGlideRange(true).toFixed(1));
-const bestGlideRangeUnfeathered = computed(() => bestGlideRange(false).toFixed(1));
+const bestGlideRangeFeathered = computed(() => bestGlideRange(true)?.toFixed(1) ?? "--");
+const bestGlideRangeUnfeathered = computed(() => bestGlideRange(false)?.toFixed(1) ?? "--");
 
+function weightUpdater(secondsElapsed: number = 60) {
+	console.log(secondsElapsed);
+	aircraftWeight.value -= Math.round(fuelFlow.value / 60 * secondsElapsed / 60); // Fuel flow per minute * minutes elapsed
+	if (aircraftWeight.value < 5000) {
+		aircraftWeight.value = 5000;
+	}
+}
+let weightUpdateInterval: number | null = null;
 // Save values to localStorage when updated
 watchEffect(() => {
+	if (weightUpdateInterval) {
+		clearInterval(weightUpdateInterval);
+	}
+	weightUpdateInterval = setInterval(weightUpdater, 60 * 1000); // Runs every minute
+
 	localStorage.setItem("aircraftWeight", aircraftWeight.value.toString());
 	localStorage.setItem("fuelFlow", fuelFlow.value.toString());
 	localStorage.setItem("altitude", altitude.value.toString());
 	localStorage.setItem("dragItemSelections", JSON.stringify(dragItemSelections.value));
+});
+
+onMounted(() => {
+	let lastWeightUpdate = localStorage.getItem("lastWeightUpdate");
+	if (!lastWeightUpdate) return;
+	let secondsElapsed = (new Date().valueOf() - parseInt(lastWeightUpdate)) / 1000;
+	if (secondsElapsed < 60) return;
+	weightUpdater(secondsElapsed);
+});
+onUnmounted(() => {
+	localStorage.setItem("lastWeightUpdate", new Date().valueOf().toString());
 });
 
 // Load configuration
