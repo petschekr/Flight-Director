@@ -42,4 +42,16 @@ export interface Performance {
 		unfeathered: number;
 	};
 	"Drag Index": DragIndexEntry[];
+	"Glide Speed": {
+		[dragIndex: string]: {
+			weight: number;
+			speed: number;
+		}[];
+	};
+	"Glide Range": {
+		[dragIndex: string]: {
+			altitude: number;
+			range: number;
+		}[];
+	}
 }
