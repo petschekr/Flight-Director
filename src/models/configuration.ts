@@ -30,3 +30,16 @@ export interface Configuration {
 		};
 	};
 }
+
+export interface DragIndexEntry {
+	name: string;
+	multiple: boolean;
+	drag: number;
+}
+export interface Performance {
+	Propeller: {
+		feathered: number;
+		unfeathered: number;
+	};
+	"Drag Index": DragIndexEntry[];
+}

@@ -18,6 +18,8 @@
 		</FileTab>
 		<FileTab v-if="currentView === 'AllFiles'" tab-name="All Files" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign" />
 
+		<Performance v-if="currentView === 'Performance'" />
+
 		<Settings v-if="currentView === 'Settings'" />
 
 		<SearchPalette :open="searchOpen" @closed="searchOpen = false" @set-callsign="(callsign) => selectedCallsign = callsign" />
@@ -31,6 +33,7 @@ import toml from "toml";
 
 import Nav from "@/components/Nav.vue";
 import FileTab from "@/views/subviews/FileTab.vue";
+import Performance from "@/views/subviews/Performance.vue";
 import Settings from "./subviews/Settings.vue";
 import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";

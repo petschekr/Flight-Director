@@ -130,6 +130,7 @@
 		BriefcaseIcon,
 		ArchiveBoxIcon,
 		BoltIcon,
+		CalculatorIcon,
 		Cog6ToothIcon,
 	} from '@heroicons/vue/24/outline';
 	import { MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
@@ -151,6 +152,8 @@
 		{ name: "Manuals", href: "/manuals", icon: DocumentTextIcon, component: "Manuals" },
 		{ name: "Operational Reference", href: "/opsref", icon: CursorArrowRaysIcon, component: "OpsRef" },
 		{ name: "Other", href: "/other", icon: BriefcaseIcon, component: "Other" },
+		null,
+		{ name: "Performance", href: "/speeds", icon: CalculatorIcon, component: "Performance" },
 		null,
 		{ name: 'All Files', href: "/files", icon: ArchiveBoxIcon, component: "AllFiles" },
 		{ name: 'Settings', href: "/settings", icon: Cog6ToothIcon, component: "Settings" },
