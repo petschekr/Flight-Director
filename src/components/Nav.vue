@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, type Ref, watch, computed, onMounted } from "vue";
+	import { ref, type Ref, watch, computed, onMounted, provide } from "vue";
 	import { useRoute, useRouter } from "vue-router";
 
 	import {
@@ -153,11 +153,12 @@
 		{ name: "Operational Reference", href: "/opsref", icon: CursorArrowRaysIcon, component: "OpsRef" },
 		{ name: "Other", href: "/other", icon: BriefcaseIcon, component: "Other" },
 		null,
-		{ name: "Performance", href: "/speeds", icon: CalculatorIcon, component: "Performance" },
+		{ name: "Performance", href: "/performance", icon: CalculatorIcon, component: "Performance" },
 		null,
 		{ name: 'All Files', href: "/files", icon: ArchiveBoxIcon, component: "AllFiles" },
 		{ name: 'Settings', href: "/settings", icon: Cog6ToothIcon, component: "Settings" },
 	];
+	provide("navigationItems", navigationItems);
 
 	const navigation = computed(() => {
 		return navigationItems.map((item, index) => {

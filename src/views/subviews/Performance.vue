@@ -195,7 +195,6 @@ const bestGlideRangeFeathered = computed(() => bestGlideRange(true)?.toFixed(1) 
 const bestGlideRangeUnfeathered = computed(() => bestGlideRange(false)?.toFixed(1) ?? "--");
 
 function weightUpdater(secondsElapsed: number = 60) {
-	console.log(secondsElapsed);
 	aircraftWeight.value -= Math.round(fuelFlow.value / 60 * secondsElapsed / 60); // Fuel flow per minute * minutes elapsed
 	if (aircraftWeight.value < 5000) {
 		aircraftWeight.value = 5000;

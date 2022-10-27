@@ -122,6 +122,7 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const navigationItems = inject<{ name: string; href: string; }[]>("navigationItems");
 
 const router = useRouter();
 
@@ -183,10 +184,25 @@ const filteredDirectories = computed((): ConfigFileEntry[] => {
 });
 
 function onSelect(selection: string) {
-	if (configuration?.value?.callsigns.map(cs => cs.callsign).includes(selection)) {
+	if (!configuration?.value || !navigationItems) return;
+
+	if (configuration.value.callsigns.map(cs => cs.callsign).includes(selection)) {
 		emit("setCallsign", selection);
 	}
+	else {
+		// Find file in configuration
+		for (let [tabName, tabGroups] of Object.entries(configuration.value.tabs)) {
+			for (let tabContents of Object.values(tabGroups)) {
+				let file = tabContents.find(entry => entry.name === selection);
+				if (file) {
+					let navItem = navigationItems.find(item => item.name === tabName);
+					if (navItem) {
+						router.push(navItem.href + "/" + encodeURIComponent(file.name));
+					}
+				}
+			}
+		}
+	}
 	close();
-	// window.location = item.url
 }
 </script>
