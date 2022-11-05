@@ -197,7 +197,13 @@ function onSelect(selection: string) {
 				if (file) {
 					let navItem = navigationItems.find(item => item.name === tabName);
 					if (navItem) {
-						router.push(navItem.href + "/" + encodeURIComponent(file.name));
+						if (file.path.startsWith("http")) {
+							// External link
+							window.open(file.path, "_blank");
+						}
+						else {
+							router.push(navItem.href + "/" + encodeURIComponent(file.name));
+						}
 					}
 				}
 			}
