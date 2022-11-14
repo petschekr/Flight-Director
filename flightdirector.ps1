@@ -100,6 +100,12 @@ try {
 				}
 				$content = [System.IO.File]::ReadAllBytes($item.FullName)
 			}
+			elseif ($path.StartsWith("/save")) {
+				$path = $path.Replace("/save", "");
+				$streamReader = [System.IO.StreamReader]::new($req.InputStream)
+				$body = $streamReader.ReadToEnd()
+				New-Item -Path "FileServe:\$path" -ItemType File -Force -Value $body
+			}
 			else {
 				$content = [System.Text.Encoding]::UTF8.GetBytes("Invalid URL");
 			}

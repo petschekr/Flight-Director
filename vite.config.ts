@@ -34,6 +34,10 @@ export default defineConfig({
         target: "http://localhost:5050/download",
         changeOrigin: true,
       },
+      "/save": {
+        target: "http://localhost:5050/save",
+        changeOrigin: true,
+      },
     }
   },
   appType: "spa",

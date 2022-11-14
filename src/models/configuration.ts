@@ -1,6 +1,6 @@
 import type * as HeroIcons from '@heroicons/vue/24/outline';
 export type IconName = keyof typeof HeroIcons;
-export type Component = "FileList" | "AllFiles" | "Performance" | "Settings" | "Feedback" | "Spacer";
+export type Component = "FileList" | "AllFiles" | "Performance" | "Settings" | "Spacer";
 
 export interface File {
 	name: string;
@@ -12,6 +12,8 @@ export interface File {
 }
 
 export interface Configuration {
+	feedbackLocation: string;
+
 	callsigns: {
 		callsign: string;
 		path: string;

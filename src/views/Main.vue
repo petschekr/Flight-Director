@@ -11,6 +11,12 @@
 		<Settings v-if="currentSidebarTab?.component === 'Settings'" />
 
 		<SearchPalette :open="searchOpen" @closed="searchOpen = false" @set-callsign="(callsign) => selectedCallsign = callsign" />
+		<Feedback :open="feedbackOpen" @closed="feedbackOpen = false" />
+
+		<button title="Submit Feedback" @click="feedbackOpen = true"
+			class="transition-all fixed bottom-6 right-6 inline-flex items-center rounded-full border border-transparent bg-white p-3 text-gray-800 drop-shadow-md hover:drop-shadow-xl focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+			<ChatBubbleOvalLeftEllipsisIcon class="h-6 w-6" />
+		</button>
 	</Nav>
 </template>
 
@@ -19,15 +25,19 @@ import { provide, computed, ref, type Ref, onMounted, onUnmounted, watchEffect }
 
 import toml from "toml";
 
+import { ChatBubbleOvalLeftEllipsisIcon } from '@heroicons/vue/24/outline'
+
 import Nav from "@/components/Nav.vue";
 import FileTab from "@/views/subviews/FileTab.vue";
 import Performance from "@/views/subviews/Performance.vue";
 import Settings from "./subviews/Settings.vue";
 import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
+import Feedback from "../components/Feedback.vue";
 type SidebarTab = Configuration["sidebarTab"][0];
 
 const searchOpen = ref(false);
+const feedbackOpen = ref(false);
 const configuration: Ref<Configuration | null> = ref(null);
 provide("configuration", configuration);
 
