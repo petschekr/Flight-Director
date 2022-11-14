@@ -17,7 +17,8 @@
 			<dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{bestGlideRangeUnfeathered}} NM</dd>
 		</div>
 	</dl>
-	<p class="text-center my-4 font-semibold text-lg">{{aircraftWeight.toLocaleString()}} lbs // Drag Index {{dragIndex}} // {{altitude.toLocaleString()}} ft</p>
+	<p class="text-center mt-4 font-semibold text-lg">{{aircraftWeight.toLocaleString()}} lbs // Drag Index: {{dragIndex}} // {{altitude.toLocaleString()}} ft</p>
+	<p class="text-center mb-4 font-semibold text-sm">Engine Out Drag Index: {{(dragIndex + (performance?.Propeller.feathered ?? 0)).toLocaleString()}} ({{(dragIndex + (performance?.Propeller.unfeathered ?? 0)).toLocaleString()}} unfeathered)</p>
 
 	<div class="bg-white px-4 py-5 shadow sm:rounded-lg sm:p-6">
 		<div class="md:grid md:grid-cols-4 md:gap-6">
