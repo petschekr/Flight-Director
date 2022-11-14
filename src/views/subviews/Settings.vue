@@ -12,7 +12,7 @@
 			</Switch>
 		</SwitchGroup>
 		<div class="text-center text-lg mt-2">
-			<code>Flight Director v0.3.0 @ {{commitHash}}</code>
+			<code>Flight Director v0.4.0 @ {{commitHash}}</code>
 		</div>
 		<div class="flex justify-center items-center mt-2">
 			<RocketLaunchIcon class="w-6 h-6 mr-3" />
