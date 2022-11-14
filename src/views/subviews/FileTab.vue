@@ -88,6 +88,14 @@ function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
 	let path = file.path;
 	path = path.replace(/<callsign-path>/gi, (configuration?.value?.callsigns ?? []).find(cs => cs.callsign === props.selectedCallsign)?.path ?? ""); // Can contain replacements itself so must go first
 	path = path.replace(/<callsign>/gi, props.selectedCallsign);
+
+	let shortCallsign = props.selectedCallsign;
+	let callsignComponents = props.selectedCallsign.match(/^([a-zA-Z]+)(\d+)$/);
+	if (callsignComponents) {
+		shortCallsign = (callsignComponents[1][0] + callsignComponents[1][callsignComponents[1].length - 1]).toUpperCase() + callsignComponents[2]; // Grabs first + last letter + numbers of callsign
+	}
+	path = path.replace(/<short-callsign>/gi, shortCallsign);
+
 	path = path.replace(/<(.*?)>/gi, (_, format) => {
 		return date.format(format);
 	});
