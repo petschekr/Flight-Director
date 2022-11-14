@@ -14,7 +14,7 @@
 		<Feedback :open="feedbackOpen" @closed="feedbackOpen = false" />
 
 		<button title="Submit Feedback" @click="feedbackOpen = true"
-			class="transition-all fixed bottom-6 right-6 inline-flex items-center rounded-full border border-transparent bg-white p-3 text-gray-800 drop-shadow-md hover:drop-shadow-xl focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+			class="transition-all fixed bottom-6 right-6 inline-flex items-center rounded-full opacity-60 hover:opacity-100 border border-transparent bg-white p-3 text-gray-800 drop-shadow-md hover:drop-shadow-xl focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
 			<ChatBubbleOvalLeftEllipsisIcon class="h-6 w-6" />
 		</button>
 	</Nav>
