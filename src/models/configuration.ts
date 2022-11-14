@@ -1,3 +1,7 @@
+import type * as HeroIcons from '@heroicons/vue/24/outline';
+export type IconName = keyof typeof HeroIcons;
+export type Component = "FileList" | "AllFiles" | "Performance" | "Settings" | "Feedback" | "Spacer";
+
 export interface File {
 	name: string;
 	description: string;
@@ -13,19 +17,16 @@ export interface Configuration {
 		path: string;
 	}[];
 
+	sidebarTab: {
+		component: Component;
+		icon?: IconName;
+		name?: string;
+		href?: string;
+		description?: string;
+	}[];
+
 	tabs: {
-		// name: string;
-		// files: File[];
-		"Daily Ops": {
-			[fileGroup: string]: File[];
-		};
-		"Manuals": {
-			[fileGroup: string]: File[];
-		};
-		"Operational Reference": {
-			[fileGroup: string]: File[];
-		};
-		"Other": {
+		[tabName: string]: {
 			[fileGroup: string]: File[];
 		};
 	};

@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, type Ref, watch, computed, onMounted, provide, defineAsyncComponent } from "vue";
+	import { ref, type Ref, watch, computed, onMounted, inject, defineAsyncComponent } from "vue";
 	import { useRoute, useRouter } from "vue-router";
 
 	import {
@@ -122,12 +122,11 @@
 		TransitionRoot,
 	} from '@headlessui/vue';
 	import { XMarkIcon, Bars3BottomLeftIcon } from '@heroicons/vue/24/outline';
-	import type * as HeroIcons from '@heroicons/vue/24/outline';
 	import { MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
-	type IconName = keyof typeof HeroIcons;
+	import type { Configuration, IconName } from "@/models/configuration";
 
 	const emit = defineEmits<{
-		(e: "navigate", component: string): void;
+		(e: "navigate", sidebarTab: Configuration["sidebarTab"][0]): void;
 		(e: "search"): void;
 	}>();
 
@@ -137,31 +136,15 @@
 	const sidebarOpen = ref(false);
 	const selectedIndex = ref(0);
 
-	interface NavigationItem {
-		name: string;
-		href: string;
-		icon: IconName;
-	}
-	const navigationItems: (NavigationItem | null)[] = [
-		// { name: 'Quick Reference', href: '#', icon: BoltIcon, current: false },
-		{ name: "Daily Ops", href: "/daily", icon: "ClockIcon" },
-		{ name: "Manuals", href: "/manuals", icon: "DocumentTextIcon" },
-		{ name: "Operational Reference", href: "/opsref", icon: "CursorArrowRaysIcon" },
-		{ name: "Other", href: "/other", icon: "BriefcaseIcon" },
-		null,
-		{ name: "Performance", href: "/performance", icon: "CalculatorIcon" },
-		null,
-		{ name: 'All Files', href: "/files", icon: "ArchiveBoxIcon" },
-		{ name: 'Settings', href: "/settings", icon: "Cog6ToothIcon" },
-	];
-	provide("navigationItems", navigationItems);
+	const configuration = inject<Ref<Configuration | null>>("configuration");
 
 	function getIcon(icon?: IconName) {
 		return defineAsyncComponent(() => import(`../../node_modules/@heroicons/vue/24/outline/${icon}.js`));
 	}
 
 	const navigation = computed(() => {
-		return navigationItems.map((item, index) => {
+		if (!configuration?.value?.sidebarTab) return [];
+		return configuration.value.sidebarTab.map((item, index) => {
 			return {
 				...item,
 				index,
@@ -171,14 +154,15 @@
 	});
 
 	function updateSelectedTab() {
-		let newIndex = navigationItems.findIndex(navItem => navItem?.href.substring(1) === route.params.path[0]);
+		let newIndex = configuration?.value?.sidebarTab?.findIndex(navItem => navItem?.href?.substring(1) === route.params.path[0]);
+		if (newIndex === undefined) return;
 		if (newIndex === -1 || !route.params.path) {
 			newIndex = 0;
-			router.push(navigationItems[newIndex]!.href);
+			router.push(configuration?.value?.sidebarTab?.[newIndex]!.href ?? "/");
 		}
 		selectedIndex.value = newIndex;
 		sidebarOpen.value = false;
-		emit("navigate", navigationItems[newIndex]!.name);
+		emit("navigate", configuration?.value?.sidebarTab?.[newIndex]!);
 	}
 	updateSelectedTab();
 	watch(() => route.params, updateSelectedTab);

@@ -1,26 +1,14 @@
 <template>
 	<Nav @navigate="navigateTo" @search="searchOpen = true">
-		<FileTab v-if="currentView === 'Daily Ops'" tab-name="Daily Ops" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
-			<h1 class="text-2xl font-semibold text-gray-900">Daily Ops</h1>
-			<h2 class="text-sm font-medium text-gray-500">Make sure callsign and take-off date are correct</h2>
+		<FileTab v-if="currentSidebarTab?.component === 'FileList'" :tab-name="currentSidebarTab?.name ?? ''" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
+			<h1 class="text-2xl font-semibold text-gray-900">{{currentSidebarTab?.name ?? ''}}</h1>
+			<h2 class="text-sm font-medium text-gray-500">{{currentSidebarTab?.description ?? ''}}</h2>
 		</FileTab>
-		<FileTab v-if="currentView === 'Manuals'" tab-name="Manuals" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
-			<h1 class="text-2xl font-semibold text-gray-900">Manuals</h1>
-			<h2 class="text-sm font-medium text-gray-500">Technical Orders for the MQ-9A</h2>
-		</FileTab>
-		<FileTab v-if="currentView === 'Operational Reference'" tab-name="Operational Reference" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
-			<h1 class="text-2xl font-semibold text-gray-900">Operational Reference</h1>
-			<h2 class="text-sm font-medium text-gray-500">Resources to keep handy for all flying operations</h2>
-		</FileTab>
-		<FileTab v-if="currentView === 'Other'" tab-name="Other" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
-			<h1 class="text-2xl font-semibold text-gray-900">Other Resources</h1>
-			<h2 class="text-sm font-medium text-gray-500">Non-critical documents and references</h2>
-		</FileTab>
-		<FileTab v-if="currentView === 'All Files'" tab-name="All Files" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign" />
+		<FileTab v-if="currentSidebarTab?.component === 'AllFiles'" tab-name="All Files" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign" />
 
-		<Performance v-if="currentView === 'Performance'" />
+		<Performance v-if="currentSidebarTab?.component === 'Performance'" />
 
-		<Settings v-if="currentView === 'Settings'" />
+		<Settings v-if="currentSidebarTab?.component === 'Settings'" />
 
 		<SearchPalette :open="searchOpen" @closed="searchOpen = false" @set-callsign="(callsign) => selectedCallsign = callsign" />
 	</Nav>
@@ -37,6 +25,7 @@ import Performance from "@/views/subviews/Performance.vue";
 import Settings from "./subviews/Settings.vue";
 import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
+type SidebarTab = Configuration["sidebarTab"][0];
 
 const searchOpen = ref(false);
 const configuration: Ref<Configuration | null> = ref(null);
@@ -52,9 +41,9 @@ watchEffect(() => {
 	localStorage.setItem("callsign", selectedCallsign.value);
 });
 
-const currentView = ref("DailyOps");
-function navigateTo(component: string) {
-	currentView.value = component;
+const currentSidebarTab: Ref<SidebarTab | null> = ref(null);
+function navigateTo(sidebarItem: SidebarTab) {
+	currentSidebarTab.value = sidebarItem;
 }
 
 function handleKeys(e: KeyboardEvent) {

@@ -122,7 +122,6 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
-const navigationItems = inject<{ name: string; href: string; }[]>("navigationItems");
 
 const router = useRouter();
 
@@ -184,7 +183,7 @@ const filteredDirectories = computed((): ConfigFileEntry[] => {
 });
 
 function onSelect(selection: string) {
-	if (!configuration?.value || !navigationItems) return;
+	if (!configuration?.value) return;
 
 	if (configuration.value.callsigns.map(cs => cs.callsign).includes(selection)) {
 		emit("setCallsign", selection);
@@ -195,7 +194,7 @@ function onSelect(selection: string) {
 			for (let tabContents of Object.values(tabGroups)) {
 				let file = tabContents.find(entry => entry.name === selection);
 				if (file) {
-					let navItem = navigationItems.find(item => item.name === tabName);
+					let navItem = configuration.value.sidebarTab.find(item => item.name === tabName);
 					if (navItem) {
 						if (file.path.startsWith("http")) {
 							// External link
