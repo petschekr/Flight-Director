@@ -58,8 +58,68 @@
 			<div class="flex h-16 flex-shrink-0 items-center bg-gray-900 px-4">
 				<h1 class="text-2xl font-semibold text-white">Flight Director</h1>
 			</div>
+
+			<Menu as="div" class="relative inline-block px-3 text-left pt-2">
+				<div>
+					<MenuButton
+						class="group w-full rounded-md bg-gray-700 px-3 py-2 text-left text-sm font-medium  hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+						<span class="flex w-full items-center justify-between">
+							<span class="flex min-w-0 items-center justify-between space-x-3">
+								<!-- <img class="h-10 w-10 flex-shrink-0 rounded-full bg-gray-300" src="/download/50.jfif" /> -->
+								<span class="flex min-w-0 flex-1 flex-col">
+									<span class="truncate text-sm font-medium text-gray-100">50th ATKS</span>
+									<!-- <span class="truncate text-sm text-gray-500">@jessyschwarz</span> -->
+								</span>
+							</span>
+							<ChevronUpDownIcon class="h-5 w-5 flex-shrink-0 text-gray-400" />
+						</span>
+					</MenuButton>
+				</div>
+				<transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95"
+					enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75"
+					leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
+					<MenuItems
+						class="absolute right-0 left-0 z-10 mx-3 mt-1 origin-top divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+						<div class="py-1">
+							<MenuItem v-slot="{ active }">
+							<a href="#"
+								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
+								<FolderOpenIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+								Open profile
+							</a>
+							</MenuItem>
+						</div>
+						<div class="py-1">
+							<MenuItem v-slot="{ active }">
+							<a href="#"
+								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
+								<PencilSquareIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+								Edit layout
+							</a>
+							</MenuItem>
+							<MenuItem v-slot="{ active }">
+							<a href="#"
+								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
+								<ArrowDownTrayIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+								Save profile
+							</a>
+							</MenuItem>
+						</div>
+						<div class="py-1">
+							<MenuItem v-slot="{ active }">
+							<a href="#"
+								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
+								<SparklesIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+								Revert to default profile
+							</a>
+							</MenuItem>
+						</div>
+					</MenuItems>
+				</transition>
+			</Menu>
+
 			<div class="flex flex-1 flex-col overflow-y-auto">
-				<nav class="flex-1 space-y-1 px-2 py-4">
+				<nav class="flex-1 space-y-1 px-2 py-2">
 					<div v-for="item in navigation" :key="item.index">
 						<RouterLink v-if="item.name" :to="item.href ?? ''"
 							:class="[item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
@@ -117,13 +177,25 @@
 	import { useRoute, useRouter } from "vue-router";
 
 	import {
+		Menu,
+		MenuButton,
+		MenuItem,
+		MenuItems,
 		Dialog,
 		DialogPanel,
 		TransitionChild,
 		TransitionRoot,
 	} from '@headlessui/vue';
 	import { XMarkIcon, Bars3BottomLeftIcon } from '@heroicons/vue/24/outline';
-	import { MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
+	import {
+		ChevronUpDownIcon,
+		MagnifyingGlassIcon,
+		FolderOpenIcon,
+		PencilSquareIcon,
+		ArrowDownTrayIcon,
+		SparklesIcon,
+
+	} from '@heroicons/vue/20/solid';
 	import type { Configuration, IconName } from "@/models/configuration";
 
 	const emit = defineEmits<{
