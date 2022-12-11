@@ -91,7 +91,7 @@
 						</div>
 						<div class="py-1">
 							<MenuItem v-slot="{ active }">
-							<a href="#"
+							<a @click="editMode = true" href="#"
 								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
 								<PencilSquareIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
 								Edit layout
@@ -110,7 +110,7 @@
 							<a href="#"
 								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
 								<SparklesIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
-								Revert to default profile
+								Load default profile
 							</a>
 							</MenuItem>
 						</div>
@@ -169,6 +169,12 @@
 				</div>
 			</div>
 		</main>
+
+		<button v-if="editMode" @click="editMode = false" type="button"
+			class="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center rounded-md border border-transparent bg-sky-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+			<BoltIcon class="-ml-1 mr-3 h-5 w-5" />
+			Finish editing
+		</button>
 	</div>
 </template>
 
@@ -194,7 +200,7 @@
 		PencilSquareIcon,
 		ArrowDownTrayIcon,
 		SparklesIcon,
-
+		BoltIcon,
 	} from '@heroicons/vue/20/solid';
 	import type { Configuration, IconName } from "@/models/configuration";
 
@@ -210,6 +216,7 @@
 	const selectedIndex = ref(0);
 
 	const configuration = inject<Ref<Configuration | null>>("configuration");
+	const editMode = inject<Ref<boolean>>("editMode");
 
 	function getIcon(icon?: IconName) {
 		return defineAsyncComponent(() => import(`../../node_modules/@heroicons/vue/24/outline/${icon}.js`));
@@ -243,6 +250,8 @@
 	const searchField: Ref<HTMLInputElement | null> = ref(null);
 	onMounted(() => {
 		if (!searchField.value) return;
+		// Don't allow typing in the search field
+		// Instead, remove focus and emit a search event to open the search palette instead
 		searchField.value.addEventListener("focus", () => {
 			searchField.value?.blur();
 			emit("search");

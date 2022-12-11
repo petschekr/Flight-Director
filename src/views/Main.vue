@@ -40,6 +40,8 @@ const searchOpen = ref(false);
 const feedbackOpen = ref(false);
 const configuration: Ref<Configuration | null> = ref(null);
 provide("configuration", configuration);
+const editMode: Ref<boolean> = ref(false);
+provide("editMode", editMode);
 
 const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
 watchEffect(() => {

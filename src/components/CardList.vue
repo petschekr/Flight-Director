@@ -9,24 +9,34 @@
 			</div>
 		</div>
 		<ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-			<li v-for="file in fileGroup.files" :key="file.name" class="col-span-1 flex rounded-md shadow-sm transition-shadow hover:shadow-md h-24">
-				<a v-if="isExternal(file)" :href="file.path" target="_blank" class="contents">
+			<li v-for="file in fileGroup.files" :key="file.name" class="col-span-1 flex rounded-md shadow-sm transition-shadow hover:shadow-md h-24" :draggable="editMode ? 'true' : 'false'">
+				<!-- External links need an <a> -->
+				<a v-if="!editMode && isExternal(file)" :href="file.path" target="_blank" class="contents">
 					<Card :file="file" />
 				</a>
-				<RouterLink v-if="!isExternal(file)" :to="getPath(file.name)" class="contents">
+				<!-- Internal links can be handled with the Vue router -->
+				<RouterLink v-if="!editMode && !isExternal(file)" :to="getPath(file.name)" class="contents">
 					<Card :file="file" />
 				</RouterLink>
+				<!-- In edit mode, clicking opens the editing panel -->
+				<a v-if="editMode" @click="editPanelFile = file" class="contents">
+					<Card :file="file" />
+				</a>
 			</li>
 		</ul>
 	</div>
+
+	<EditCard :file="editPanelFile" @closed="editPanelFile = null" />
 </template>
 
 <script setup lang="ts">
+import { inject, type Ref, ref } from "vue";
 import { useRoute } from "vue-router";
 
 import type { File } from "@/models/configuration";
 
-import Card from "./Card.vue";
+import Card from "@/components/Card.vue";
+import EditCard from "@/components/EditCard.vue";
 
 defineProps<{
 	fileGroups: {
@@ -34,6 +44,9 @@ defineProps<{
 		files: File[];
 	}[];
 }>();
+
+const editMode = inject<Ref<boolean>>("editMode");
+const editPanelFile: Ref<File | null> = ref(null);
 
 const route = useRoute();
 

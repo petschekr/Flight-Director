@@ -11,24 +11,27 @@
 			</p>
 			<p class="text-gray-500 line-clamp-2 whitespace-normal">{{ file.description }}</p>
 		</div>
-		<!-- <div class="flex-shrink-0 pr-2">
+		<div v-if="editMode" class="flex-shrink-0 pr-2">
 			<button type="button"
-				class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white bg-transparent text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+				class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white bg-transparent text-gray-400">
 				<span class="sr-only">Open options</span>
-				<EllipsisVerticalIcon class="h-5 w-5" aria-hidden="true" />
+				<Bars3Icon class="h-5 w-5" aria-hidden="true" />
 			</button>
-		</div> -->
+		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/20/solid'
+import { inject, type Ref } from "vue";
+import { ArrowTopRightOnSquareIcon, Bars3Icon } from '@heroicons/vue/20/solid'
 
 import type { File } from "@/models/configuration";
 
 defineProps<{
 	file: File
 }>();
+
+const editMode = inject<Ref<boolean>>("editMode");
 
 function isExternal(file: File): boolean {
 	return file.path.startsWith("http");
