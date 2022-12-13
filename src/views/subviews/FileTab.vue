@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, watch, computed, type Ref, watchPostEffect } from "vue";
+import { provide, inject, ref, watch, computed, type Ref, watchPostEffect } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
 import type { File as ConfigFileEntry, Configuration } from "@/models/configuration";
@@ -83,9 +83,8 @@ function callsignChange(event: Event) {
 	emit("setCallsign", target.value);
 }
 
-function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
+function processPathReplacements(path: string): string {
 	const date = dayjs(selectedDate.value);
-	let path = file.path;
 	path = path.replace(/<callsign-path>/gi, (configuration?.value?.callsigns ?? []).find(cs => cs.callsign === props.selectedCallsign)?.path ?? ""); // Can contain replacements itself so must go first
 	path = path.replace(/<callsign>/gi, props.selectedCallsign);
 
@@ -99,11 +98,17 @@ function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
 	path = path.replace(/<(.*?)>/gi, (_, format) => {
 		return date.format(format);
 	});
+	return path;
+}
+provide("processPathReplacements", processPathReplacements);
+function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
 	return {
 		...file,
-		path,
+		rawPath: file.path,
+		path: processPathReplacements(file.path),
 	};
 }
+
 // Files for grid list overview
 const fileGroups = computed(() => {
 	if (!configuration || !configuration.value || props.tabName === "All Files" || !configuration.value.tabs[props.tabName]) return [];

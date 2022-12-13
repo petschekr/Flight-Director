@@ -126,10 +126,24 @@
 													<p class="mt-1 text-sm text-gray-500">
 														Sharedrive path to the file or folder this card links to. Paths must be children of the root folder. Web links are also supported.
 													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>&lt;callsign&gt;</code>: Full user-selected callsign
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>&lt;callsign-path&gt;</code>: Path associated with selected callsign
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>&lt;short-callsign&gt;</code>: Short version of selected callsign (ex: <code>WY11</code>)
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>&lt;DD MMM YY&gt;</code>: Full date formatting support
+													</p>
 												</div>
 												<div class="sm:col-span-2">
-													<textarea id="card-path" rows="2" v-model="path"
-														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
+													<textarea id="card-path" rows="4" v-model="path"
+														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"></textarea>
+													<br />
+													<code>{{pathPreview}}</code>
 												</div>
 											</div>
 
@@ -179,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref, watch, inject } from "vue";
+import { ref, type Ref, computed, watch, inject } from "vue";
 import {
 	Dialog, DialogPanel, DialogTitle,
 	TransitionChild, TransitionRoot,
@@ -203,6 +217,7 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const processPathReplacements = inject<(file: string) => string>("processPathReplacements");
 const defaultColor = "bg-sky-500";
 
 const isOpen = ref(false);
@@ -211,7 +226,7 @@ watch(() => props.file, () => {
 	title.value = props.file?.name ?? "";
 	description.value = props.file?.description ?? "";
 	abbreviation.value = props.file?.abbreviation ?? "";
-	path.value = props.file?.path ?? "";
+	path.value = props.file?.rawPath ?? props.file?.path ?? "";
 	searchTerms.value = props.file?.searchTerms ?? "";
 	selectedColor.value = colors[colors.findIndex(color => props.file?.color === color)] ?? defaultColor;
 });
@@ -249,6 +264,11 @@ const selectedColor = ref(defaultColor); // Updated by props.file watcher
 const abbreviation = ref("");
 const path = ref("");
 const searchTerms = ref("");
+
+const pathPreview = computed(() => {
+	if (!processPathReplacements) return "";
+	return processPathReplacements(path.value);
+});
 
 async function saveCard() {
 	if (!configuration?.value) return;

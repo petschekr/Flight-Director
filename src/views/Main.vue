@@ -117,6 +117,7 @@ async function saveConfiguration() {
 
 	let profileName = prompt("Profile name:", configuration.value.name)?.trim();
 	if (!profileName) return; // User canceled
+	configuration.value.name = profileName;
 
 	const fileHandle = await window.showSaveFilePicker({
 		suggestedName: configuration.value.name,

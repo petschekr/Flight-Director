@@ -8,6 +8,7 @@ export interface File {
 	abbreviation: string;
 	color: string;
 	path: string;
+	rawPath?: string;
 	searchTerms?: string; // Comma separated
 }
 
