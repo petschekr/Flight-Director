@@ -19,7 +19,7 @@
 											<div class="flex items-start justify-between space-x-3">
 												<div class="space-y-1">
 													<DialogTitle class="text-lg font-medium text-gray-900">Edit Card</DialogTitle>
-													<p class="text-sm text-gray-500">Customize link contents and appearance</p>
+													<p class="text-sm text-gray-500 font-mono">{{tabName}} > {{groupName}} > {{title}}</p>
 												</div>
 												<div class="flex h-7 items-center">
 													<button type="button" @click="close()" class="text-gray-400 hover:text-gray-500">
@@ -186,13 +186,14 @@ import {
 	Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions,
 } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
-import { LinkIcon, QuestionMarkCircleIcon, CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
+import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 
 import Alert from "@/components/Alert.vue";
 
 import type { File, Configuration } from "@/models/configuration";
 
 const props = defineProps<{
+	open: boolean;
 	file: File | null;
 	groupName: string | null;
 	tabName: string | null;
@@ -202,18 +203,17 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const defaultColor = "bg-sky-500";
 
 const isOpen = ref(false);
+watch(() => props.open, () => isOpen.value = props.open);
 watch(() => props.file, () => {
-	isOpen.value = props.file !== null;
-	if (props.file !== null) {
-		title.value = props.file.name;
-		description.value = props.file.description;
-		abbreviation.value = props.file.abbreviation;
-		path.value = props.file.path;
-		searchTerms.value = props.file.searchTerms ?? "";
-		selectedColor.value = colors[colors.findIndex(color => props.file?.color === color) ?? 0];
-	}
+	title.value = props.file?.name ?? "";
+	description.value = props.file?.description ?? "";
+	abbreviation.value = props.file?.abbreviation ?? "";
+	path.value = props.file?.path ?? "";
+	searchTerms.value = props.file?.searchTerms ?? "";
+	selectedColor.value = colors[colors.findIndex(color => props.file?.color === color)] ?? defaultColor;
 });
 function close() {
 	isOpen.value = false;
@@ -245,14 +245,14 @@ const colors: string[] = colorBases.reduce((prev, color, index) => {
 
 const title = ref("");
 const description = ref("");
-const selectedColor = ref(colors[0]); // Updated by props.file watcher
+const selectedColor = ref(defaultColor); // Updated by props.file watcher
 const abbreviation = ref("");
 const path = ref("");
 const searchTerms = ref("");
 
 async function saveCard() {
 	if (!configuration?.value) return;
-	if (!props.file || !props.groupName || !props.tabName) return;
+	if (!props.groupName || !props.tabName) return;
 
 	if (!title.value) {
 		await openAlert("Title required", "Please provide a title for the card");
@@ -271,8 +271,7 @@ async function saveCard() {
 		return;
 	}
 
-	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.file?.name);
-	configuration.value.tabs[props.tabName][props.groupName][fileIndex] = {
+	const fileContents = {
 		name: title.value,
 		description: description.value,
 		color: selectedColor.value,
@@ -280,6 +279,16 @@ async function saveCard() {
 		path: path.value,
 		searchTerms: searchTerms.value.length === 0 ? undefined : searchTerms.value,
 	};
+
+	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.file?.name);
+	if (!props.file || fileIndex === -1) {
+		// Create a new file
+		configuration.value.tabs[props.tabName][props.groupName].push(fileContents);
+	}
+	else {
+		// Update existing file
+		configuration.value.tabs[props.tabName][props.groupName][fileIndex] = fileContents;
+	}
 	configuration.value.unsaved = true;
 	close();
 }

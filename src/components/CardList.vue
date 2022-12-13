@@ -23,10 +23,18 @@
 					<Card :file="file" />
 				</a>
 			</li>
+			<!-- New card button appears in edit mode -->
+			<li v-if="editMode" class="col-span-1 flex rounded-md h-24">
+				<a @click="openEditPanel(null, fileGroup.groupName, fileGroup.tabName)" class="contents">
+					<div class="flex flex-1 items-center justify-center rounded-md border-4 border-dashed border-gray-300 hover:border-solid cursor-pointer transition-transform hover:scale-105">
+						<SquaresPlusIcon class="h-12 w-12 text-gray-300" />
+					</div>
+				</a>
+			</li>
 		</ul>
 	</div>
 
-	<EditCard :file="editPanelFile" :group-name="editPanelGroupName" :tab-name="editPanelTabName" @closed="editPanelFile = null" />
+	<EditCard :file="editPanelFile" :group-name="editPanelGroupName" :tab-name="editPanelTabName" :open="editPanelOpen" @closed="editPanelOpen = false" />
 </template>
 
 <script setup lang="ts">
@@ -34,6 +42,8 @@ import { inject, type Ref, ref } from "vue";
 import { useRoute } from "vue-router";
 
 import type { File } from "@/models/configuration";
+
+import { SquaresPlusIcon } from "@heroicons/vue/24/outline";
 
 import Card from "@/components/Card.vue";
 import EditCard from "@/components/EditCard.vue";
@@ -47,6 +57,7 @@ defineProps<{
 }>();
 
 const editMode = inject<Ref<boolean>>("editMode");
+const editPanelOpen: Ref<boolean> = ref(false);
 const editPanelFile: Ref<File | null> = ref(null);
 const editPanelGroupName: Ref<string | null> = ref(null);
 const editPanelTabName: Ref<string | null> = ref(null);
@@ -60,9 +71,10 @@ function getPath(filePath: string): string {
 function isExternal(file: File): boolean {
 	return file.path.startsWith("http");
 }
-function openEditPanel(file: File, groupName: string, tabName: string) {
+function openEditPanel(file: File | null, groupName: string, tabName: string) {
 	editPanelFile.value = file;
 	editPanelGroupName.value = groupName;
 	editPanelTabName.value = tabName;
+	editPanelOpen.value = true;
 }
 </script>
