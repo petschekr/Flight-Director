@@ -152,16 +152,16 @@
 
 									<!-- Action buttons -->
 									<div class="flex-shrink-0 border-t border-gray-200 px-4 py-5 sm:px-6 flex space-x-3">
-										<button type="button"
+										<button type="button" @click="deleteCard"
 											class="inline-flex justify-center rounded-md border border-transparent bg-red-500 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
 											Delete
 										</button>
 										<div class="grow"></div>
-										<button type="button" @click="close()"
+										<button type="button" @click="close"
 											class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
 											Cancel
 										</button>
-										<button type="submit"
+										<button type="submit" @click="saveCard"
 											class="inline-flex justify-center rounded-md border border-transparent bg-sky-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
 											Save
 										</button>
@@ -179,7 +179,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref, watch } from "vue";
+import { ref, type Ref, watch, inject } from "vue";
 import {
 	Dialog, DialogPanel, DialogTitle,
 	TransitionChild, TransitionRoot,
@@ -190,14 +190,18 @@ import { LinkIcon, QuestionMarkCircleIcon, CheckIcon, ChevronUpDownIcon } from '
 
 import Alert from "@/components/Alert.vue";
 
-import type { File } from "@/models/configuration";
+import type { File, Configuration } from "@/models/configuration";
 
 const props = defineProps<{
 	file: File | null;
+	groupName: string | null;
+	tabName: string | null;
 }>();
 const emit = defineEmits<{
 	(e: "closed"): void;
 }>();
+
+const configuration = inject<Ref<Configuration | null>>("configuration");
 
 const isOpen = ref(false);
 watch(() => props.file, () => {
@@ -245,4 +249,40 @@ const selectedColor = ref(colors[0]); // Updated by props.file watcher
 const abbreviation = ref("");
 const path = ref("");
 const searchTerms = ref("");
+
+async function saveCard() {
+	if (!configuration?.value) return;
+	if (!props.file || !props.groupName || !props.tabName) return;
+
+	if (!title.value) {
+		await openAlert("Title required", "Please provide a title for the card");
+		return;
+	}
+	if (!description.value) {
+		await openAlert("Description required", "Please provide a brief description of the card's contents");
+		return;
+	}
+	if (!abbreviation.value) {
+		await openAlert("Abbreviation required", "Please provide a short abbrevation to help quickly identify the card");
+		return;
+	}
+	if (!path.value) {
+		await openAlert("Path or link required", "Please provide a path or external web link that this card will link to");
+		return;
+	}
+
+	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.file?.name);
+	configuration.value.tabs[props.tabName][props.groupName][fileIndex] = {
+		name: title.value,
+		description: description.value,
+		color: selectedColor.value,
+		abbreviation: abbreviation.value,
+		path: path.value,
+		searchTerms: searchTerms.value.length === 0 ? undefined : searchTerms.value,
+	};
+	configuration.value.unsaved = true;
+	close();
+}
+async function deleteCard() {}
+
 </script>

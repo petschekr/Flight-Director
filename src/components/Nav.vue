@@ -62,13 +62,12 @@
 			<Menu as="div" class="relative inline-block px-3 text-left pt-2">
 				<div>
 					<MenuButton
-						class="group w-full rounded-md bg-gray-700 px-3 py-2 text-left text-sm font-medium  hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+						:class="[configuration?.unsaved ? 'bg-red-900 hover:bg-red-800' : 'bg-gray-700 hover:bg-gray-600', 'group w-full rounded-md px-3 py-2 text-left text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-500']">
 						<span class="flex w-full items-center justify-between">
 							<span class="flex min-w-0 items-center justify-between space-x-3">
 								<!-- <img class="h-10 w-10 flex-shrink-0 rounded-full bg-gray-300" src="/download/50.jfif" /> -->
 								<span class="flex min-w-0 flex-1 flex-col">
-									<span class="truncate text-sm font-medium text-gray-100">50th ATKS</span>
-									<!-- <span class="truncate text-sm text-gray-500">@jessyschwarz</span> -->
+									<span class="truncate text-sm font-medium text-gray-100">{{configuration?.name ?? "Default Profile"}}</span>
 								</span>
 							</span>
 							<ChevronUpDownIcon class="h-5 w-5 flex-shrink-0 text-gray-400" />
@@ -82,7 +81,7 @@
 						class="absolute right-0 left-0 z-10 mx-3 mt-1 origin-top divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
 						<div class="py-1">
 							<MenuItem v-slot="{ active }">
-							<a href="#"
+							<a @click="$emit('loadProfile')" href="#"
 								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
 								<FolderOpenIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
 								Open profile
@@ -98,16 +97,17 @@
 							</a>
 							</MenuItem>
 							<MenuItem v-slot="{ active }">
-							<a href="#"
+							<a @click="$emit('saveProfile')" href="#"
 								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
 								<ArrowDownTrayIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
 								Save profile
+								<!-- <small v-if="configuration?.unsaved">(Unsaved changes)</small> -->
 							</a>
 							</MenuItem>
 						</div>
 						<div class="py-1">
 							<MenuItem v-slot="{ active }">
-							<a href="#"
+							<a @click="$emit('loadDefaultProfile')" href="#"
 								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
 								<SparklesIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
 								Load default profile
@@ -207,6 +207,9 @@
 	const emit = defineEmits<{
 		(e: "navigate", sidebarTab: Configuration["sidebarTab"][0]): void;
 		(e: "search"): void;
+		(e: "loadProfile"): void;
+		(e: "loadDefaultProfile"): void;
+		(e: "saveProfile"): void;
 	}>();
 
 	const router = useRouter();

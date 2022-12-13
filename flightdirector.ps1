@@ -35,6 +35,13 @@ try {
 			# Serve app
 			if ($path -eq "/") {
 				$item = Get-Item -LiteralPath "FileServe:\Flight Director.html" -Force -ErrorAction Stop
+				$res.ContentType = "text/html"
+				$content = [System.IO.File]::ReadAllBytes($item)
+			}
+			# Serve default config file
+			elseif ($path.StartsWith("/config")) {
+				$item = Get-Item -LiteralPath "FileServe:\flightdirector.toml" -Force -ErrorAction Stop
+				$res.ContentType = "text/plain"
 				$content = [System.IO.File]::ReadAllBytes($item)
 			}
 			# List directory or file details

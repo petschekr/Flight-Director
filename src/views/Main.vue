@@ -1,5 +1,5 @@
 <template>
-	<Nav @navigate="navigateTo" @search="searchOpen = true">
+	<Nav @navigate="navigateTo" @search="searchOpen = true" @load-default-profile="loadDefaultConfiguration" @save-profile="saveConfiguration" @load-profile="openConfiguration">
 		<FileTab v-if="currentSidebarTab?.component === 'FileList'" :tab-name="currentSidebarTab?.name ?? ''" :selected-callsign="selectedCallsign" @set-callsign="(callsign) => selectedCallsign = callsign">
 			<h1 class="text-2xl font-semibold text-gray-900">{{currentSidebarTab?.name ?? ''}}</h1>
 			<h2 class="text-sm font-medium text-gray-500">{{currentSidebarTab?.description ?? ''}}</h2>
@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { provide, computed, ref, type Ref, onMounted, onUnmounted, watchEffect } from "vue";
+import { provide, computed, ref, type Ref, onMounted, onUnmounted, watchEffect, watch } from "vue";
 
 import toml from "toml";
 
@@ -38,8 +38,10 @@ type SidebarTab = Configuration["sidebarTab"][0];
 
 const searchOpen = ref(false);
 const feedbackOpen = ref(false);
+
 const configuration: Ref<Configuration | null> = ref(null);
 provide("configuration", configuration);
+
 const editMode: Ref<boolean> = ref(false);
 provide("editMode", editMode);
 
@@ -67,13 +69,66 @@ function handleKeys(e: KeyboardEvent) {
 onMounted(() => document.addEventListener("keydown", handleKeys));
 onUnmounted(() => document.removeEventListener("keydown", handleKeys));
 
-// Load configuration
-try {
-	let response = await fetch("/download/flightdirector.toml");
-	configuration.value = toml.parse(await response.text());
+async function loadConfiguration(configContents: string) {
+	// Warn if current configuration is not saved before overwriting it
+	if (configuration.value?.unsaved) {
+		if (!confirm("Your current profile has unsaved changes. Are you sure you want to overwrite these by loading a different profile?")) {
+			return;
+		}
+	}
+	try {
+		if (configContents.trimStart().charAt(0) === '{') {
+			// Assume JSON
+			configuration.value = JSON.parse(configContents);
+		}
+		else {
+			// Assume TOML
+			configuration.value = toml.parse(configContents);
+		}
+	}
+	catch (err) {
+		alert("Error parsing/loading configuration file\n" + err);
+		window.location.reload();
+	}
+
 }
-catch (err) {
-	alert("Error parsing configuration file\n" + err);
-	window.location.reload();
+async function openConfiguration() {
+	const [fileHandle] = await window.showOpenFilePicker({
+		multiple: false,
+		types: [{
+			description: "Flight Director Profile",
+			accept: { "application/json": [".json"] },
+		}],
+	});
+	const file = await fileHandle.getFile();
+	const configContents = await file.text();
+	await loadConfiguration(configContents);
+}
+async function loadDefaultConfiguration() {
+	// Default configuration location is set in the PowerShell server
+	let response = await fetch("/config");
+	let configContents = await response.text();
+	await loadConfiguration(configContents);
+}
+await loadDefaultConfiguration();
+
+async function saveConfiguration() {
+	if (!configuration.value) return;
+
+	let profileName = prompt("Profile name:", configuration.value.name)?.trim();
+	if (!profileName) return; // User canceled
+
+	const fileHandle = await window.showSaveFilePicker({
+		suggestedName: configuration.value.name,
+		types: [{
+			description: "Flight Director Profile",
+			accept: { "application/json": [".json"] },
+		}],
+	});
+	const stream = await fileHandle.createWritable();
+
+	configuration.value.unsaved = undefined;
+	await stream.write(JSON.stringify(configuration.value, null, "\t"));
+	await stream.close();
 }
 </script>

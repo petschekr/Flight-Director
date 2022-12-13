@@ -110,7 +110,8 @@ const fileGroups = computed(() => {
 
 	return Object.entries(configuration.value.tabs[props.tabName]).map(entry => {
 		return {
-			name: entry[0],
+			tabName: props.tabName.toString(),
+			groupName: entry[0],
 			files: entry[1].map(mapPathIdentifiers),
 		};
 	});

@@ -12,6 +12,8 @@ export interface File {
 }
 
 export interface Configuration {
+	name?: string;
+
 	feedbackLocation: string;
 
 	callsigns: {
@@ -32,6 +34,8 @@ export interface Configuration {
 			[fileGroup: string]: File[];
 		};
 	};
+
+	unsaved?: boolean;
 }
 
 export interface DragIndexEntry {

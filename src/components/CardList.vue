@@ -1,11 +1,11 @@
 <template>
-	<div v-for="fileGroup in fileGroups" :key="fileGroup.name" class="">
+	<div v-for="fileGroup in fileGroups" :key="fileGroup.groupName" class="">
 		<div class="relative mt-2" v-if="fileGroups.length > 1">
 			<div class="absolute inset-0 top-1 flex items-center" aria-hidden="true">
 				<div class="w-full border-t border-gray-300" />
 			</div>
 			<div class="relative flex justify-start">
-				<span class="bg-gray-100 pr-3 text-lg font-medium text-gray-900">{{fileGroup.name}}</span>
+				<span class="bg-gray-100 pr-3 text-lg font-medium text-gray-900">{{fileGroup.groupName}}</span>
 			</div>
 		</div>
 		<ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
@@ -19,14 +19,14 @@
 					<Card :file="file" />
 				</RouterLink>
 				<!-- In edit mode, clicking opens the editing panel -->
-				<a v-if="editMode" @click="editPanelFile = file" class="contents">
+				<a v-if="editMode" @click="openEditPanel(file, fileGroup.groupName, fileGroup.tabName)" class="contents">
 					<Card :file="file" />
 				</a>
 			</li>
 		</ul>
 	</div>
 
-	<EditCard :file="editPanelFile" @closed="editPanelFile = null" />
+	<EditCard :file="editPanelFile" :group-name="editPanelGroupName" :tab-name="editPanelTabName" @closed="editPanelFile = null" />
 </template>
 
 <script setup lang="ts">
@@ -40,13 +40,16 @@ import EditCard from "@/components/EditCard.vue";
 
 defineProps<{
 	fileGroups: {
-		name: string;
+		tabName: string;
+		groupName: string;
 		files: File[];
 	}[];
 }>();
 
 const editMode = inject<Ref<boolean>>("editMode");
 const editPanelFile: Ref<File | null> = ref(null);
+const editPanelGroupName: Ref<string | null> = ref(null);
+const editPanelTabName: Ref<string | null> = ref(null);
 
 const route = useRoute();
 
@@ -56,5 +59,10 @@ function getPath(filePath: string): string {
 }
 function isExternal(file: File): boolean {
 	return file.path.startsWith("http");
+}
+function openEditPanel(file: File, groupName: string, tabName: string) {
+	editPanelFile.value = file;
+	editPanelGroupName.value = groupName;
+	editPanelTabName.value = tabName;
 }
 </script>

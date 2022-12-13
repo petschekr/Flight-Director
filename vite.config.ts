@@ -21,7 +21,12 @@ export default defineConfig({
     __COMMIT_HASH__: JSON.stringify(commitHash),
   },
   server: {
+    host: true,
     proxy: {
+      "/config": {
+        target: "http://localhost:5050/config",
+        changeOrigin: true,
+      },
       "/api": {
         target: "http://localhost:5050/api",
         changeOrigin: true,
