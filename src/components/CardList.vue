@@ -121,6 +121,7 @@ function updateGroupName(oldGroupName: string, event: Event) {
 		}
 	}
 	configuration.value.tabs[props.tabName] = newTabContents;
+	configuration.value.unsaved = true;
 }
 function addGroupName(event: Event) {
 	if (!configuration?.value) return;
@@ -135,5 +136,6 @@ function addGroupName(event: Event) {
 	}
 	Object.assign(configuration.value.tabs[props.tabName], { [newGroupName]: [] });
 	inputElement.value = "";
+	configuration.value.unsaved = true;
 }
 </script>
