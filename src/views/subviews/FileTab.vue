@@ -22,7 +22,7 @@
 				</div>
 			</div>
 		</div>
-		<CardList :file-groups="fileGroups" v-if="renderType === RenderType.Overview" />
+		<CardList :file-groups="fileGroups" :tabName="tabName as string" v-if="renderType === RenderType.Overview" />
 		<File :file="fileRendered" v-if="renderType === RenderType.File" />
 		<FileList :directory="directoryRendered" v-if="renderType === RenderType.Directory" />
 		<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
