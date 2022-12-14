@@ -312,6 +312,18 @@ async function saveCard() {
 	configuration.value.unsaved = true;
 	close();
 }
-async function deleteCard() {}
+async function deleteCard() {
+	if (!configuration?.value) return;
+	if (!props.groupName || !props.tabName) return;
+
+	if (!confirm("Are you sure you want to delete this card?")) return;
+
+	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.file?.name);
+	if (fileIndex === -1) return; // Not found
+
+	configuration.value.tabs[props.tabName][props.groupName].splice(fileIndex, 1);
+	configuration.value.unsaved = true;
+	close();
+}
 
 </script>
