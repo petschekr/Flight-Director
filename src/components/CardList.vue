@@ -2,12 +2,16 @@
 	<div v-for="fileGroup in fileGroups" :key="fileGroup.groupName" class="">
 		<div class="relative mt-2">
 			<div class="absolute inset-0 top-1 flex items-center" aria-hidden="true">
-				<div class="w-full border-t border-gray-300" />
+				<div v-if="!editMode" class="w-full border-t border-gray-300" />
 			</div>
 			<div class="relative flex justify-start">
 				<span v-if="!editMode" class="bg-gray-100 pr-3 text-lg font-medium text-gray-900">{{fileGroup.groupName}}</span>
-				<input v-else type="text" :value="fileGroup.groupName" @keydown.enter="($event.target as HTMLInputElement).blur()" @blur="updateGroupName(fileGroup.groupName, $event)"
-					class="rounded-md bg-gray-100 border-gray-300 shadow-sm font-medium text-gray-900 focus:border-sky-500 focus:ring-sky-500" />
+				<input v-if="editMode" type="text" :value="fileGroup.groupName" @keydown.enter="($event.target as HTMLInputElement).blur()" @blur="updateGroupName(fileGroup.groupName, $event)"
+					class="rounded-md bg-gray-50 border-gray-300 shadow-sm font-medium text-gray-900 focus:border-sky-500 focus:ring-sky-500" />
+				<ChevronUpIcon v-if="editMode" @click="moveGroup(fileGroup.groupName, 'up')"
+					class="w-8 h-8 px-1 ml-1 self-center rounded-full text-gray-400 cursor-pointer transition-colors hover:bg-gray-200" />
+				<ChevronDownIcon v-if="editMode" @click="moveGroup(fileGroup.groupName, 'down')"
+					class="w-8 h-8 px-1 ml-1 self-center rounded-full text-gray-400 cursor-pointer transition-colors hover:bg-gray-200" />
 			</div>
 		</div>
 		<ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
@@ -55,7 +59,7 @@ import { useRoute } from "vue-router";
 
 import type { File, Configuration } from "@/models/configuration";
 
-import { SquaresPlusIcon } from "@heroicons/vue/24/outline";
+import { SquaresPlusIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/vue/24/outline";
 
 import Card from "@/components/Card.vue";
 import EditCard from "@/components/EditCard.vue";
@@ -136,6 +140,47 @@ function addGroupName(event: Event) {
 	}
 	Object.assign(configuration.value.tabs[props.tabName], { [newGroupName]: [] });
 	inputElement.value = "";
+	configuration.value.unsaved = true;
+}
+function moveGroup(moveGroupName: string, direction: "up" | "down") {
+	if (!configuration?.value) return;
+
+	let newTabContents = {};
+	let buffer: [string, File[]] | null = null; // Holds a card object as it gets moved around between loop iterations
+	for (let [groupName, group] of Object.entries(configuration.value.tabs[props.tabName])) {
+		if (direction === "up") {
+			if (groupName === moveGroupName) {
+				if (direction === "up" && buffer === null) {
+					// If buffer is empty, this group is already first
+					return;
+				}
+				Object.assign(newTabContents, { [groupName]: group });
+			}
+			else {
+				if (buffer !== null) {
+					Object.assign(newTabContents, { [buffer[0]]: buffer[1] });
+				}
+				buffer = [groupName, group];
+			}
+		}
+		else if (direction === "down") {
+			if (groupName === moveGroupName) {
+				buffer = [groupName, group]; // Save for next iteration
+			}
+			else {
+				Object.assign(newTabContents, { [groupName]: group });
+				if (buffer !== null) {
+					Object.assign(newTabContents, { [buffer[0]]: buffer[1] });
+				}
+			}
+		}
+	}
+	// Add any leftover buffer contents to the end
+	if (buffer !== null) {
+		Object.assign(newTabContents, { [buffer[0]]: buffer[1] });
+	}
+
+	configuration.value.tabs[props.tabName] = newTabContents;
 	configuration.value.unsaved = true;
 }
 </script>
