@@ -290,6 +290,12 @@ async function saveCard() {
 		await openAlert("Path or link required", "Please provide a path or external web link that this card will link to");
 		return;
 	}
+	// Check if there's already a card in this group with this name
+	let existingFileWithName = configuration.value.tabs[props.tabName][props.groupName].find(file => file.name === title.value);
+	if (existingFileWithName) {
+		await openAlert("Invalid title", "A card with that title already exists in this group. Please choose a different title.");
+		return;
+	}
 
 	const fileContents = {
 		name: title.value,
