@@ -292,7 +292,7 @@ async function saveCard() {
 	}
 	// Check if there's already a card in this group with this name
 	let existingFileWithName = configuration.value.tabs[props.tabName][props.groupName].find(file => file.name === title.value);
-	if (existingFileWithName) {
+	if (existingFileWithName && props.file?.name !== title.value) {
 		await openAlert("Invalid title", "A card with that title already exists in this group. Please choose a different title.");
 		return;
 	}
