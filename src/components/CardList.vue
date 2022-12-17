@@ -15,26 +15,26 @@
 			</div>
 		</div>
 		<ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-			<li v-for="file in fileGroup.files" :key="file.name" class="disable-child-pointer-events col-span-1 flex rounded-md shadow-sm transition hover:shadow-md h-24"
-				:draggable="editMode ? 'true' : 'false'" @dragstart="dragStart($event, fileGroup.groupName, file.name)" @dragend="dragEnd" @dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, fileGroup.groupName, file.name)">
+			<li v-for="file in fileGroup.files" :key="file.name" :class="[editMode ? 'disable-child-pointer-events' : '', 'col-span-1 flex rounded-md shadow-sm transition hover:shadow-md h-24']"
+				@click="editMode && openEditPanel(file, fileGroup.groupName, fileGroup.tabName)"
+				:draggable="editMode ? 'true' : 'false'"
+				@dragstart="dragStart($event, fileGroup.groupName, file.name)" @dragend="dragEnd"
+				@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, fileGroup.groupName, file.name)">
 				<!-- External links need an <a> -->
-				<a v-if="!editMode && isExternal(file)" :href="file.path" target="_blank" class="contents">
+				<a v-if="isExternal(file)" :href="file.path" target="_blank" class="contents">
 					<Card :file="file" />
 				</a>
 				<!-- Internal links can be handled with the Vue router -->
-				<RouterLink v-if="!editMode && !isExternal(file)" :to="getPath(file.name)" class="contents">
+				<RouterLink v-if="!isExternal(file)" :to="getPath(file.name)" class="contents">
 					<Card :file="file" />
 				</RouterLink>
-				<!-- In edit mode, clicking opens the editing panel -->
-				<a v-if="editMode" @click="openEditPanel(file, fileGroup.groupName, fileGroup.tabName)" class="contents">
-					<Card :file="file" />
-				</a>
 			</li>
 			<!-- New card button appears in edit mode -->
-			<li v-if="editMode" class="disable-child-pointer-events col-span-1 flex rounded-md h-24 mb-4 transition"
+			<li v-if="editMode" :class="[editMode ? 'disable-child-pointer-events' : '', 'col-span-1 flex rounded-md h-24 mb-4 transition border-4 border-dashed border-gray-300 hover:border-solid cursor-pointer hover:scale-105']"
+				@click="editMode && openEditPanel(null, fileGroup.groupName, fileGroup.tabName)"
 				@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, fileGroup.groupName)">
-				<a @click="openEditPanel(null, fileGroup.groupName, fileGroup.tabName)" class="contents">
-					<div class="flex flex-1 items-center justify-center rounded-md border-4 border-dashed border-gray-300 hover:border-solid cursor-pointer transition-transform hover:scale-105">
+				<a class="contents">
+					<div class="flex flex-1 items-center justify-center">
 						<SquaresPlusIcon class="h-12 w-12 text-gray-300" />
 					</div>
 				</a>
