@@ -15,7 +15,8 @@
 			</div>
 		</div>
 		<ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-			<li v-for="file in fileGroup.files" :key="file.name" class="col-span-1 flex rounded-md shadow-sm transition-shadow hover:shadow-md h-24" :draggable="editMode ? 'true' : 'false'">
+			<li v-for="file in fileGroup.files" :key="file.name" class="disable-child-pointer-events col-span-1 flex rounded-md shadow-sm transition hover:shadow-md h-24"
+				:draggable="editMode ? 'true' : 'false'" @dragstart="dragStart($event, fileGroup.groupName, file.name)" @dragend="dragEnd" @dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, fileGroup.groupName, file.name)">
 				<!-- External links need an <a> -->
 				<a v-if="!editMode && isExternal(file)" :href="file.path" target="_blank" class="contents">
 					<Card :file="file" />
@@ -30,7 +31,8 @@
 				</a>
 			</li>
 			<!-- New card button appears in edit mode -->
-			<li v-if="editMode" class="col-span-1 flex rounded-md h-24 mb-4">
+			<li v-if="editMode" class="disable-child-pointer-events col-span-1 flex rounded-md h-24 mb-4 transition"
+				@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, fileGroup.groupName)">
 				<a @click="openEditPanel(null, fileGroup.groupName, fileGroup.tabName)" class="contents">
 					<div class="flex flex-1 items-center justify-center rounded-md border-4 border-dashed border-gray-300 hover:border-solid cursor-pointer transition-transform hover:scale-105">
 						<SquaresPlusIcon class="h-12 w-12 text-gray-300" />
@@ -52,6 +54,13 @@
 
 	<EditCard :file="editPanelFile" :group-name="editPanelGroupName" :tab-name="editPanelTabName" :open="editPanelOpen" @closed="editPanelOpen = false" />
 </template>
+
+<style>
+	/* Prevents every card's children elements from triggering dragenter/leave events */
+	.disable-child-pointer-events * {
+		pointer-events: none;
+	}
+</style>
 
 <script setup lang="ts">
 import { inject, type Ref, ref } from "vue";
@@ -181,6 +190,71 @@ function moveGroup(moveGroupName: string, direction: "up" | "down") {
 	}
 
 	configuration.value.tabs[props.tabName] = newTabContents;
+	configuration.value.unsaved = true;
+}
+
+let currentDragItem: HTMLElement | null = null;
+const dragSourceActiveStyles = ["opacity-50"];
+const dragTargetActiveStyles = ["opacity-80", "scale-90"];
+
+function dragStart(e: DragEvent, groupName: string, title: string) {
+	let target = e.currentTarget as HTMLElement;
+	if (!e.dataTransfer) return;
+
+	currentDragItem = target;
+
+	target.classList.add(...dragSourceActiveStyles);
+
+	e.dataTransfer.effectAllowed = "move";
+	e.dataTransfer.setData("text/plain", title);
+	e.dataTransfer.setData("groupName", groupName);
+	e.dataTransfer.setData("title", title);
+}
+function dragEnd(e: DragEvent) {
+	let target = e.currentTarget as HTMLElement;
+	if (!e.dataTransfer) return;
+
+	currentDragItem = null;
+
+	target.classList.remove(...dragSourceActiveStyles);
+}
+function dragEnter(e: DragEvent) {
+	let target = e.currentTarget as HTMLElement;
+	if (target === currentDragItem) return; // Don't react to being dragged over self
+
+	target.classList.add(...dragTargetActiveStyles);
+}
+function dragLeave(e: DragEvent) {
+	let target = e.currentTarget as HTMLElement;
+	if (target === currentDragItem) return; // Don't react to being dragged over self
+
+	target.classList.remove(...dragTargetActiveStyles);
+}
+function drop(e: DragEvent, targetGroupName: string, targetTitle?: string) {
+	let target = e.currentTarget as HTMLElement;
+	if (target === currentDragItem) return; // Don't react to being dropped on self
+	if (!e.dataTransfer || !configuration?.value) return;
+
+	target.classList.remove(...dragTargetActiveStyles);
+
+	const sourceGroupName = e.dataTransfer.getData("groupName");
+	const sourceTitle = e.dataTransfer.getData("title");
+
+	let sourceIndex = configuration.value.tabs[props.tabName][sourceGroupName].findIndex(file => file.name === sourceTitle);
+	if (sourceIndex === -1) {
+		alert("Dragged card doesn't exist in configuration(?)");
+		return;
+	}
+	let targetIndex = configuration.value.tabs[props.tabName][targetGroupName].findIndex(file => file.name === targetTitle);
+	if (targetIndex === -1) {
+		// If dropped onto new card area, there is no existing card
+		targetIndex = configuration.value.tabs[props.tabName][targetGroupName].length; // TODO: check if this panics somewhere
+	}
+
+	let file = configuration.value.tabs[props.tabName][sourceGroupName][sourceIndex]; // Grab the dragged file out of the array
+	configuration.value.tabs[props.tabName][sourceGroupName].splice(sourceIndex, 1); // Delete from the source array
+	configuration.value.tabs[props.tabName][targetGroupName].splice(targetIndex, 0, file); // Add to the target array in the target's position, pushing everything else backwards
+
 	configuration.value.unsaved = true;
 }
 </script>
