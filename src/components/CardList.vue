@@ -207,13 +207,12 @@ function dragStart(e: DragEvent, groupName: string, title: string) {
 
 	e.dataTransfer.effectAllowed = "move";
 	e.dataTransfer.setData("text/plain", title);
-	e.dataTransfer.setData("type", "card");
+	e.dataTransfer.setData("flightdirector/card", "");
 	e.dataTransfer.setData("groupName", groupName);
 	e.dataTransfer.setData("title", title);
 }
 function dragEnd(e: DragEvent) {
 	let target = e.currentTarget as HTMLElement;
-	if (!e.dataTransfer) return;
 
 	currentDragItem = null;
 
@@ -222,19 +221,22 @@ function dragEnd(e: DragEvent) {
 function dragEnter(e: DragEvent) {
 	let target = e.currentTarget as HTMLElement;
 	if (target === currentDragItem) return; // Don't react to being dragged over self
+	if (!e.dataTransfer?.types.includes("flightdirector/card")) return;
 
 	target.classList.add(...dragTargetActiveStyles);
 }
 function dragLeave(e: DragEvent) {
 	let target = e.currentTarget as HTMLElement;
 	if (target === currentDragItem) return; // Don't react to being dragged over self
+	if (!e.dataTransfer?.types.includes("flightdirector/card")) return;
 
 	target.classList.remove(...dragTargetActiveStyles);
 }
 function drop(e: DragEvent, targetGroupName: string, targetTitle?: string) {
 	let target = e.currentTarget as HTMLElement;
 	if (target === currentDragItem) return; // Don't react to being dropped on self
-	if (!e.dataTransfer || !configuration?.value) return;
+	if (!e.dataTransfer?.types.includes("flightdirector/card")) return;
+	if (!configuration?.value) return;
 
 	target.classList.remove(...dragTargetActiveStyles);
 
