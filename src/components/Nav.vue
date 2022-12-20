@@ -127,8 +127,10 @@
 								:class="[item.current ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300', 'mr-3 flex-shrink-0 h-6 w-6']"
 								aria-hidden="true" />
 							{{ item.name }}
+							<span class="flex-grow"></span>
+							<PencilIcon v-if="editMode" @click="openEditTabPanel(item.index)" class="w-6 p-1 justify-self-end rounded transition-colors hover:bg-gray-500" />
 						</RouterLink>
-						<div v-else style="height: 2px" class="bg-gray-500 my-3"></div>
+						<div v-else style="height: 2px" @click="openEditTabPanel(item.index)" :class="[editMode ? 'cursor-pointer' : '', 'bg-gray-500 my-3']"></div>
 					</div>
 				</nav>
 			</div>
@@ -176,6 +178,8 @@
 			Finish editing
 		</button>
 	</div>
+
+	<EditTab :tab-index="editTabPanelTabIndex" :open="editTabPanelOpen" @closed="editTabPanelOpen = false" />
 </template>
 
 <script setup lang="ts">
@@ -192,7 +196,7 @@
 		TransitionChild,
 		TransitionRoot,
 	} from '@headlessui/vue';
-	import { XMarkIcon, Bars3BottomLeftIcon } from '@heroicons/vue/24/outline';
+	import { XMarkIcon, Bars3BottomLeftIcon, PencilIcon, } from '@heroicons/vue/24/outline';
 	import {
 		ChevronUpDownIcon,
 		MagnifyingGlassIcon,
@@ -203,6 +207,8 @@
 		BoltIcon,
 	} from '@heroicons/vue/20/solid';
 	import type { Configuration, IconName } from "@/models/configuration";
+
+	import EditTab from "@/components/EditTab.vue";
 
 	const emit = defineEmits<{
 		(e: "navigate", sidebarTab: Configuration["sidebarTab"][0]): void;
@@ -220,6 +226,14 @@
 
 	const configuration = inject<Ref<Configuration | null>>("configuration");
 	const editMode = inject<Ref<boolean>>("editMode");
+
+	const editTabPanelOpen = ref(false);
+	const editTabPanelTabIndex = ref(0);
+	function openEditTabPanel(tabIndex: number) {
+		if (!editMode?.value) return;
+		editTabPanelTabIndex.value = tabIndex;
+		editTabPanelOpen.value = true;
+	}
 
 	function getIcon(icon?: IconName) {
 		return defineAsyncComponent(() => import(`../../node_modules/@heroicons/vue/24/outline/${icon}.js`));
