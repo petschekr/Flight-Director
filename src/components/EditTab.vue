@@ -19,7 +19,7 @@
 											<div class="flex items-start justify-between space-x-3">
 												<div class="space-y-1">
 													<DialogTitle class="text-lg font-medium text-gray-900">Edit Tab</DialogTitle>
-													<p class="text-sm text-gray-500 font-mono">{{configuration?.sidebarTab[tabIndex]?.name}}</p>
+													<p class="text-sm text-gray-500 font-mono">{{tabIndex ? configuration?.sidebarTab[tabIndex]?.name : ''}}</p>
 												</div>
 												<div class="flex h-7 items-center">
 													<button type="button" @click="close()" class="text-gray-400 hover:text-gray-500">
@@ -156,7 +156,7 @@ import type { Configuration, IconName, Component } from "@/models/configuration"
 
 const props = defineProps<{
 	open: boolean;
-	tabIndex: number;
+	tabIndex: number | null;
 }>();
 const emit = defineEmits<{
 	(e: "closed"): void;
@@ -176,14 +176,23 @@ const description = ref("");
 
 watch(() => props.open, () => isOpen.value = props.open);
 watch(() => props.tabIndex, () => {
-	let tabConfig = configuration?.value?.sidebarTab[props.tabIndex];
-	if (!tabConfig) return;
+	if (props.tabIndex !== null) {
+		let tabConfig = configuration?.value?.sidebarTab[props.tabIndex];
+		if (!tabConfig) return;
 
-	component.value = tabConfig.component ?? "Spacer";
-	icon.value = tabConfig.icon ?? "Bars3BottomLeftIcon";
-	title.value = tabConfig.name ?? "";
-	href.value = tabConfig.href ?? "";
-	description.value = tabConfig.description ?? "";
+		component.value = tabConfig.component ?? "Spacer";
+		icon.value = tabConfig.icon ?? "Bars3BottomLeftIcon";
+		title.value = tabConfig.name ?? "";
+		href.value = tabConfig.href ?? "";
+		description.value = tabConfig.description ?? "";
+	}
+	else {
+		component.value = "FileList";
+		icon.value = "Bars3BottomLeftIcon";
+		title.value = "";
+		href.value = "";
+		description.value = "";
+	}
 });
 function updateHref() {
 	href.value = "/" + title.value.toLowerCase().replace(/(\/| )/gi, "-");
@@ -212,7 +221,7 @@ function openAlert(title: string, message: string, okText = "OK"): Promise<void>
 
 async function saveTab() {
 	if (!configuration?.value) return;
-	if (!props.tabIndex || !configuration.value.sidebarTab[props.tabIndex]) return;
+	// if (!props.tabIndex || !configuration.value.sidebarTab[props.tabIndex]) return;
 
 	if (!icon.value && component.value !== "Spacer") {
 		await openAlert("Icon required", "Please provide a icon for the tab");
@@ -230,33 +239,67 @@ async function saveTab() {
 		await openAlert("Description required", "Please provide a brief description for this card list tab");
 		return;
 	}
+	// Check if there is already a tab with this name or href
+	let existingNameIndex = configuration.value.sidebarTab.findIndex(tab => tab.name === title.value);
+	if (component.value !== "Spacer" && existingNameIndex !== -1 && existingNameIndex !== props.tabIndex) {
+		await openAlert("Invalid title", "A tab with that title already exists. Please choose a different title.");
+		return;
+	}
+	let existingHrefIndex = configuration.value.sidebarTab.findIndex(tab => tab.href === href.value);
+	if (component.value !== "Spacer" && existingHrefIndex !== -1 && existingHrefIndex !== props.tabIndex) {
+		await openAlert("Invalid URL", "A tab with that URL already exists. Please choose a different URL.");
+		return;
+	}
 
-	// Use Object.assign to rename the property key while preserving the order
-	let newTabs = {};
-	for (let [tabName, tabContents] of Object.entries(configuration.value.tabs)) {
-		if (configuration.value.sidebarTab[props.tabIndex].name === tabName && title.value) {
-			// Rename key to the new title
-			Object.assign(newTabs, { [title.value]: tabContents });
+	if (props.tabIndex && configuration.value.sidebarTab[props.tabIndex]) {
+		// Edit existing tab
+		// Use Object.assign to rename the property key while preserving the order
+		let newTabs = {};
+		for (let [tabName, tabContents] of Object.entries(configuration.value.tabs)) {
+			if (configuration.value.sidebarTab[props.tabIndex].name === tabName && title.value) {
+				// Rename key to the new title
+				Object.assign(newTabs, { [title.value]: tabContents });
+			}
+			else {
+				// Keep as-is
+				Object.assign(newTabs, { [tabName]: tabContents });
+			}
 		}
-		else {
-			// Keep as-is
-			Object.assign(newTabs, { [tabName]: tabContents });
-		}
-	}
-	configuration.value.tabs = newTabs;
+		configuration.value.tabs = newTabs;
 
-	configuration.value.sidebarTab[props.tabIndex].component = component.value;
-	if (icon.value) {
-		configuration.value.sidebarTab[props.tabIndex].icon = icon.value;
+		configuration.value.sidebarTab[props.tabIndex].component = component.value;
+		if (icon.value) {
+			configuration.value.sidebarTab[props.tabIndex].icon = icon.value;
+		}
+		if (title.value) {
+			configuration.value.sidebarTab[props.tabIndex].name = title.value;
+		}
+		if (href.value) {
+			configuration.value.sidebarTab[props.tabIndex].href = href.value;
+		}
+		if (description.value) {
+			configuration.value.sidebarTab[props.tabIndex].description = description.value;
+		}
 	}
-	if (title.value) {
-		configuration.value.sidebarTab[props.tabIndex].name = title.value;
-	}
-	if (href.value) {
-		configuration.value.sidebarTab[props.tabIndex].href = href.value;
-	}
-	if (description.value) {
-		configuration.value.sidebarTab[props.tabIndex].description = description.value;
+	else {
+		// Add new tab
+		if (title.value) {
+			configuration.value.tabs[title.value] = {};
+		}
+		let newTab: any = { component: component.value }; // TODO fix type annotation
+		if (icon.value) {
+			newTab.icon = icon.value;
+		}
+		if (title.value) {
+			newTab.name = title.value;
+		}
+		if (href.value) {
+			newTab.href = href.value;
+		}
+		if (description.value) {
+			newTab.description = description.value;
+		}
+		configuration.value.sidebarTab.push(newTab);
 	}
 
 	configuration.value.unsaved = true;

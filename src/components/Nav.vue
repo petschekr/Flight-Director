@@ -137,6 +137,10 @@
 							@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, item.index)"
 						></div>
 					</div>
+					<div v-if="editMode" @click="openEditTabPanel(null)" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center justify-center px-2 py-2 text-sm font-medium rounded-md transition border-dashed border-gray-700 border-2 cursor-pointer">
+						<PlusCircleIcon class="w-6 mr-1" />
+						New tab
+					</div>
 				</nav>
 			</div>
 		</div>
@@ -201,7 +205,7 @@
 		TransitionChild,
 		TransitionRoot,
 	} from '@headlessui/vue';
-	import { XMarkIcon, Bars3BottomLeftIcon, PencilIcon, } from '@heroicons/vue/24/outline';
+	import { XMarkIcon, Bars3BottomLeftIcon, PencilIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
 	import {
 		ChevronUpDownIcon,
 		MagnifyingGlassIcon,
@@ -233,8 +237,8 @@
 	const editMode = inject<Ref<boolean>>("editMode");
 
 	const editTabPanelOpen = ref(false);
-	const editTabPanelTabIndex = ref(0);
-	function openEditTabPanel(tabIndex: number) {
+	const editTabPanelTabIndex: Ref<number | null> = ref(0);
+	function openEditTabPanel(tabIndex: number | null) {
 		if (!editMode?.value) return;
 		editTabPanelTabIndex.value = tabIndex;
 		editTabPanelOpen.value = true;
