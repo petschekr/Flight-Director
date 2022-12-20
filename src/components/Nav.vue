@@ -122,7 +122,9 @@
 				<nav class="flex-1 space-y-1 px-2 py-2">
 					<div v-for="item in navigation" :key="item.index">
 						<RouterLink v-if="item.name" :to="item.href ?? ''"
-							:class="[item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+							:class="[item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition']"
+							:draggable="editMode ? 'true' : 'false'" @dragstart="dragStart($event, item.index)" @dragend="dragEnd"
+							@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, item.index)">
 							<component :is="getIcon(item.icon)"
 								:class="[item.current ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300', 'mr-3 flex-shrink-0 h-6 w-6']"
 								aria-hidden="true" />
@@ -130,7 +132,10 @@
 							<span class="flex-grow"></span>
 							<PencilIcon v-if="editMode" @click="openEditTabPanel(item.index)" class="w-6 p-1 justify-self-end rounded transition-colors hover:bg-gray-500" />
 						</RouterLink>
-						<div v-else style="height: 2px" @click="openEditTabPanel(item.index)" :class="[editMode ? 'cursor-pointer' : '', 'bg-gray-500 my-3']"></div>
+						<div v-else :style="`height: ${editMode ? 10 : 2}px`" @click="openEditTabPanel(item.index)" :class="[editMode ? 'cursor-pointer' : '', 'bg-gray-500 my-3 transition']"
+							:draggable="editMode ? 'true' : 'false'" @dragstart="dragStart($event, item.index)" @dragend="dragEnd"
+							@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, item.index)"
+						></div>
 					</div>
 				</nav>
 			</div>
@@ -274,4 +279,59 @@
 			emit("search");
 		});
 	});
+
+	let currentDragItem: HTMLElement | null = null;
+	const dragSourceActiveStyles = ["opacity-50"];
+	const dragTargetActiveStyles = ["opacity-80", "scale-90"];
+
+	function dragStart(e: DragEvent, tabIndex: number) {
+		let target = e.currentTarget as HTMLElement;
+		if (!e.dataTransfer) return;
+
+		currentDragItem = target;
+
+		target.classList.add(...dragSourceActiveStyles);
+
+		e.dataTransfer.effectAllowed = "move";
+		e.dataTransfer.setData("text/plain", configuration?.value?.sidebarTab[tabIndex].name ?? "");
+		e.dataTransfer.setData("type", "tab");
+		e.dataTransfer.setData("tabIndex", tabIndex.toString());
+	}
+	function dragEnd(e: DragEvent) {
+		let target = e.currentTarget as HTMLElement;
+		if (!e.dataTransfer) return;
+
+		currentDragItem = null;
+
+		target.classList.remove(...dragSourceActiveStyles);
+	}
+	function dragEnter(e: DragEvent) {
+		let target = e.currentTarget as HTMLElement;
+		if (target === currentDragItem) return; // Don't react to being dragged over self
+
+		target.classList.add(...dragTargetActiveStyles);
+	}
+	function dragLeave(e: DragEvent) {
+		let target = e.currentTarget as HTMLElement;
+		if (target === currentDragItem) return; // Don't react to being dragged over self
+
+		target.classList.remove(...dragTargetActiveStyles);
+	}
+	function drop(e: DragEvent, targetTabIndex: number) {
+		let target = e.currentTarget as HTMLElement;
+		if (target === currentDragItem) return; // Don't react to being dropped on self
+		if (!e.dataTransfer || !configuration?.value) return;
+
+		target.classList.remove(...dragTargetActiveStyles);
+
+		const sourceTabIndex = parseInt(e.dataTransfer.getData("tabIndex"));
+
+		let tab = configuration.value.sidebarTab[sourceTabIndex]; // Grab the dragged tab out of the array
+		configuration.value.sidebarTab.splice(sourceTabIndex, 1); // Delete from the source array
+		configuration.value.sidebarTab.splice(targetTabIndex, 0, tab); // Add to the target array in the target's position, pushing everything else backwards
+
+		// TODO: Reorder tab contents object to match
+
+		configuration.value.unsaved = true;
+	}
 </script>

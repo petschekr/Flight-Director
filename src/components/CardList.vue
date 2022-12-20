@@ -207,6 +207,7 @@ function dragStart(e: DragEvent, groupName: string, title: string) {
 
 	e.dataTransfer.effectAllowed = "move";
 	e.dataTransfer.setData("text/plain", title);
+	e.dataTransfer.setData("type", "card");
 	e.dataTransfer.setData("groupName", groupName);
 	e.dataTransfer.setData("title", title);
 }
