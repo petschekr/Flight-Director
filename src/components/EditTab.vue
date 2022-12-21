@@ -174,8 +174,7 @@ const title = ref("");
 const href = ref("");
 const description = ref("");
 
-watch(() => props.open, () => isOpen.value = props.open);
-watch(() => props.tabIndex, () => {
+function loadValues() {
 	if (props.tabIndex !== null) {
 		let tabConfig = configuration?.value?.sidebarTab[props.tabIndex];
 		if (!tabConfig) return;
@@ -193,7 +192,12 @@ watch(() => props.tabIndex, () => {
 		href.value = "";
 		description.value = "";
 	}
-});
+}
+
+watch(() => props.open, () => isOpen.value = props.open);
+watch(() => props.tabIndex, loadValues);
+loadValues();
+
 function updateHref() {
 	href.value = "/" + title.value.toLowerCase().replace(/(\/| )/gi, "-");
 }
@@ -221,7 +225,6 @@ function openAlert(title: string, message: string, okText = "OK"): Promise<void>
 
 async function saveTab() {
 	if (!configuration?.value) return;
-	// if (!props.tabIndex || !configuration.value.sidebarTab[props.tabIndex]) return;
 
 	if (!icon.value && component.value !== "Spacer") {
 		await openAlert("Icon required", "Please provide a icon for the tab");
