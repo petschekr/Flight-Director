@@ -112,6 +112,8 @@ function processPathReplacements(path: string, callsign: string = props.selected
 	path = path.replace(/<(.*?)>/gi, (_, format) => {
 		return date.format(format);
 	});
+
+	path = path.replace(/\\/g, "/"); // Replace Windows-style path slashes with normal slashes
 	return path;
 }
 provide("processPathReplacements", processPathReplacements);
