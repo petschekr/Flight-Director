@@ -11,6 +11,7 @@
 					<select id="callsign" :value="selectedCallsign" @change="callsignChange"
 						class="mt-1 block w-full rounded-md font-bold border-gray-300 py-2 pl-3 pr-10 text-base focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
 						<option v-for="callsign in callsigns" :key="callsign">{{callsign}}</option>
+						<option v-if="editMode">Edit callsigns...</option>
 					</select>
 				</div>
 				<div class="ml-5 w-full sm:w-40">
@@ -26,6 +27,7 @@
 		<File :file="fileRendered" v-if="renderType === RenderType.File" />
 		<FileList :directory="directoryRendered" v-if="renderType === RenderType.Directory" />
 		<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
+		<EditCallsigns :open="editCallsignsPanelOpen" @closed="editCallsignsPanelOpen = false" />
 	</div>
 </template>
 
@@ -40,6 +42,7 @@ import CardList from "@/components/CardList.vue";
 import File from "@/components/File.vue";
 import FileList from "@/components/FileList.vue";
 import Alert from "@/components/Alert.vue";
+import EditCallsigns from "@/components/EditCallsigns.vue";
 
 import dayjs from "dayjs";
 
@@ -52,6 +55,8 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const editMode = inject<Ref<boolean>>("editMode");
+const editCallsignsPanelOpen = ref(false);
 
 const alert: Ref<{
 	open: boolean;
@@ -80,20 +85,29 @@ const callsigns = computed(() => {
 });
 function callsignChange(event: Event) {
 	let target = event.target as HTMLSelectElement;
-	emit("setCallsign", target.value);
+	if (target.value === "Edit callsigns...") {
+		target.value = configuration?.value?.callsigns[0]?.callsign ?? "";
+		editCallsignsPanelOpen.value = true;
+	}
+	else {
+		emit("setCallsign", target.value);
+	}
 }
 
-function processPathReplacements(path: string): string {
-	const date = dayjs(selectedDate.value);
-	path = path.replace(/<callsign-path>/gi, (configuration?.value?.callsigns ?? []).find(cs => cs.callsign === props.selectedCallsign)?.path ?? ""); // Can contain replacements itself so must go first
-	path = path.replace(/<callsign>/gi, props.selectedCallsign);
-
-	let shortCallsign = props.selectedCallsign;
-	let callsignComponents = props.selectedCallsign.match(/^([a-zA-Z]+)(\d+)$/);
+function generateShortCallsign(callsign: string): string {
+	let shortCallsign = callsign;
+	let callsignComponents = callsign.match(/^([a-zA-Z]+)(\d+)$/);
 	if (callsignComponents) {
 		shortCallsign = (callsignComponents[1][0] + callsignComponents[1][callsignComponents[1].length - 1]).toUpperCase() + callsignComponents[2]; // Grabs first + last letter + numbers of callsign
 	}
-	path = path.replace(/<short-callsign>/gi, shortCallsign);
+	return shortCallsign;
+}
+provide("generateShortCallsign", generateShortCallsign);
+function processPathReplacements(path: string, callsign: string = props.selectedCallsign): string {
+	const date = dayjs(selectedDate.value);
+	path = path.replace(/<callsign-path>/gi, (configuration?.value?.callsigns ?? []).find(cs => cs.callsign === callsign)?.path ?? ""); // Can contain replacements itself so must go first
+	path = path.replace(/<callsign>/gi, callsign);
+	path = path.replace(/<short-callsign>/gi, generateShortCallsign(callsign));
 
 	path = path.replace(/<(.*?)>/gi, (_, format) => {
 		return date.format(format);
