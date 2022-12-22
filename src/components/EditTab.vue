@@ -254,7 +254,7 @@ async function saveTab() {
 		return;
 	}
 
-	if (props.tabIndex && configuration.value.sidebarTab[props.tabIndex]) {
+	if (props.tabIndex !== null && configuration.value.sidebarTab[props.tabIndex]) {
 		// Edit existing tab
 		// Use Object.assign to rename the property key while preserving the order
 		let newTabs = {};
