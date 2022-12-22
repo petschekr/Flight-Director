@@ -81,8 +81,8 @@
 						class="absolute right-0 left-0 z-10 mx-3 mt-1 origin-top divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
 						<div class="py-1">
 							<MenuItem v-slot="{ active }">
-							<a @click="$emit('loadProfile')" href="#"
-								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
+							<a @click="$emit('loadProfile')"
+								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm cursor-pointer']">
 								<FolderOpenIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
 								Open profile
 							</a>
@@ -90,15 +90,15 @@
 						</div>
 						<div class="py-1">
 							<MenuItem v-slot="{ active }">
-							<a @click="editMode = true" href="#"
-								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
+							<a @click="editMode = true"
+								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm cursor-pointer']">
 								<PencilSquareIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
 								Edit layout
 							</a>
 							</MenuItem>
 							<MenuItem v-slot="{ active }">
-							<a @click="$emit('saveProfile')" href="#"
-								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
+							<a @click="$emit('saveProfile')"
+								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm cursor-pointer']">
 								<ArrowDownTrayIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
 								Save profile
 								<!-- <small v-if="configuration?.unsaved">(Unsaved changes)</small> -->
@@ -107,8 +107,8 @@
 						</div>
 						<div class="py-1">
 							<MenuItem v-slot="{ active }">
-							<a @click="$emit('loadDefaultProfile')" href="#"
-								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm']">
+							<a @click="$emit('loadDefaultProfile')"
+								:class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'group flex items-center px-4 py-2 text-sm cursor-pointer']">
 								<SparklesIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
 								Load default profile
 							</a>

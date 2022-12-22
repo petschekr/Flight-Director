@@ -22,6 +22,7 @@
 
 <script setup lang="ts">
 import { provide, computed, ref, type Ref, onMounted, onUnmounted, watchEffect, watch } from "vue";
+import { useRouter } from "vue-router";
 
 import toml from "toml";
 
@@ -35,6 +36,8 @@ import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
 import Feedback from "../components/Feedback.vue";
 type SidebarTab = Configuration["sidebarTab"][0];
+
+const router = useRouter();
 
 const searchOpen = ref(false);
 const feedbackOpen = ref(false);
@@ -84,6 +87,10 @@ async function loadConfiguration(configContents: string) {
 		else {
 			// Assume TOML
 			configuration.value = toml.parse(configContents);
+		}
+		// If loaded profile does not have current path, load root
+		if (!configuration.value?.sidebarTab.find(tab => tab.href === router.currentRoute.value.path)) {
+			router.push("/");
 		}
 	}
 	catch (err) {
