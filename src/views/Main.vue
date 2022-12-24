@@ -98,7 +98,8 @@ async function loadConfiguration(configContents: string, shouldCache = true) {
 		}
 
 		// If loaded profile does not have current path, load root
-		if (!configuration.value?.sidebarTab.find(tab => tab.href === router.currentRoute.value.path)) {
+		// This happens when loading a profile that does not have the current selected tab
+		if (!configuration.value?.sidebarTab.find(tab => tab.href && router.currentRoute.value.path.indexOf(tab.href) === 0)) {
 			router.push("/");
 		}
 	}
