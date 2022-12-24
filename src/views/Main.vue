@@ -72,7 +72,7 @@ function handleKeys(e: KeyboardEvent) {
 onMounted(() => document.addEventListener("keydown", handleKeys));
 onUnmounted(() => document.removeEventListener("keydown", handleKeys));
 
-async function loadConfiguration(configContents: string) {
+async function loadConfiguration(configContents: string, shouldCache = true) {
 	// Warn if current configuration is not saved before overwriting it
 	if (configuration.value?.unsaved) {
 		if (!confirm("Your current profile has unsaved changes. Are you sure you want to overwrite these by loading a different profile?")) {
@@ -88,6 +88,15 @@ async function loadConfiguration(configContents: string) {
 			// Assume TOML
 			configuration.value = toml.parse(configContents);
 		}
+
+		if (shouldCache) {
+			// Save for fast reload on page refresh
+			localStorage.setItem("configuration", JSON.stringify(configuration.value));
+		}
+		else {
+			localStorage.removeItem("configuration");
+		}
+
 		// If loaded profile does not have current path, load root
 		if (!configuration.value?.sidebarTab.find(tab => tab.href === router.currentRoute.value.path)) {
 			router.push("/");
@@ -95,6 +104,7 @@ async function loadConfiguration(configContents: string) {
 	}
 	catch (err) {
 		alert("Error parsing/loading configuration file\n" + err);
+		localStorage.removeItem("configuration");
 		window.location.reload();
 	}
 
@@ -115,9 +125,18 @@ async function loadDefaultConfiguration() {
 	// Default configuration location is set in the PowerShell server
 	let response = await fetch("/config");
 	let configContents = await response.text();
-	await loadConfiguration(configContents);
+	await loadConfiguration(configContents, false); // Don't cache the default configuration so the most recent version is always loaded
 }
-await loadDefaultConfiguration();
+async function firstPageLoadConfiguration() {
+	let previousConfiguration = localStorage.getItem("configuration");
+	if (previousConfiguration) {
+		await loadConfiguration(previousConfiguration);
+	}
+	else {
+		await loadDefaultConfiguration();
+	}
+}
+await firstPageLoadConfiguration();
 
 async function saveConfiguration() {
 	if (!configuration.value) return;
