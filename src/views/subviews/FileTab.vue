@@ -229,47 +229,42 @@ watchPostEffect(async () => {
 				matcher = new RegExp("^" + indefinitePathComponent + "$"); // Wrap in start/end match symbols
 			}
 
+			let unfilteredItemInfo = itemInfo;
 			itemInfo = itemInfo.filter(item => item.name.match(matcher) !== null);
 			if (itemInfo.length === 0) {
 				await openAlert(
 					"File or directory not found",
 					`Couldn't find file or directory with RegEx as specified in the configuration: ${filePath.join("/")}. Going to the folder that might contain it.`
 				);
-				return; // TODO?
+				itemInfo = unfilteredItemInfo;
+				continue;
 			}
 
-			if (indefinitePath.length === 0) {
-				// This is the final path item
-				if (itemInfo.length === 1) {
-					// Only one RegEx match
-					definitePath.push(itemInfo[0].name);
-					if (itemInfo[0].kind === "file") {
-						// Show as single file instead of a list of files
-						itemInfo = itemInfo[0] as FileFromAPI;
-					}
-					else {
-						// Load directory's contents
-						itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
-						itemInfo = await itemInfoResponse.json();
-					}
+			async function loadItem(item: FileFromAPI | DirectoryFromAPI) {
+				definitePath.push(item.name);
+				if (item.kind === "file") {
+					// Show as single file instead of a list of files
+					itemInfo = item;
+				}
+				else {
+					// Load directory's contents
+					itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+					itemInfo = await itemInfoResponse.json();
 				}
 			}
-			else {
-				// More path items remaining
+
+			if (indefinitePath.length === 0 && itemInfo.length === 1) {
+				// This is the final path item and there is only one RegEx match
+				await loadItem(itemInfo[0]);
+			}
+			else if (indefinitePath.length > 0) {
+				// More indefinite path items remaining
 				if (indefinitePath[0].match(regexPathReplacement) === null && indefinitePath[0].match(matcher) !== null) {
-					// If the next indefinite path item matches the current matcher, this may be a subitem of a match list
+					// If the next non-regex indefinite path item matches the current matcher, this may be a subitem of the match list
 					let matchedItem = itemInfo.find(item => item.name === indefinitePath[0]);
 					if (matchedItem) {
-						definitePath.push(indefinitePath.shift()!);
-						if (itemInfo[0].kind === "file") {
-							// Show as single file instead of a list of files
-							itemInfo = itemInfo[0] as FileFromAPI;
-						}
-						else {
-							// Load directory's contents
-							itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
-							itemInfo = await itemInfoResponse.json();
-						}
+						indefinitePath.shift();
+						await loadItem(matchedItem);
 					}
 				}
 				else {
@@ -277,11 +272,18 @@ watchPostEffect(async () => {
 					// Only folders can have something within them so filter on that
 					itemInfo = itemInfo.filter(item => item.kind === "directory");
 					if (itemInfo.length === 0) {
-						window.alert("Not found"); // TODO
-						return;
+						await openAlert(
+							"Directory not found",
+							`Couldn't find directory (only files) with RegEx as specified in the configuration: ${filePath.join("/")}. Going to the last matching folder.`
+						);
+						itemInfo = unfilteredItemInfo;
+						break;
 					}
 					if (itemInfo.length > 1) {
-						console.warn(`Multiple matches for RegEx path ${matcher}, using first result`);
+						await openAlert(
+							"Multiple matches",
+							`The RegEx path ${matcher} returned multiple matches. Please update the card path to be more specific. Using the first result.`
+						);
 					}
 					definitePath.push(itemInfo[0].name);
 					itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
