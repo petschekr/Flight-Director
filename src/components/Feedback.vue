@@ -120,8 +120,6 @@
 		</Dialog>
 	</TransitionRoot>
 
-	<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
-
 	<!-- Global notification live region, render this permanently at the end of the document -->
 	<div aria-live="assertive" class="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-50">
 		<div class="flex w-full flex-col items-center space-y-4 sm:items-end">
@@ -164,7 +162,6 @@ import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { XMarkIcon as XMarkIconSmall } from '@heroicons/vue/20/solid'
 import { CheckCircleIcon } from '@heroicons/vue/24/outline'
 
-import Alert from "@/components/Alert.vue";
 import type { Configuration } from "@/models/configuration";
 
 const props = defineProps<{
@@ -175,29 +172,13 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 
 const isOpen = ref(false);
 watch(() => props.open, () => isOpen.value = props.open);
 function close() {
 	isOpen.value = false;
 	emit("closed");
-}
-
-const alert: Ref<{
-	open: boolean;
-	title?: string;
-	message?: string;
-	okText?: string;
-}> = ref({ open: false });
-function openAlert(title: string, message: string, okText = "OK"): Promise<void> {
-	return new Promise((resolve, reject) => {
-		alert.value = { title, message, okText, open: true };
-		watch(alert.value, () => {
-			if (!alert.value.open) {
-				resolve();
-			}
-		});
-	});
 }
 
 const notificationOpen = ref(false);
@@ -207,6 +188,8 @@ const description = ref("");
 const feedbackType = ref("");
 
 async function feedbackSubmit() {
+	if (!openAlert) return;
+
 	if (!configuration?.value?.feedbackLocation) {
 		await openAlert("Missing feedback save location", "No location is configured for where to save feedback");
 		return;

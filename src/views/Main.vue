@@ -18,6 +18,8 @@
 			<ChatBubbleOvalLeftEllipsisIcon class="h-6 w-6" />
 		</button>
 	</Nav>
+
+	<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
 </template>
 
 <script setup lang="ts">
@@ -35,6 +37,7 @@ import Settings from "./subviews/Settings.vue";
 import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
 import Feedback from "../components/Feedback.vue";
+import Alert from "@/components/Alert.vue";
 type SidebarTab = Configuration["sidebarTab"][0];
 
 const router = useRouter();
@@ -47,6 +50,27 @@ provide("configuration", configuration);
 
 const editMode: Ref<boolean> = ref(false);
 provide("editMode", editMode);
+
+const alert: Ref<{
+	open: boolean;
+	title?: string;
+	message?: string;
+	okText?: string;
+}> = ref({ open: false });
+function openAlert(title: string, message: string, okText = "OK"): Promise<void> {
+	return new Promise((resolve, reject) => {
+		// The setTimeout() prevents dialog from dismissing without being seen if triggered by an enter key event
+		setTimeout(() => {
+			alert.value = { title, message, okText, open: true };
+			watch(alert.value, () => {
+				if (!alert.value.open) {
+					resolve();
+				}
+			});
+		}, 0);
+	});
+}
+provide("openAlert", openAlert);
 
 const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
 watchEffect(() => {
@@ -104,7 +128,7 @@ async function loadConfiguration(configContents: string, shouldCache = true) {
 		}
 	}
 	catch (err) {
-		alert("Error parsing/loading configuration file\n" + err);
+		openAlert("Couldn't load configuration", "There was an error parsing/loading the configuration file: " + err);
 		localStorage.removeItem("configuration");
 		window.location.reload();
 	}

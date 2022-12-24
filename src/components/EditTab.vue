@@ -135,8 +135,6 @@
 			</div>
 		</Dialog>
 	</TransitionRoot>
-
-	<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
 </template>
 
 <script setup lang="ts">
@@ -148,9 +146,6 @@ import {
 	Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions,
 } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
-
-import Alert from "@/components/Alert.vue";
 
 import type { Configuration, IconName, Component } from "@/models/configuration";
 
@@ -165,6 +160,7 @@ const emit = defineEmits<{
 const router = useRouter();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 
 const isOpen = ref(false);
 
@@ -206,25 +202,8 @@ function close() {
 	emit("closed");
 }
 
-const alert: Ref<{
-	open: boolean;
-	title?: string;
-	message?: string;
-	okText?: string;
-}> = ref({ open: false });
-function openAlert(title: string, message: string, okText = "OK"): Promise<void> {
-	return new Promise((resolve, reject) => {
-		alert.value = { title, message, okText, open: true };
-		watch(alert.value, () => {
-			if (!alert.value.open) {
-				resolve();
-			}
-		});
-	});
-}
-
 async function saveTab() {
-	if (!configuration?.value) return;
+	if (!configuration?.value || !openAlert) return;
 
 	if (!icon.value && component.value !== "Spacer") {
 		await openAlert("Icon required", "Please provide a icon for the tab");

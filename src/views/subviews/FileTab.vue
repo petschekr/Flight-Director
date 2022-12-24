@@ -26,7 +26,6 @@
 		<CardList :file-groups="fileGroups" :tabName="tabName as string" v-if="renderType === RenderType.Overview" />
 		<File :file="fileRendered" v-if="renderType === RenderType.File" />
 		<FileList :directory="directoryRendered" v-if="renderType === RenderType.Directory" />
-		<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
 		<EditCallsigns :open="editCallsignsPanelOpen" @closed="editCallsignsPanelOpen = false" />
 	</div>
 </template>
@@ -41,7 +40,6 @@ import type { FileRender, DirectoryRender, FileFromAPI, DirectoryFromAPI } from 
 import CardList from "@/components/CardList.vue";
 import File from "@/components/File.vue";
 import FileList from "@/components/FileList.vue";
-import Alert from "@/components/Alert.vue";
 import EditCallsigns from "@/components/EditCallsigns.vue";
 
 import dayjs from "dayjs";
@@ -55,25 +53,9 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 const editMode = inject<Ref<boolean>>("editMode");
 const editCallsignsPanelOpen = ref(false);
-
-const alert: Ref<{
-	open: boolean;
-	title?: string;
-	message?: string;
-	okText?: string;
-}> = ref({ open: false });
-function openAlert(title: string, message: string, okText = "OK"): Promise<void> {
-	return new Promise((resolve, reject) => {
-		alert.value = { title, message, okText, open: true };
-		watch(alert.value, () => {
-			if (!alert.value.open) {
-				resolve();
-			}
-		});
-	});
-}
 
 const selectedDate = ref(localStorage.getItem("selectedDate") ?? new Date().toISOString().split("T")[0]); // Returns today's date
 watch(selectedDate, () => {
@@ -152,7 +134,7 @@ const directoryRendered: Ref<DirectoryRender | null> = ref(null);
 const router = useRouter();
 const route = useRoute();
 watchPostEffect(async () => {
-	if (!configuration?.value) {
+	if (!configuration?.value || !openAlert) {
 		renderType.value = RenderType.Overview;
 		return;
 	}

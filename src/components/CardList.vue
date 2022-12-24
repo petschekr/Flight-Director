@@ -83,6 +83,7 @@ const props = defineProps<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 
 const editMode = inject<Ref<boolean>>("editMode");
 const editPanelOpen: Ref<boolean> = ref(false);
@@ -105,8 +106,8 @@ function openEditPanel(file: File | null, groupName: string, tabName: string) {
 	editPanelTabName.value = tabName;
 	editPanelOpen.value = true;
 }
-function updateGroupName(oldGroupName: string, event: Event) {
-	if (!configuration?.value) return;
+async function updateGroupName(oldGroupName: string, event: Event) {
+	if (!configuration?.value || !openAlert) return;
 	const inputElement = event.target as HTMLInputElement;
 	let newGroupName = inputElement.value.trim();
 	if (newGroupName === oldGroupName) return;
@@ -114,7 +115,7 @@ function updateGroupName(oldGroupName: string, event: Event) {
 		if (!confirm("Are you sure you want to delete this group?")) return;
 	}
 	if (configuration.value.tabs[props.tabName][newGroupName]) {
-		alert("A group with that name already exists!");
+		await openAlert("Invalid name", "A group with that name already exists!");
 		inputElement.value = oldGroupName;
 		return;
 	}
@@ -136,15 +137,16 @@ function updateGroupName(oldGroupName: string, event: Event) {
 	configuration.value.tabs[props.tabName] = newTabContents;
 	configuration.value.unsaved = true;
 }
-function addGroupName(event: Event) {
-	if (!configuration?.value) return;
+async function addGroupName(event: Event) {
+	if (!configuration?.value || !openAlert) return;
 	const inputElement = event.target as HTMLInputElement;
 	let newGroupName = inputElement.value.trim();
 	if (!newGroupName) {
 		return;
 	}
 	if (configuration.value.tabs[props.tabName][newGroupName]) {
-		alert("A group with that name already exists!");
+		await openAlert("Invalid name", "A group with that name already exists!");
+		inputElement.focus();
 		return;
 	}
 	Object.assign(configuration.value.tabs[props.tabName], { [newGroupName]: [] });
@@ -245,7 +247,7 @@ function drop(e: DragEvent, targetGroupName: string, targetTitle?: string) {
 
 	let sourceIndex = configuration.value.tabs[props.tabName][sourceGroupName].findIndex(file => file.name === sourceTitle);
 	if (sourceIndex === -1) {
-		alert("Dragged card doesn't exist in configuration(?)");
+		console.error("Dragged card doesn't exist in configuration(?)");
 		return;
 	}
 	let targetIndex = configuration.value.tabs[props.tabName][targetGroupName].findIndex(file => file.name === targetTitle);

@@ -92,12 +92,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref, computed, watchEffect, onMounted, onUnmounted } from "vue";
+import { ref, type Ref, inject, computed, watchEffect, onMounted, onUnmounted } from "vue";
 
 import toml from "toml";
 
+
 import type { Performance } from "@/models/configuration";
 const performance: Ref<Performance | null> = ref(null);
+
+const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 
 const dragItems = computed(() => {
 	if (!performance.value) return [];
@@ -232,7 +235,9 @@ try {
 	performance.value = toml.parse(await response.text());
 }
 catch (err) {
-	alert("Error parsing performance configuration file\n" + err);
+	if (openAlert) {
+		await openAlert("Couldn't load configuration", "Error parsing performance configuration file: " + err);
+	}
 	window.location.assign("/");
 }
 </script>

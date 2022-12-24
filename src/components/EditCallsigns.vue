@@ -57,8 +57,6 @@
 			</div>
 		</Dialog>
 	</TransitionRoot>
-
-	<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
 </template>
 
 <script setup lang="ts">
@@ -71,7 +69,6 @@ import {
 } from '@headlessui/vue'
 import { XMarkIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
 
-import Alert from "@/components/Alert.vue";
 import CallsignCard from "./CallsignCard.vue";
 
 import type { Configuration, IconName, Component } from "@/models/configuration";
@@ -84,6 +81,7 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 
 const isOpen = ref(false);
 watch(() => props.open, () => isOpen.value = props.open);
@@ -92,27 +90,10 @@ function close() {
 	emit("closed");
 }
 
-const alert: Ref<{
-	open: boolean;
-	title?: string;
-	message?: string;
-	okText?: string;
-}> = ref({ open: false });
-function openAlert(title: string, message: string, okText = "OK"): Promise<void> {
-	return new Promise((resolve, reject) => {
-		alert.value = { title, message, okText, open: true };
-		watch(alert.value, () => {
-			if (!alert.value.open) {
-				resolve();
-			}
-		});
-	});
-}
-
 const callsignCards = ref<InstanceType<typeof CallsignCard>[] | null>(null);
 
 async function save() {
-	if (!configuration?.value || !callsignCards.value) return;
+	if (!configuration?.value || !callsignCards.value || !openAlert) return;
 
 	let newCallsigns = callsignCards.value.map(card => card.callsign);
 	if ((new Set(newCallsigns)).size !== newCallsigns.length) {
@@ -138,7 +119,7 @@ async function save() {
 	close();
 }
 async function deleteCallsign(callsign: string) {
-	if (!configuration?.value) return;
+	if (!configuration?.value || !openAlert) return;
 
 	if (configuration.value.callsigns.length === 1) {
 		await openAlert("Can't delete callsign", "At least one callsign must exist");

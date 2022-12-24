@@ -191,8 +191,6 @@
 			</div>
 		</Dialog>
 	</TransitionRoot>
-
-	<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
 </template>
 
 <script setup lang="ts">
@@ -204,8 +202,6 @@ import {
 } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
-
-import Alert from "@/components/Alert.vue";
 
 import type { File, Configuration } from "@/models/configuration";
 
@@ -220,6 +216,7 @@ const emit = defineEmits<{
 }>();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
+const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 const processPathReplacements = inject<(file: string) => string>("processPathReplacements");
 const defaultColor = "bg-sky-500";
 
@@ -236,23 +233,6 @@ watch(() => props.file, () => {
 function close() {
 	isOpen.value = false;
 	emit("closed");
-}
-
-const alert: Ref<{
-	open: boolean;
-	title?: string;
-	message?: string;
-	okText?: string;
-}> = ref({ open: false });
-function openAlert(title: string, message: string, okText = "OK"): Promise<void> {
-	return new Promise((resolve, reject) => {
-		alert.value = { title, message, okText, open: true };
-		watch(alert.value, () => {
-			if (!alert.value.open) {
-				resolve();
-			}
-		});
-	});
 }
 
 const colorBases = ["red", "orange", "amber", "yellow", "lime", "green", "emerald", "teal", "cyan", "sky", "blue", "indigo", "violet", "purple", "fuchsia", "pink", "rose", "slate", "gray", "zinc", "neutral", "stone"];
@@ -274,7 +254,7 @@ const pathPreview = computed(() => {
 });
 
 async function saveCard() {
-	if (!configuration?.value) return;
+	if (!configuration?.value || !openAlert) return;
 	if (!props.groupName || !props.tabName) return;
 
 	if (!title.value) {
