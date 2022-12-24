@@ -12,9 +12,14 @@
 			</Switch>
 		</SwitchGroup>
 		<div class="text-center text-lg mt-2">
-			<code>Flight Director v0.5.0 @ {{commitHash}}</code>
+			<code>Flight Director v0.6.0 @ {{commitHash}}</code>
 		</div>
-		<div class="flex justify-center items-center mt-2">
+		<div class="mt-2">
+			<p><code>v0.6.0</code>: Regular Expression support in card paths, better looking confirmation and alert dialogs, various bugfixes</p>
+			<p><code>v0.5.0</code>: Loadable profiles and user-editable design</p>
+			<p><code>v0.4.0</code>: Integrated feedback submission, sidebar tabs in configuration file</p>
+		</div>
+		<div class="flex justify-center items-center mt-3">
 			<RocketLaunchIcon class="w-6 h-6 mr-3" />
 			<div class="text-sm">
 				<p>Developed by 1st Lt Ryan Petschek</p>
