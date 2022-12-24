@@ -82,6 +82,7 @@ const emit = defineEmits<{
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
+const openConfirm = inject<(title: string, message: string, confirmText?: string, cancelText?: string) => Promise<boolean>>("openConfirm");
 
 const isOpen = ref(false);
 watch(() => props.open, () => isOpen.value = props.open);
@@ -119,13 +120,13 @@ async function save() {
 	close();
 }
 async function deleteCallsign(callsign: string) {
-	if (!configuration?.value || !openAlert) return;
+	if (!configuration?.value || !openAlert || !openConfirm) return;
 
 	if (configuration.value.callsigns.length === 1) {
 		await openAlert("Can't delete callsign", "At least one callsign must exist");
 		return;
 	}
-	if (!confirm(`Are you sure you want to delete ${callsign || "New callsign"}?`)) return;
+	if (!await openConfirm("Delete callsign?", `Are you sure you want to delete ${callsign || "New callsign"}?`)) return;
 
 	let callsignIndex = configuration.value.callsigns.findIndex(c => c.callsign === callsign);
 	if (callsignIndex === -1) return;

@@ -217,6 +217,7 @@ const emit = defineEmits<{
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
+const openConfirm = inject<(title: string, message: string, confirmText?: string, cancelText?: string) => Promise<boolean>>("openConfirm");
 const processPathReplacements = inject<(file: string) => string>("processPathReplacements");
 const defaultColor = "bg-sky-500";
 
@@ -302,10 +303,10 @@ async function saveCard() {
 	close();
 }
 async function deleteCard() {
-	if (!configuration?.value) return;
+	if (!configuration?.value || !openConfirm) return;
 	if (!props.groupName || !props.tabName) return;
 
-	if (!confirm("Are you sure you want to delete this card?")) return;
+	if (!await openConfirm("Delete card?", "Are you sure you want to delete this card?")) return;
 
 	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.file?.name);
 	if (fileIndex === -1) return; // Not found

@@ -84,6 +84,7 @@ const props = defineProps<{
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
+const openConfirm = inject<(title: string, message: string, confirmText?: string, cancelText?: string) => Promise<boolean>>("openConfirm");
 
 const editMode = inject<Ref<boolean>>("editMode");
 const editPanelOpen: Ref<boolean> = ref(false);
@@ -107,12 +108,12 @@ function openEditPanel(file: File | null, groupName: string, tabName: string) {
 	editPanelOpen.value = true;
 }
 async function updateGroupName(oldGroupName: string, event: Event) {
-	if (!configuration?.value || !openAlert) return;
+	if (!configuration?.value || !openAlert || !openConfirm) return;
 	const inputElement = event.target as HTMLInputElement;
 	let newGroupName = inputElement.value.trim();
 	if (newGroupName === oldGroupName) return;
 	if (!newGroupName) {
-		if (!confirm("Are you sure you want to delete this group?")) return;
+		if (!await openConfirm("Delete this group?", "Are you sure you want to delete this group?")) return;
 	}
 	if (configuration.value.tabs[props.tabName][newGroupName]) {
 		await openAlert("Invalid name", "A group with that name already exists!");

@@ -17,8 +17,8 @@
 							class="relative transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
 							<div class="sm:flex sm:items-start">
 								<div
-									class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-									<ExclamationTriangleIcon class="h-6 w-6 text-red-600" aria-hidden="true" />
+									:class="[type === 'alert' ? 'bg-red-100' : 'bg-amber-100', 'mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full sm:mx-0 sm:h-10 sm:w-10']">
+									<ExclamationTriangleIcon :class="[type === 'alert' ? 'text-red-600' : 'text-amber-600', 'h-6 w-6']" aria-hidden="true" />
 								</div>
 								<div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
 									<DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">{{title}}</DialogTitle>
@@ -28,9 +28,12 @@
 								</div>
 							</div>
 							<div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+								<button v-if="type === 'confirm'" type="button"
+									class="inline-flex w-full justify-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+									@click="close(true)">{{ confirmText ?? "Confirm" }}</button>
 								<button type="button"
 									class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm"
-									@click="close()" ref="cancelButtonRef">{{okText ?? 'OK'}}</button>
+									@click="close(false)" ref="cancelButtonRef">{{ cancelText ?? (type === "alert" ? "OK" : "Cancel") }}</button>
 							</div>
 						</DialogPanel>
 					</TransitionChild>
@@ -46,20 +49,22 @@ import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } fro
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps<{
+	type: "alert" | "confirm";
 	title?: string;
 	message?: string;
-	okText?: string;
+	confirmText?: string;
+	cancelText?: string;
 	open: boolean;
 }>();
 const emit = defineEmits<{
-	(e: "closed"): void;
+	(e: "closed", value: boolean): void;
 }>();
 
 const isOpen = ref(false);
 watch(() => props.open, () => isOpen.value = props.open);
-function close() {
+function close(value = false) {
 	isOpen.value = false;
-	emit("closed");
+	emit("closed", value);
 }
 
 </script>

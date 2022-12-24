@@ -19,7 +19,7 @@
 		</button>
 	</Nav>
 
-	<Alert :title="alert.title" :message="alert.message" :open="alert.open" @closed="alert.open = false" />
+	<Alert :type="alert.type" :title="alert.title" :message="alert.message" :open="alert.open" @closed="alertClosed" />
 </template>
 
 <script setup lang="ts">
@@ -52,16 +52,24 @@ const editMode: Ref<boolean> = ref(false);
 provide("editMode", editMode);
 
 const alert: Ref<{
-	open: boolean;
+	type: "alert" | "confirm";
 	title?: string;
 	message?: string;
-	okText?: string;
-}> = ref({ open: false });
-function openAlert(title: string, message: string, okText = "OK"): Promise<void> {
+	confirmText?: string;
+	cancelText?: string;
+
+	open: boolean;
+	value?: boolean;
+}> = ref({ type: "alert" as const, open: false });
+function alertClosed(value: boolean) {
+	alert.value.open = false;
+	alert.value.value = value;
+}
+function openAlert(title: string, message: string, cancelText = "OK"): Promise<void> {
 	return new Promise((resolve, reject) => {
 		// The setTimeout() prevents dialog from dismissing without being seen if triggered by an enter key event
 		setTimeout(() => {
-			alert.value = { title, message, okText, open: true };
+			alert.value = { type: "alert", title, message, cancelText, open: true };
 			watch(alert.value, () => {
 				if (!alert.value.open) {
 					resolve();
@@ -71,6 +79,20 @@ function openAlert(title: string, message: string, okText = "OK"): Promise<void>
 	});
 }
 provide("openAlert", openAlert);
+function openConfirm(title: string, message: string, confirmText = "OK", cancelText = "Cancel"): Promise<boolean> {
+	return new Promise((resolve, reject) => {
+		// The setTimeout() prevents dialog from dismissing without being seen if triggered by an enter key event
+		setTimeout(() => {
+			alert.value = { type: "confirm", title, message, confirmText, cancelText, open: true };
+			watch(alert.value, () => {
+				if (!alert.value.open) {
+					resolve(!!alert.value.value);
+				}
+			});
+		}, 0);
+	});
+}
+provide("openConfirm", openConfirm);
 
 const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
 watchEffect(() => {
@@ -99,7 +121,7 @@ onUnmounted(() => document.removeEventListener("keydown", handleKeys));
 async function loadConfiguration(configContents: string, shouldCache = true) {
 	// Warn if current configuration is not saved before overwriting it
 	if (configuration.value?.unsaved) {
-		if (!confirm("Your current profile has unsaved changes. Are you sure you want to overwrite these by loading a different profile?")) {
+		if (!await openConfirm("Overwrite current profile?", "Your current profile has unsaved changes. Are you sure you want to overwrite these by loading a different profile?")) {
 			return;
 		}
 	}

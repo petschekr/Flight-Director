@@ -161,6 +161,7 @@ const router = useRouter();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
+const openConfirm = inject<(title: string, message: string, confirmText?: string, cancelText?: string) => Promise<boolean>>("openConfirm");
 
 const isOpen = ref(false);
 
@@ -288,10 +289,10 @@ async function saveTab() {
 	close();
 }
 async function deleteTab() {
-	if (!configuration?.value) return;
+	if (!configuration?.value || !openConfirm) return;
 	if (!props.tabIndex) return;
 
-	if (!confirm("Are you sure you want to delete this tab?")) return;
+	if (!await openConfirm("Delete tab?", "Are you sure you want to delete this tab?")) return;
 
 	if (configuration.value.sidebarTab[props.tabIndex]?.name) {
 		delete configuration.value.tabs[configuration.value.sidebarTab[props.tabIndex].name!];
