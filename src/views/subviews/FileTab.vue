@@ -109,11 +109,12 @@ function processPathReplacements(path: string, callsign: string = props.selected
 	path = path.replace(/<callsign>/gi, callsign);
 	path = path.replace(/<short-callsign>/gi, generateShortCallsign(callsign));
 
-	path = path.replace(/<(.*?)>/gi, (_, format) => {
-		return date.format(format);
-	});
+	// Date replacement (matches anything surrounded by <> brackets without slashes before and after)
+	path = path.replace(/<[^|](.*?)[^|]>/gi, (_, format) => date.format(format));
 
-	path = path.replace(/\\/g, "/"); // Replace Windows-style path slashes with normal slashes
+	// Replace Windows-style path slashes with normal slashes (but not inside <> brackets)
+	// \-style slashes are used in RegExes
+	path = path.replace(/(\\|<.*?>)/g, substring => substring === "\\" ? "/" : substring);
 	return path;
 }
 provide("processPathReplacements", processPathReplacements);
@@ -190,15 +191,111 @@ watchPostEffect(async () => {
 	}
 	filePath = filePath.concat(routePath); // If routePath still has items on it, they're subitems of the looked-up filePath
 
-	let itemInfoResponse = await fetch("/api/" + filePath.join("/"));
+	const regexPathReplacement = /<\|(.*?)\|>/;
+	let firstRegexPath = filePath.findIndex(path => path.match(regexPathReplacement) !== null);
+	let definitePath: string[] = filePath; // Definite path that does not contain regexes
+	let indefinitePath: string[] = []; // Part of path that does contain regexes
+	if (firstRegexPath !== -1) {
+		definitePath = filePath.slice(0, firstRegexPath);
+		indefinitePath = filePath.slice(firstRegexPath);
+	}
+
+	let itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
 	if (itemInfoResponse.status === 200) {
 		let itemInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await itemInfoResponse.json();
+
+		while (indefinitePath.length > 0 && Array.isArray(itemInfo)) {
+			let indefinitePathComponent = indefinitePath.shift()!; // Undefined check is part of loop condition
+			let matcher: RegExp;
+			// TODO Limitation: right now, each indefinite path component is evaluated as either 100% regex or 100% not
+			if (indefinitePathComponent.match(regexPathReplacement) !== null) {
+				// Path component contains a regex
+				let matcherText = indefinitePathComponent.replace(new RegExp(regexPathReplacement, "g"), (_, expression) => expression);
+				try {
+					matcher = new RegExp(matcherText);
+				}
+				catch (err) {
+					await openAlert(
+						"Invalid regular expression",
+						`The path for this card contains an invalid regular expression for the path component ${matcherText}: ${(err as SyntaxError).message}`
+					);
+					router.push("/" + route.params.path[0]); // Navigate to root of the tab
+					return;
+				}
+			}
+			else {
+				// Use literal path component
+				indefinitePathComponent = indefinitePathComponent.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&"); // Escape Regex characters
+				matcher = new RegExp("^" + indefinitePathComponent + "$"); // Wrap in start/end match symbols
+			}
+
+			itemInfo = itemInfo.filter(item => item.name.match(matcher) !== null);
+			if (itemInfo.length === 0) {
+				await openAlert(
+					"File or directory not found",
+					`Couldn't find file or directory with RegEx as specified in the configuration: ${filePath.join("/")}. Going to the folder that might contain it.`
+				);
+				return; // TODO?
+			}
+
+			if (indefinitePath.length === 0) {
+				// This is the final path item
+				if (itemInfo.length === 1) {
+					// Only one RegEx match
+					definitePath.push(itemInfo[0].name);
+					if (itemInfo[0].kind === "file") {
+						// Show as single file instead of a list of files
+						itemInfo = itemInfo[0] as FileFromAPI;
+					}
+					else {
+						// Load directory's contents
+						itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+						itemInfo = await itemInfoResponse.json();
+					}
+				}
+			}
+			else {
+				// More path items remaining
+				if (indefinitePath[0].match(regexPathReplacement) === null && indefinitePath[0].match(matcher) !== null) {
+					// If the next indefinite path item matches the current matcher, this may be a subitem of a match list
+					let matchedItem = itemInfo.find(item => item.name === indefinitePath[0]);
+					if (matchedItem) {
+						definitePath.push(indefinitePath.shift()!);
+						if (itemInfo[0].kind === "file") {
+							// Show as single file instead of a list of files
+							itemInfo = itemInfo[0] as FileFromAPI;
+						}
+						else {
+							// Load directory's contents
+							itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+							itemInfo = await itemInfoResponse.json();
+						}
+					}
+				}
+				else {
+					// If not, go down a level and see if we can find it there
+					// Only folders can have something within them so filter on that
+					itemInfo = itemInfo.filter(item => item.kind === "directory");
+					if (itemInfo.length === 0) {
+						window.alert("Not found"); // TODO
+						return;
+					}
+					if (itemInfo.length > 1) {
+						console.warn(`Multiple matches for RegEx path ${matcher}, using first result`);
+					}
+					definitePath.push(itemInfo[0].name);
+					itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+					itemInfo = await itemInfoResponse.json();
+				}
+			}
+		}
+
 		if (Array.isArray(itemInfo)) {
 			// Directory
 			directoryRendered.value = {
 				directory: itemInfo,
 				location: {
-					path: filePath,
+					path: definitePath,
 					fromRoot: props.tabName === "All Files",
 				},
 			};
@@ -209,16 +306,17 @@ watchPostEffect(async () => {
 			// Find common name for this file from configuration's name for it
 			let commonName = itemInfo.name;
 			if (configuration?.value && props.tabName !== "All Files") {
+				// TODO doesn't work for single files specified via RegEx
 				commonName = Object.values(configuration.value.tabs[props.tabName])
 					.flat()
 					.map(mapPathIdentifiers)
-					.find(file => file.path.toLowerCase() === filePath.join("/").toLowerCase())?.name
+					.find(file => file.path.toLowerCase() === definitePath.join("/").toLowerCase())?.name
 					?? itemInfo.name;
 			}
 
 			fileRendered.value = {
 				file: itemInfo,
-				path: filePath,
+				path: definitePath,
 				commonName,
 			};
 

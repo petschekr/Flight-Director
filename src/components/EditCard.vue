@@ -138,6 +138,9 @@
 													<p class="mt-1 text-sm text-gray-500">
 														<code>&lt;DD MMM YY&gt;</code>: Full date formatting support
 													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>&lt;|.*\.pdf|&gt;</code>: Full Regular Expression support
+													</p>
 												</div>
 												<div class="sm:col-span-2">
 													<textarea id="card-path" rows="4" v-model="path"
