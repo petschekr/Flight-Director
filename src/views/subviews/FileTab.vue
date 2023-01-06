@@ -91,8 +91,8 @@ function processPathReplacements(path: string, callsign: string = props.selected
 	path = path.replace(/<callsign>/gi, callsign);
 	path = path.replace(/<short-callsign>/gi, generateShortCallsign(callsign));
 
-	// Date replacement (matches anything surrounded by <> brackets without slashes before and after)
-	path = path.replace(/<[^|](.*?)[^|]>/gi, (_, format) => date.format(format));
+	// Date replacement (matches anything surrounded by <> brackets without | before and after)
+	path = path.replace(/<(.*?)>/gi, (_, format) => format[0] !== "|" && format[format.length - 1] !== "|" ? date.format(format) : `<${format}>`);
 
 	// Replace Windows-style path slashes with normal slashes (but not inside <> brackets)
 	// \-style slashes are used in RegExes
