@@ -205,4 +205,11 @@ async function saveConfiguration() {
 	await stream.write(JSON.stringify(configuration.value, null, "\t"));
 	await stream.close();
 }
+
+window.addEventListener("beforeunload", e => {
+	if (configuration.value?.unsaved) {
+		e.preventDefault();
+		e.returnValue = "The current profile has unsaved changes"
+	}
+}, { "capture": true });
 </script>
