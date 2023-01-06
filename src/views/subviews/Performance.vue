@@ -231,7 +231,7 @@ onUnmounted(() => {
 
 // Load configuration
 try {
-	let response = await fetch("/download/performance.toml");
+	let response = await fetch("/performance");
 	performance.value = toml.parse(await response.text());
 }
 catch (err) {

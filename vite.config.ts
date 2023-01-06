@@ -27,6 +27,10 @@ export default defineConfig({
         target: "http://localhost:5050/config",
         changeOrigin: true,
       },
+      "/performance": {
+        target: "http://localhost:5050/performance",
+        changeOrigin: true,
+      },
       "/api": {
         target: "http://localhost:5050/api",
         changeOrigin: true,

@@ -44,6 +44,12 @@ try {
 				$res.ContentType = "text/plain"
 				$content = [System.IO.File]::ReadAllBytes($item)
 			}
+			# Serve default performance file
+			elseif ($path.StartsWith("/performance")) {
+				$item = Get-Item -LiteralPath "FileServe:\performance.toml" -Force -ErrorAction Stop
+				$res.ContentType = "text/plain"
+				$content = [System.IO.File]::ReadAllBytes($item)
+			}
 			# List directory or file details
 			elseif ($path.StartsWith("/api")) {
 				$path = $path.Replace("/api", "");
