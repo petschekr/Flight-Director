@@ -12,7 +12,7 @@
 			</Switch>
 		</SwitchGroup>
 		<div class="text-center text-lg mt-2">
-			<code>Flight Director v0.6.0 @ {{commitHash}}</code>
+			<code>Flight Director v0.6.1 @ {{commitHash}}</code>
 		</div>
 		<div class="mt-2">
 			<p><code>v0.6.0</code>: Regular Expression support in card paths, better looking confirmation and alert dialogs, various bugfixes</p>
