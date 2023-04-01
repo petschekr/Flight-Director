@@ -8,6 +8,8 @@
 
 		<Performance v-if="currentSidebarTab?.component === 'Performance'" />
 
+		<ATLC v-if="currentSidebarTab?.component === 'ATLC'" />
+
 		<Settings v-if="currentSidebarTab?.component === 'Settings'" />
 
 		<SearchPalette :open="searchOpen" @closed="searchOpen = false" @set-callsign="(callsign) => selectedCallsign = callsign" />
@@ -33,6 +35,7 @@ import { ChatBubbleOvalLeftEllipsisIcon } from '@heroicons/vue/24/outline'
 import Nav from "@/components/Nav.vue";
 import FileTab from "@/views/subviews/FileTab.vue";
 import Performance from "@/views/subviews/Performance.vue";
+import ATLC from "@/views/subviews/ATLC.vue";
 import Settings from "./subviews/Settings.vue";
 import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";

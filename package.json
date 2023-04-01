@@ -14,6 +14,7 @@
     "@fortawesome/vue-fontawesome": "^3.0.1",
     "@headlessui/vue": "^1.7.3",
     "@heroicons/vue": "^2.0.13",
+    "csv-parse": "^5.3.6",
     "dayjs": "^1.11.5",
     "pinia": "^2.0.21",
     "toml": "^3.0.0",

@@ -70,7 +70,6 @@
 			</div>
 			<div class="mt-5 space-y-6 md:col-span-3 md:mt-0">
 				<fieldset class="border-t border-b border-gray-200">
-					<legend class="sr-only">Notifications</legend>
 					<div class="divide-y divide-gray-200">
 						<div v-for="dragItem in dragItems" :key="dragItem.index" class="relative flex items-start py-4">
 							<div class="min-w-0 flex-1 text-sm">
@@ -95,7 +94,6 @@
 import { ref, type Ref, inject, computed, watchEffect, onMounted, onUnmounted } from "vue";
 
 import toml from "toml";
-
 
 import type { Performance } from "@/models/configuration";
 const performance: Ref<Performance | null> = ref(null);
@@ -152,6 +150,7 @@ function interpolateFromData(feathered: boolean, tableName: keyof Performance, r
 		return null; // Value too small
 	}
 
+	// TODO: returns NaN when should return 0 for n, inMin, and inMax being same
 	function scale(n: number, inMin: number, inMax: number, outMin: number = 0, outMax: number = 1): number {
 		return (n - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 	}
