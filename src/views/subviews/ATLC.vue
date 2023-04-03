@@ -24,7 +24,7 @@
 
 						<transition leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
 							<ListboxOptions class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-								<ListboxOption as="template" v-for="runway in runways" :key="runway.notes" :value="runway" v-slot="{ active, selected }">
+								<ListboxOption as="template" v-for="runway in runwaysDropdown" :key="runway.notes" :value="runway" v-slot="{ active, selected }">
 									<li :class="[active ? 'bg-sky-600 text-white' : 'text-gray-900', 'relative cursor-default select-none py-2 pl-3 pr-9']">
 										<div class="flex">
 											<span :class="[selected ? 'font-semibold' : 'font-normal', 'truncate']">{{ runway.name }}</span>
@@ -141,7 +141,8 @@
 					PA: <span class="font-semibold">{{ pressureAltitude }} ft</span> //
 					DA: <span class="font-semibold">{{ densityAltitude }} ft</span> //
 					ISA <span class="font-semibold">{{ isa }} °F</span> //
-					TODA: <span class="font-semibold">{{ toda }}</span>
+					TODA: <span class="font-semibold">{{ toda }}</span> //
+					LDA: <span class="font-semibold">{{ lda }}</span>
 				</p>
 				<dl class="mt-2 grid grid-cols-2 xl:grid-cols-4 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
 					<div v-for="item in takeOffStats" :key="item.name" class="px-4 py-5 flex items-center first:border-t-[1px] max-xl:odd:!border-l-0">
@@ -153,7 +154,7 @@
 								<p class="truncate text-base font-medium text-gray-500">{{ item.name }}</p>
 							</dt>
 							<dd class="flex items-center">
-								<p class="text-2xl font-semibold text-gray-900">{{ item.stat }} <span class="text-lg font-normal">{{ item.unit }}</span></p>
+								<p class="text-2xl font-semibold text-gray-900 leading-5">{{ item.stat }} <span class="text-lg font-normal">{{ item.unit }}</span></p>
 							</dd>
 						</div>
 					</div>
@@ -195,7 +196,7 @@ import { ref, type Ref, computed, inject, watchEffect } from "vue";
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/vue/20/solid";
 import { AdjustmentsHorizontalIcon, ChevronDoubleRightIcon, RadioIcon, XCircleIcon } from "@heroicons/vue/20/solid";
-import { ArrowUturnUpIcon, ArrowTrendingUpIcon, ClockIcon, FlagIcon } from "@heroicons/vue/24/outline";
+import { ArrowUturnUpIcon, ArrowTrendingUpIcon, ClockIcon, FlagIcon, ReceiptPercentIcon } from "@heroicons/vue/24/outline";
 
 import { parse } from "csv-parse/browser/esm";
 import toml from "toml";
@@ -218,6 +219,7 @@ const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "1
 const selectedAirfield: Ref<Airport | null> = ref(null);
 const selectedAirfieldRunways: Ref<Runway[]> = ref([]);
 const selectedRunway: Ref<Runway | null> = ref(null);
+const selectedRunwayEnd: Ref<"HIGH" | "LOW"> = ref("HIGH");
 
 const pressureAltitude = computed(() => {
 	if (!selectedAirfield.value) return "--";
@@ -239,8 +241,16 @@ const isa = computed(() => {
 });
 const toda = computed(() => {
 	if (!selectedAirfield.value || !selectedRunway.value) return "-- ft";
-	console.log(selectedRunway.value);
-	return `${parseInt(selectedRunway.value.LENGTH).toLocaleString()} ft (${selectedRunway.value.LOW_IDENT}/${selectedRunway.value.HIGH_IDENT})`;
+	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HE_TAKEOFF : selectedRunway.value.LE_TAKEOFF);
+	if (distance === 1) {
+		distance = parseInt(selectedRunway.value.LENGTH);
+	}
+	return `${distance.toLocaleString()} ft`;
+});
+const lda = computed(() => {
+	if (!selectedAirfield.value || !selectedRunway.value) return "-- ft";
+	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HELAND_DIS : selectedRunway.value.LELAND_DIS);
+	return `${distance.toLocaleString()} ft`;
 });
 const accelCheckTime = computed(() => {
 	if (!selectedAirfield.value) return "--";
@@ -290,11 +300,24 @@ const tabs = [
 	{ name: "Frequencies", href: "#", icon: RadioIcon, current: false },
 ];
 
-const runways = ref([
+const runwaysDropdown = ref([
 	{ name: "Loading...", notes: "" },
 ]);
 
-const selected = ref(runways.value[0])
+const selected = ref(runwaysDropdown.value[0]);
+watchEffect(() => {
+	if (!selectedAirfieldRunways.value) return;
+	for (let runway of selectedAirfieldRunways.value) {
+		if (runway.HIGH_IDENT === selected.value.name) {
+			selectedRunway.value = runway;
+			selectedRunwayEnd.value = "HIGH";
+		}
+		if (runway.LOW_IDENT === selected.value.name) {
+			selectedRunway.value = runway;
+			selectedRunwayEnd.value = "LOW";
+		}
+	}
+});
 
 ///////////////////////////////////////////
 
@@ -389,11 +412,12 @@ interface Airport {
 	BEACON: "Y" | "N";
 	ELEV: string; // Leading zero padded
 	ICAO: string;
+	FAA_HOST_ID: string;
 	MAG_VAR: string; // e.g. W007588 0123
 	NAME: string;
 }
 async function getAirportInfo(identifier: string): Promise<Airport> {
-	return searchTSV<Airport>("/download/DAFIFT/ARPT/ARPT.TXT", record => record.ICAO.toUpperCase() === identifier.toUpperCase()).then(airport => airport[0]);
+	return searchTSV<Airport>("/download/DAFIFT/ARPT/ARPT.TXT", record => [record.ICAO.toUpperCase(), record.FAA_HOST_ID.toUpperCase()].includes(identifier.toUpperCase())).then(airport => airport[0]);
 }
 
 interface Runway {
@@ -444,15 +468,16 @@ async function updateAirfield() {
 		return;
 	}
 	selectedAirfieldRunways.value = await getRunwayInfo(airport.ARPT_IDENT);
-
 	selectedAirfield.value = airport;
 
-	runways.value = selectedAirfieldRunways.value
+	runwaysDropdown.value = selectedAirfieldRunways.value
 		.flatMap(runway => [runway.HIGH_IDENT, runway.LOW_IDENT])
 		.sort()
-		.map(name => ({ name, notes: "" }));
-	selected.value = runways.value[0]; // TODO: select best wind
-	selectedRunway.value = selectedAirfieldRunways.value[0];
+		.map((name, index) => {
+			let length = parseInt(selectedAirfieldRunways.value.find(runway => [runway.HIGH_IDENT, runway.LOW_IDENT].includes(name))!.LENGTH);
+			return { name, notes: `${length.toLocaleString()} ft` }
+		});
+	selected.value = runwaysDropdown.value[0]; // TODO: select best wind
 }
 updateAirfield();
 
