@@ -57,7 +57,7 @@
 				<div class="hidden sm:block">
 					<div class="border-b border-gray-200">
 						<nav class="-mb-px flex space-x-4 justify-between" aria-label="Tabs">
-							<a v-for="tab in tabs" :key="tab.name" :href="tab.href" :class="[tab.current ? 'border-sky-500 text-sky-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium grow']" :aria-current="tab.current ? 'page' : undefined">
+							<a v-for="tab in tabs" :key="tab.name" :href="tab.href" :class="[tab.current ? 'border-sky-500 text-sky-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'group inline-flex items-center border-b-2 py-3 px-1 text-sm font-medium grow']" :aria-current="tab.current ? 'page' : undefined">
 								<component :is="tab.icon" :class="[tab.current ? 'text-sky-500' : 'text-gray-400 group-hover:text-gray-500', '-ml-0.5 mr-2 h-5 w-5']" aria-hidden="true" />
 								<span>{{ tab.name }}</span>
 							</a>
@@ -65,6 +65,36 @@
 					</div>
 				</div>
 			</div>
+
+			<div class="mt-2 flow-root">
+				<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+					<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+					<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
+						<table class="min-w-full divide-y divide-gray-300">
+							<tbody class="divide-y divide-gray-200 bg-white">
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Field Elevation</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ fieldElevation }} ft</td>
+								</tr>
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Mag Var</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ magVar }}</td>
+								</tr>
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">ILLA</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ illa }} ft</td>
+								</tr>
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">ILLH</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ illh }}°</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					</div>
+				</div>
+			</div>
+
 		</section>
 		<section class="lg:col-span-2 lg:col-start-2">
 			<!-- Aircraft information -->
@@ -141,8 +171,8 @@
 					PA: <span class="font-semibold">{{ pressureAltitude }} ft</span> //
 					DA: <span class="font-semibold">{{ densityAltitude }} ft</span> //
 					ISA <span class="font-semibold">{{ isa }} °F</span> //
-					TODA: <span class="font-semibold">{{ toda }}</span> //
-					LDA: <span class="font-semibold">{{ lda }}</span>
+					TODA: <span class="font-semibold">{{ toda }} ft</span> //
+					LDA: <span class="font-semibold">{{ lda }} ft</span>
 				</p>
 				<dl class="mt-2 grid grid-cols-2 xl:grid-cols-4 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
 					<div v-for="item in takeOffStats" :key="item.name" class="px-4 py-5 flex items-center first:border-t-[1px] max-xl:odd:!border-l-0">
@@ -240,17 +270,17 @@ const isa = computed(() => {
 	}
 });
 const toda = computed(() => {
-	if (!selectedAirfield.value || !selectedRunway.value) return "-- ft";
+	if (!selectedAirfield.value || !selectedRunway.value) return "--";
 	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HE_TAKEOFF : selectedRunway.value.LE_TAKEOFF);
 	if (distance === 1) {
 		distance = parseInt(selectedRunway.value.LENGTH);
 	}
-	return `${distance.toLocaleString()} ft`;
+	return distance.toLocaleString();
 });
 const lda = computed(() => {
 	if (!selectedAirfield.value || !selectedRunway.value) return "-- ft";
 	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HELAND_DIS : selectedRunway.value.LELAND_DIS);
-	return `${distance.toLocaleString()} ft`;
+	return distance.toLocaleString();
 });
 const accelCheckTime = computed(() => {
 	if (!selectedAirfield.value) return "--";
@@ -282,6 +312,35 @@ const rotateSpeed = computed(() => {
 const liftoffSpeed = computed(() => {
 	let result = ATLCPerformance.liftoffSpeed(aircraftWeight.value);
 	return Math.round(result);
+});
+const fieldElevation = computed(() => {
+	if (!selectedAirfield.value) return "--";
+	return parseInt(selectedAirfield.value.ELEV).toLocaleString();
+});
+const magVar = computed(() => {
+	if (!selectedAirfield.value) return "--";
+	let parsed = selectedAirfield.value.MAG_VAR.match(/^(E|W)(\d\d\d)(\d\d\d)/);
+	if (!parsed) return "--";
+
+	let variation = parseInt(parsed[2]);
+	variation += parseInt(parsed[3]) / 10 / 60;
+	return `${variation.toFixed(1)}° ${parsed[1]}`
+});
+const illa = computed(() => {
+	if (!selectedAirfield.value) return "--";
+	let fieldElevation = parseInt(selectedAirfield.value.ELEV);
+	let illa = Math.ceil(fieldElevation / 100) * 100 + 500;
+	return illa.toLocaleString();
+});
+const illh = computed(() => {
+	if (!selectedAirfield.value) return "--";
+	if (!selectedRunway.value) return "--";
+	if (selectedRunwayEnd.value === "HIGH") {
+		return selectedRunway.value.HIGH_HDG;
+	}
+	else {
+		return selectedRunway.value.LOW_HDG;
+	}
 });
 
 const takeOffStats = computed(() => {
