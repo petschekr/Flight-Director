@@ -1,5 +1,5 @@
 <template>
-	<div class="grid grid-cols-1 gap-6 sm:px-6 lg:grid-flow-col-dense lg:grid-cols-3">
+	<div class="grid grid-cols-1 gap-6 lg:grid-flow-col-dense lg:grid-cols-3">
 		<section class="lg:col-span-1 lg:col-start-1">
 			<!-- Airport information -->
 			<div class="grid grid-cols-3 gap-2">
@@ -9,13 +9,13 @@
 						<input type="text" name="icao" id="icao" v-model="icao" @keydown.enter="($event.target as HTMLInputElement).blur()" @blur="updateAirfield" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 uppercase placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6" placeholder="KSSC" maxlength="4" autocomplete="off" />
 					</div>
 				</div>
-				<Listbox as="div" v-model="selected" class="col-span-2">
+				<Listbox as="div" v-model="selectedDropdown" class="col-span-2">
 					<ListboxLabel class="block text-sm font-medium leading-6 text-gray-900">Runway</ListboxLabel>
 					<div class="relative mt-1">
 						<ListboxButton class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 sm:text-sm sm:leading-6">
 							<span class="inline-flex w-full truncate">
-								<span class="truncate font-semibold">{{ selected.name }}</span>
-								<span class="ml-2 truncate text-gray-500">{{ selected.notes }}</span>
+								<span class="truncate font-semibold">{{ selectedDropdown.name }}</span>
+								<span class="ml-2 truncate text-gray-500">{{ selectedDropdown.notes }}</span>
 							</span>
 							<span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
 								<ChevronUpDownIcon class="h-5 w-5 text-gray-400" />
@@ -51,14 +51,14 @@
 					<label for="tabs" class="sr-only">Select a tab</label>
 					<!-- Use an "onChange" listener to redirect the user to the selected tab URL. -->
 					<select id="tabs" name="tabs" class="block w-full rounded-md border-gray-300 focus:border-sky-500 focus:ring-sky-500">
-						<option v-for="tab in tabs" :key="tab.name" :selected="tab.current">{{ tab.name }}</option>
+						<option v-for="tab in tabs" :key="tab.name" :selected="tab.type === currentAirfieldTab">{{ tab.name }}</option>
 					</select>
 				</div>
 				<div class="hidden sm:block">
 					<div class="border-b border-gray-200">
 						<nav class="-mb-px flex space-x-4 justify-between" aria-label="Tabs">
-							<a v-for="tab in tabs" :key="tab.name" :href="tab.href" :class="[tab.current ? 'border-sky-500 text-sky-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'group inline-flex items-center border-b-2 py-3 px-1 text-sm font-medium grow']" :aria-current="tab.current ? 'page' : undefined">
-								<component :is="tab.icon" :class="[tab.current ? 'text-sky-500' : 'text-gray-400 group-hover:text-gray-500', '-ml-0.5 mr-2 h-5 w-5']" aria-hidden="true" />
+							<a v-for="tab in tabs" :key="tab.name" @click="tabSelect(tab.name)" :class="[tab.type === currentAirfieldTab ? 'border-sky-500 text-sky-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'group inline-flex items-center border-b-2 py-3 px-1 text-sm font-medium grow cursor-pointer']">
+								<component :is="tab.icon" :class="[tab.type === currentAirfieldTab ? 'text-sky-500' : 'text-gray-400 group-hover:text-gray-500', '-ml-0.5 mr-2 h-5 w-5']" aria-hidden="true" />
 								<span>{{ tab.name }}</span>
 							</a>
 						</nav>
@@ -66,7 +66,7 @@
 				</div>
 			</div>
 
-			<div class="mt-2 flow-root">
+			<div v-if="currentAirfieldTab === AirfieldTabs.Presets" class="mt-2 flow-root">
 				<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
 					<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
 					<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
@@ -87,6 +87,63 @@
 								<tr>
 									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">ILLH</td>
 									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ illh }}°</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					</div>
+				</div>
+			</div>
+			<div v-if="currentAirfieldTab === AirfieldTabs.Runways" class="mt-2 flow-root">
+				<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+					<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+					<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
+						<table class="min-w-full divide-y divide-gray-300">
+							<tbody class="divide-y divide-gray-200 bg-white">
+								<tr v-for="runway in selectedAirfieldRunways" class="divide-x">
+									<td class="py-3 pl-4 pr-3 text-sm sm:pl-6 text-center w-32">
+										<p class="text-lg font-medium text-gray-900">{{ runway.LOW_IDENT }} - {{ runway.HIGH_IDENT }}</p>
+										<p class="font-medium">{{ parseInt(runway.LENGTH).toLocaleString() }}' x {{ parseInt(runway.RWY_WIDTH).toLocaleString() }}'</p>
+										<p>{{ runway.SURFACE }}</p>
+									</td>
+									<td class="px-3 py-3 text-sm text-gray-600">
+										<p class="text-gray-900 font-medium">Rwy {{ runway.LOW_IDENT }} <span v-if="isBestWind(parseFloat(runway.LOW_HDG))" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
+										<p class="leading-8">
+											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(parseFloat(runway.LOW_HDG))[0] > 0 ? 'rotate-90' : '-rotate-90']" />
+											<span class="ml-1 text-gray-500">{{ Math.abs(windComponents(parseFloat(runway.LOW_HDG))[0]) }} kts</span>
+											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
+											<span :class="['ml-1 text-red-500', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ Math.abs(windComponents(parseFloat(runway.LOW_HDG))[1]) }} kts</span>
+										</p>
+										<p class="text-gray-900 font-medium">Rwy {{ runway.HIGH_IDENT }} <span v-if="isBestWind(parseFloat(runway.HIGH_HDG))" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
+										<p class="leading-8">
+											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(parseFloat(runway.HIGH_HDG))[0] > 0 ? 'rotate-90' : '-rotate-90']" />
+											<span class="ml-1 text-gray-500">{{ Math.abs(windComponents(parseFloat(runway.HIGH_HDG))[0]) }} kts</span>
+											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
+											<span :class="['ml-1 text-red-500', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ Math.abs(windComponents(parseFloat(runway.HIGH_HDG))[1]) }} kts</span>
+										</p>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					</div>
+				</div>
+			</div>
+			<div v-if="currentAirfieldTab === AirfieldTabs.Frequencies" class="mt-2 flow-root">
+				<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+					<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+					<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
+						<table class="min-w-full divide-y divide-gray-300">
+							<tbody class="divide-y divide-gray-200 bg-white">
+								<tr v-for="freq in selectedAirfieldComms">
+									<td class="py-3 pl-4 pr-3 text-sm sm:pl-6">
+										<p class="font-medium text-gray-900">{{ freq.COMM_NAME }}</p>
+										<p>{{ freq.S_OPR_H }}</p>
+									</td>
+									<td class="px-3 py-3 text-sm text-gray-600 text-center">
+										{{ freq.FREQ_1 }}
+										{{ freq.FREQ_2 }}
+									</td>
 								</tr>
 							</tbody>
 						</table>
@@ -226,7 +283,8 @@ import { ref, type Ref, computed, inject, watchEffect } from "vue";
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/vue/20/solid";
 import { AdjustmentsHorizontalIcon, ChevronDoubleRightIcon, RadioIcon, XCircleIcon } from "@heroicons/vue/20/solid";
-import { ArrowUturnUpIcon, ArrowTrendingUpIcon, ClockIcon, FlagIcon, ReceiptPercentIcon } from "@heroicons/vue/24/outline";
+import { ArrowUturnUpIcon, ArrowTrendingUpIcon, ClockIcon, FlagIcon } from "@heroicons/vue/24/outline";
+import { ArrowUpCircleIcon } from "@heroicons/vue/24/solid";
 
 import { parse } from "csv-parse/browser/esm";
 import toml from "toml";
@@ -250,6 +308,7 @@ const selectedAirfield: Ref<Airport | null> = ref(null);
 const selectedAirfieldRunways: Ref<Runway[]> = ref([]);
 const selectedRunway: Ref<Runway | null> = ref(null);
 const selectedRunwayEnd: Ref<"HIGH" | "LOW"> = ref("HIGH");
+const selectedAirfieldComms: Ref<AirportComms[] | null> = ref(null);
 
 const pressureAltitude = computed(() => {
 	if (!selectedAirfield.value) return "--";
@@ -343,6 +402,24 @@ const illh = computed(() => {
 	}
 });
 
+function windComponents(runwayHeading: number): [number, number] {
+	let crosswind = Math.sin((runwayHeading - windDirection.value) * (Math.PI / 180)) * windSpeed.value;
+	let headwind = Math.cos((runwayHeading - windDirection.value) * (Math.PI / 180)) * windSpeed.value;
+	return [Math.round(crosswind), Math.round(headwind)];
+}
+function isBestWind(runwayHeading: number): boolean {
+	let bestHeadwind = -Infinity;
+	let bestHeading = NaN;
+	for (let direction of selectedAirfieldRunways.value.flatMap(runway => [runway.LOW_HDG, runway.HIGH_HDG]).map(parseFloat)) {
+		let wind = windComponents(direction);
+		if (wind[1] > bestHeadwind) {
+			bestHeading = direction;
+			bestHeadwind = wind[1];
+		}
+	}
+	return Math.round(runwayHeading) === Math.round(bestHeading);
+}
+
 const takeOffStats = computed(() => {
 	let deemphasizeRefusalSpeed = typeof refusalSpeed.value === "number" && typeof rotateSpeed.value === "number" && refusalSpeed.value <= rotateSpeed.value;
 	return [
@@ -353,25 +430,30 @@ const takeOffStats = computed(() => {
 	];
 });
 
-const tabs = [
-	{ name: "Presets", href: "#", icon: AdjustmentsHorizontalIcon, current: true },
-	{ name: "Runways", href: "#", icon: ChevronDoubleRightIcon, current: false },
-	{ name: "Frequencies", href: "#", icon: RadioIcon, current: false },
-];
+enum AirfieldTabs { Presets, Runways, Frequencies };
+const tabs = ref([
+	{ name: "Presets", type: AirfieldTabs.Presets, icon: AdjustmentsHorizontalIcon },
+	{ name: "Runways", type: AirfieldTabs.Runways, icon: ChevronDoubleRightIcon },
+	{ name: "Frequencies", type: AirfieldTabs.Frequencies, icon: RadioIcon },
+]);
+const currentAirfieldTab: Ref<AirfieldTabs> = ref(AirfieldTabs.Presets);
+function tabSelect(name: string) {
+	currentAirfieldTab.value = tabs.value.find(tab => tab.name === name)?.type ?? AirfieldTabs.Presets;
+}
 
 const runwaysDropdown = ref([
 	{ name: "Loading...", notes: "" },
 ]);
 
-const selected = ref(runwaysDropdown.value[0]);
+const selectedDropdown = ref(runwaysDropdown.value[0]);
 watchEffect(() => {
 	if (!selectedAirfieldRunways.value) return;
 	for (let runway of selectedAirfieldRunways.value) {
-		if (runway.HIGH_IDENT === selected.value.name) {
+		if (runway.HIGH_IDENT === selectedDropdown.value.name) {
 			selectedRunway.value = runway;
 			selectedRunwayEnd.value = "HIGH";
 		}
-		if (runway.LOW_IDENT === selected.value.name) {
+		if (runway.LOW_IDENT === selectedDropdown.value.name) {
 			selectedRunway.value = runway;
 			selectedRunwayEnd.value = "LOW";
 		}
@@ -512,7 +594,52 @@ interface Runway {
 }
 
 async function getRunwayInfo(airportIdentifier: string): Promise<Runway[]> {
-	return searchTSV<Runway>("/download/DAFIFT/ARPT/RWY.TXT", record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase());
+	return (await searchTSV<Runway>("/download/DAFIFT/ARPT/RWY.TXT", record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase())).map(runway => {
+		const surfaceTypes: { [abbr: string]: string } = {
+			"ASP": "Asphalt",
+			"BIT": "Tar",
+			"BRI": "Brick",
+			"CLA": "Clay",
+			"COM": "Composite (Temporary)",
+			"CON": "Concrete",
+			"COP": "Composite (Permanent)",
+			"COR": "Coral",
+			"GRE": "Graded Earth",
+			"GRS": "Grass",
+			"GVL": "Gravel",
+			"ICE": "Ice",
+			"LAT": "Laterite",
+			"MAC": "Macadam",
+			"MEM": "Plastic Membrane",
+			"MIX": "Mix",
+			"PEM": "Concrete/Asphalt",
+			"PER": "Unknown (Permanent)",
+			"PSP": "Steel Planking",
+			"SAN": "Sand",
+			"SNO": "Snow",
+			"U": "Unknown",
+		};
+		if (surfaceTypes[runway.SURFACE]) {
+			runway.SURFACE = surfaceTypes[runway.SURFACE];
+		}
+		return runway;
+	});
+}
+
+interface AirportComms {
+	ARPT_IDENT: string;
+	COMM_NAME: string;
+	COMM_TYPE: string;
+	FREQ_1: string;
+	FREQ_2: string;
+	FREQ_3: string;
+	FREQ_4: string;
+	FREQ_5: string;
+	S_OPR_H: string;
+}
+
+async function getCommInfo(airportIdentifier: string): Promise<AirportComms[]> {
+	return searchTSV<AirportComms>("/download/DAFIFT/ARPT/ACOM.TXT", record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase());
 }
 
 async function updateAirfield() {
@@ -536,7 +663,18 @@ async function updateAirfield() {
 			let length = parseInt(selectedAirfieldRunways.value.find(runway => [runway.HIGH_IDENT, runway.LOW_IDENT].includes(name))!.LENGTH);
 			return { name, notes: `${length.toLocaleString()} ft` }
 		});
-	selected.value = runwaysDropdown.value[0]; // TODO: select best wind
+	selectedDropdown.value = runwaysDropdown.value[0]; // TODO: select best wind
+
+	selectedAirfieldComms.value = (await getCommInfo(airport.ARPT_IDENT))
+		.filter(freq => freq.FREQ_1)
+		.map(freq => {
+			freq.FREQ_1 = freq.FREQ_1.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_1;
+			freq.FREQ_2 = freq.FREQ_2.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_2;
+			freq.FREQ_3 = freq.FREQ_3.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_3;
+			freq.FREQ_4 = freq.FREQ_4.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_4;
+			freq.FREQ_5 = freq.FREQ_5.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_5;
+			return freq;
+		});
 }
 updateAirfield();
 
