@@ -50,13 +50,13 @@
 				<div class="sm:hidden">
 					<label for="tabs" class="sr-only">Select a tab</label>
 					<!-- Use an "onChange" listener to redirect the user to the selected tab URL. -->
-					<select id="tabs" name="tabs" class="block w-full rounded-md border-gray-300 focus:border-sky-500 focus:ring-sky-500">
+					<select id="tabs" name="tabs" @change="(e) => tabSelect((e.target as HTMLInputElement).value)" class="block w-full rounded-md border-gray-300 focus:border-sky-500 focus:ring-sky-500">
 						<option v-for="tab in tabs" :key="tab.name" :selected="tab.type === currentAirfieldTab">{{ tab.name }}</option>
 					</select>
 				</div>
 				<div class="hidden sm:block">
 					<div class="border-b border-gray-200">
-						<nav class="-mb-px flex space-x-4 justify-between" aria-label="Tabs">
+						<nav class="-mb-px flex space-x-4 justify-between overflow-hidden" aria-label="Tabs">
 							<a v-for="tab in tabs" :key="tab.name" @click="tabSelect(tab.name)" :class="[tab.type === currentAirfieldTab ? 'border-sky-500 text-sky-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'group inline-flex items-center border-b-2 py-3 px-1 text-sm font-medium grow cursor-pointer']">
 								<component :is="tab.icon" :class="[tab.type === currentAirfieldTab ? 'text-sky-500' : 'text-gray-400 group-hover:text-gray-500', '-ml-0.5 mr-2 h-5 w-5']" aria-hidden="true" />
 								<span>{{ tab.name }}</span>
@@ -112,14 +112,14 @@
 											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(parseFloat(runway.LOW_HDG))[0] > 0 ? 'rotate-90' : '-rotate-90']" />
 											<span class="ml-1 text-gray-500">{{ Math.abs(windComponents(parseFloat(runway.LOW_HDG))[0]) }} kts</span>
 											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
-											<span :class="['ml-1 text-red-500', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ Math.abs(windComponents(parseFloat(runway.LOW_HDG))[1]) }} kts</span>
+											<span :class="['ml-1', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ Math.abs(windComponents(parseFloat(runway.LOW_HDG))[1]) }} kts</span>
 										</p>
 										<p class="text-gray-900 font-medium">Rwy {{ runway.HIGH_IDENT }} <span v-if="isBestWind(parseFloat(runway.HIGH_HDG))" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
 										<p class="leading-8">
 											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(parseFloat(runway.HIGH_HDG))[0] > 0 ? 'rotate-90' : '-rotate-90']" />
 											<span class="ml-1 text-gray-500">{{ Math.abs(windComponents(parseFloat(runway.HIGH_HDG))[0]) }} kts</span>
 											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
-											<span :class="['ml-1 text-red-500', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ Math.abs(windComponents(parseFloat(runway.HIGH_HDG))[1]) }} kts</span>
+											<span :class="['ml-1', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ Math.abs(windComponents(parseFloat(runway.HIGH_HDG))[1]) }} kts</span>
 										</p>
 									</td>
 								</tr>
@@ -231,14 +231,49 @@
 					TODA: <span class="font-semibold">{{ toda }} ft</span> //
 					LDA: <span class="font-semibold">{{ lda }} ft</span>
 				</p>
-				<dl class="mt-2 grid grid-cols-2 xl:grid-cols-4 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
+				<dl class="mt-4 grid grid-cols-2 xl:grid-cols-4 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
 					<div v-for="item in takeOffStats" :key="item.name" class="px-4 py-5 flex items-center first:border-t-[1px] max-xl:odd:!border-l-0">
 						<div :class="[item.color, 'rounded-md p-2 mr-3']">
 							<component :is="item.icon" class="h-5 w-5 text-white" aria-hidden="true" />
 						</div>
 						<div>
 							<dt>
-								<p class="truncate text-base font-medium text-gray-500">{{ item.name }}</p>
+								<p class="text-base leading-4 my-1 font-medium text-gray-500">{{ item.name }}</p>
+							</dt>
+							<dd class="flex items-center">
+								<p class="text-2xl font-semibold text-gray-900 leading-5">{{ item.stat }} <span class="text-lg font-normal">{{ item.unit }}</span></p>
+							</dd>
+						</div>
+					</div>
+				</dl>
+			</div>
+
+			<div>
+				<dl class="mt-4 grid grid-cols-1 xl:grid-cols-3 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
+					<div v-for="item in distanceStats" :key="item.name" class="px-4 py-5 flex items-center first:border-t-[1px] max-xl:odd:!border-l-0">
+						<div :class="[item.color, 'rounded-md p-2 mr-3']">
+							<component :is="item.icon" class="h-5 w-5 text-white" aria-hidden="true" />
+						</div>
+						<div>
+							<dt>
+								<p class="text-base leading-4 my-1 font-medium text-gray-500">{{ item.name }}</p>
+							</dt>
+							<dd class="flex items-center">
+								<p class="text-2xl font-semibold text-gray-900 leading-5">{{ item.stat }} <span class="text-lg font-normal">{{ item.unit }}</span></p>
+							</dd>
+						</div>
+					</div>
+				</dl>
+			</div>
+			<div>
+				<dl class="mt-4 grid grid-cols-1 xl:grid-cols-3 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
+					<div v-for="item in airborneStats" :key="item.name" class="px-4 py-5 flex items-center first:border-t-[1px] max-xl:odd:!border-l-0">
+						<div :class="[item.color, 'rounded-md p-2 mr-3']">
+							<component :is="item.icon" class="h-5 w-5 text-white" aria-hidden="true" />
+						</div>
+						<div>
+							<dt>
+								<p class="text-base leading-4 my-1 font-medium text-gray-500">{{ item.name }}</p>
 							</dt>
 							<dd class="flex items-center">
 								<p class="text-2xl font-semibold text-gray-900 leading-5">{{ item.stat }} <span class="text-lg font-normal">{{ item.unit }}</span></p>
@@ -283,7 +318,18 @@ import { ref, type Ref, computed, inject, watchEffect } from "vue";
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/vue/20/solid";
 import { AdjustmentsHorizontalIcon, ChevronDoubleRightIcon, RadioIcon, XCircleIcon } from "@heroicons/vue/20/solid";
-import { ArrowUturnUpIcon, ArrowTrendingUpIcon, ClockIcon, FlagIcon } from "@heroicons/vue/24/outline";
+import {
+	ArrowUturnUpIcon,
+	ArrowTrendingUpIcon,
+	ClockIcon,
+	FlagIcon,
+	ArrowUpRightIcon,
+	ArrowDownRightIcon,
+	ExclamationTriangleIcon,
+	CubeTransparentIcon,
+	ChevronDoubleRightIcon as ChevronDoubleRightBigIcon,
+	ChevronDoubleLeftIcon,
+} from "@heroicons/vue/24/outline";
 import { ArrowUpCircleIcon } from "@heroicons/vue/24/solid";
 
 import { parse } from "csv-parse/browser/esm";
@@ -292,6 +338,7 @@ import toml from "toml";
 import type { Performance } from "@/models/configuration";
 
 import * as ATLCPerformance from "@/performance/ATLC";
+import * as GlidePerformance from "@/performance/glide";
 
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 
@@ -343,7 +390,7 @@ const lda = computed(() => {
 });
 const accelCheckTime = computed(() => {
 	if (!selectedAirfield.value) return "--";
-	let elevation = parseInt(selectedAirfield.value.ELEV)
+	let elevation = parseInt(selectedAirfield.value.ELEV);
 	let result = ATLCPerformance.accelCheckTime(
 		aircraftWeight.value,
 		ATLCPerformance.pressureAltitude(elevation, altimeter.value),
@@ -354,7 +401,7 @@ const accelCheckTime = computed(() => {
 });
 const refusalSpeed = computed(() => {
 	if (!selectedAirfield.value || !selectedRunway.value) return "--";
-	let elevation = parseInt(selectedAirfield.value.ELEV)
+	let elevation = parseInt(selectedAirfield.value.ELEV);
 	let result = ATLCPerformance.refusalSpeed(
 		aircraftWeight.value,
 		ATLCPerformance.pressureAltitude(elevation, altimeter.value),
@@ -364,14 +411,50 @@ const refusalSpeed = computed(() => {
 	if (result === null) return "--";
 	return Math.round(result);
 });
-const rotateSpeed = computed(() => {
-	let result = ATLCPerformance.rotationSpeed(aircraftWeight.value);
+const rotateSpeed = computed(() => ATLCPerformance.rotationSpeed(aircraftWeight.value));
+const liftoffSpeed = computed(() => ATLCPerformance.liftoffSpeed(aircraftWeight.value));
+const takeoffRoll = computed(() => {
+	if (!selectedAirfield.value || !selectedRunway.value) return "--";
+	let elevation = parseInt(selectedAirfield.value.ELEV);
+	let runwayHeading = parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HIGH_HDG : selectedRunway.value.LOW_HDG);
+	let runwaySlope = parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HE_SLOPE : selectedRunway.value.LE_SLOPE);
+	if (isNaN(runwaySlope)) runwaySlope = 0;
+
+	let result = ATLCPerformance.takeoffRoll(
+		aircraftWeight.value,
+		ATLCPerformance.pressureAltitude(elevation, altimeter.value),
+		ATLCPerformance.deltaISA_F(elevation, temperature.value),
+		windComponents(runwayHeading)[1],
+		runwaySlope,
+	);
+	if (result === null) return "--";
+	const ACCURACY = 50;
+	return (Math.ceil(result / ACCURACY) * ACCURACY).toLocaleString();
+});
+const landingRoll = computed(() => {
+	if (!selectedAirfield.value || !selectedRunway.value) return "--";
+	let elevation = parseInt(selectedAirfield.value.ELEV);
+	let runwayHeading = parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HIGH_HDG : selectedRunway.value.LOW_HDG);
+	let runwaySlope = parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HE_SLOPE : selectedRunway.value.LE_SLOPE);
+	if (isNaN(runwaySlope)) runwaySlope = 0;
+
+	let result = ATLCPerformance.landingRoll(
+		aircraftWeight.value,
+		ATLCPerformance.densityAltitude(elevation, altimeter.value, temperature.value),
+		windComponents(runwayHeading)[1],
+		runwaySlope,
+	);
+	if (result === null) return "--";
+	const ACCURACY = 50;
+	return (Math.ceil(result / ACCURACY) * ACCURACY).toLocaleString();
+});
+const bestGlideSpeed = computed(() => {
+	if (!performance.value) return "--";
+	let result = GlidePerformance.bestGlideSpeed(performance.value, dragIndex.value, true, aircraftWeight.value);
+	if (result === null) return "--";
 	return Math.round(result);
 });
-const liftoffSpeed = computed(() => {
-	let result = ATLCPerformance.liftoffSpeed(aircraftWeight.value);
-	return Math.round(result);
-});
+const approachSpeed = computed(() => ATLCPerformance.approachSpeed(aircraftWeight.value));
 const fieldElevation = computed(() => {
 	if (!selectedAirfield.value) return "--";
 	return parseInt(selectedAirfield.value.ELEV).toLocaleString();
@@ -427,6 +510,22 @@ const takeOffStats = computed(() => {
 		{ name: "Refusal", icon: FlagIcon, color: deemphasizeRefusalSpeed ? "bg-red-500" : "bg-red-200", stat: refusalSpeed.value, unit: "KIAS" },
 		{ name: "Rotate", icon: ArrowUturnUpIcon, color: "bg-sky-500", stat: rotateSpeed.value, unit: "KIAS" },
 		{ name: "Liftoff", icon: ArrowTrendingUpIcon, color: "bg-green-500", stat: liftoffSpeed.value, unit: "KIAS" },
+	];
+});
+
+const distanceStats = computed(() => {
+	return [
+		{ name: "Takeoff Ground Rolll", icon: ChevronDoubleRightBigIcon, color: "bg-slate-500", stat: takeoffRoll.value, unit: "ft" },
+		{ name: "Distance to Clear 50ft Obstacle", icon: CubeTransparentIcon, color: "bg-slate-600", stat: "--", unit: "ft" },
+		{ name: "Landing Roll", icon: ChevronDoubleLeftIcon, color: "bg-orange-900", stat: landingRoll.value, unit: "ft" },
+	];
+});
+
+const airborneStats = computed(() => {
+	return [
+		{ name: "Best Rate of Climb", icon: ArrowUpRightIcon, color: "bg-teal-500", stat: "--", unit: "KIAS" },
+		{ name: "Best Glide", icon: ExclamationTriangleIcon, color: "bg-amber-500", stat: bestGlideSpeed.value, unit: "KIAS" },
+		{ name: "Approach", icon: ArrowDownRightIcon, color: "bg-purple-500", stat: approachSpeed.value, unit: "KIAS" },
 	];
 });
 
