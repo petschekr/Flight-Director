@@ -192,7 +192,7 @@
 					<div class="grow">
 						<label for="altimeter" class="block text-sm font-medium leading-6 whitespace-nowrap truncate text-gray-900">Altimeter</label>
 						<div class="mt-1 flex rounded-md">
-							<input type="number" name="altimeter" id="altimeter" min="20.00" max="40.00" step="0.01" v-model="altimeter" class="block w-full flex-1 rounded-none rounded-l-md border-0 py-1.5 pr-1 text-center sm:text-lg text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 uppercase placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:leading-6" />
+							<input type="number" name="altimeter" id="altimeter" min="20.00" max="40.00" step="0.01" v-model="altimeter" @blur="altimeter > 40 ? altimeter /= 100 : null" class="block w-full flex-1 rounded-none rounded-l-md border-0 py-1.5 pr-1 text-center sm:text-lg text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 uppercase placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:leading-6" />
 							<span class="inline-flex items-center rounded-r-md border border-l-0 shadow-sm border-gray-300 bg-gray-50 px-1 text-sm text-gray-500 z-0">inHg</span>
 						</div>
 					</div>
@@ -206,17 +206,16 @@
 				</div>
 			</div>
 
-			<div class="border-l-4 border-red-400 bg-red-50 p-4 mt-3">
+			<div v-if="errors.length > 0" class="border-l-4 border-red-400 bg-red-50 p-4 mt-4">
 				<div class="flex">
 					<div class="flex-shrink-0">
 						<XCircleIcon class="h-5 w-5 text-red-400" aria-hidden="true" />
 					</div>
 					<div class="ml-3">
-						<h3 class="text-sm font-medium text-red-800">Error(s) detected! </h3>
+						<h3 class="text-sm font-medium text-red-800">Warning!</h3>
 						<div class="mt-2 text-sm text-red-700">
 							<ul role="list" class="list-disc space-y-1 pl-5">
-								<li>Your password must be at least 8 characters</li>
-								<li>Your password must include at least one pro wrestling finishing move</li>
+								<li v-for="error in errors" v-html="error"></li>
 							</ul>
 						</div>
 					</div>
@@ -224,7 +223,7 @@
 			</div>
 
 			<div>
-				<p class="text-center mt-1 text-lg">
+				<p class="text-center mt-4 text-lg">
 					PA: <span class="font-semibold">{{ pressureAltitude }} ft</span> //
 					DA: <span class="font-semibold">{{ densityAltitude }} ft</span> //
 					ISA <span class="font-semibold">{{ isa }} °F</span> //
@@ -566,6 +565,52 @@ watchEffect(() => {
 			selectedRunway.value = runway;
 			selectedRunwayEnd.value = "LOW";
 		}
+	}
+});
+
+// Input error detector
+let errors: Ref<string[]> = ref([]);
+watchEffect(() => {
+	if (!selectedAirfield.value || !selectedRunway.value) return;
+	errors.value = [];
+
+	// Wind limitations
+	let [crosswind, headwind] = windComponents(parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HIGH_HDG : selectedRunway.value.LOW_HDG));
+	if (Math.max(windSpeed.value) > 30) {
+		errors.value.push(`Total wind of <b>${Math.abs(headwind)} kts</b> exceeds 30 kt limit`);
+	}
+	if (headwind < -10) {
+		errors.value.push(`Tailwind of <b>${Math.abs(headwind)} kts</b> exceeds 10 kt limit`);
+	}
+	if (Math.abs(crosswind) > 15) {
+		errors.value.push(`Crosswind of <b>${Math.abs(crosswind)} kts</b> exceeds 15 kt limit (dirty wing)`);
+	}
+
+	// Runway limitations
+	if (parseInt(takeoffRoll.value.replace(",", "")) > parseInt(toda.value.replace(",", ""))) {
+		errors.value.push(`Takeoff roll of <b>${takeoffRoll.value} ft</b> exceeds takeoff distance available (${toda.value} ft)`);
+	}
+	if (parseInt(landingRoll.value.replace(",", "")) > parseInt(lda.value.replace(",", ""))) {
+		errors.value.push(`Landing roll of <b>${landingRoll.value} ft</b> exceeds landing distance available (${lda.value} ft)`);
+	}
+	if (parseInt(selectedRunway.value.LENGTH) < 5000) {
+		errors.value.push(`Selected runway length of <b>${parseInt(selectedRunway.value.LENGTH).toLocaleString()} ft</b> is too short (5,000 ft required)`);
+	}
+
+	// Weight limitations
+	if (aircraftWeight.value > 11_700) {
+		errors.value.push(`AV weight of <b>${aircraftWeight.value.toLocaleString()} lbs</b> exceeds maximum ramp weight (11,700 lbs)`);
+	}
+	if (aircraftWeight.value > 10_500) {
+		errors.value.push(`AV weight of <b>${aircraftWeight.value.toLocaleString()} lbs</b> exceeds maximum normal landing weight (10,500 lbs)`);
+	}
+	else if (aircraftWeight.value > 8_500) {
+		errors.value.push(`AV weight of <b>${aircraftWeight.value.toLocaleString()} lbs</b> exceeds maximum ATLC landing weight (8,500 lbs)`);
+	}
+
+	// Weather limitations
+	if (ATLCPerformance.deltaISA_F(parseInt(selectedAirfield.value.ELEV), temperature.value) > 70) {
+		errors.value.push(`Airfield temperature exceeds +70 °F ISA. Performance calculations are not valid.`);
 	}
 });
 
