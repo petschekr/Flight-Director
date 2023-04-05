@@ -95,8 +95,11 @@ import { ref, type Ref, inject, computed, watchEffect, onMounted, onUnmounted } 
 
 import toml from "toml";
 
+import * as GlidePerformance from "@/performance/glide";
+
 import type { Performance } from "@/models/configuration";
 const performance: Ref<Performance | null> = ref(null);
+
 
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 
@@ -133,69 +136,10 @@ const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "5
 const fuelFlow = ref(parseInt(localStorage.getItem("fuelFlow") ?? "200"));
 const altitude = ref(parseInt(localStorage.getItem("altitude") ?? "20000"));
 
-function interpolateFromData(feathered: boolean, tableName: keyof Performance, rowKey: string, rowValue: string, compareValue: number): number | null {
-	if (!performance.value) return null;
-	let dragIndexWithProp = dragIndex.value + (feathered ? performance.value.Propeller.feathered : performance.value.Propeller.unfeathered);
-
-	let dragIndices = Object.keys(performance.value[tableName]).map(key => parseInt(key));
-	let topIndex = dragIndices.findIndex(value => value >= dragIndexWithProp);
-	if (topIndex === -1) {
-		return null; // Value too big
-	}
-	let bottomIndex = topIndex - 1;
-	if (dragIndexWithProp === dragIndices[topIndex]) {
-		bottomIndex = topIndex;
-	}
-	if (bottomIndex < 0) {
-		return null; // Value too small
-	}
-
-	// TODO: returns NaN when should return 0 for n, inMin, and inMax being same
-	function scale(n: number, inMin: number, inMax: number, outMin: number = 0, outMax: number = 1): number {
-		return (n - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-	}
-
-	let bottomDragIndex = dragIndices[bottomIndex];
-	let topDragIndex = dragIndices[topIndex];
-	let dragIndexRatio = scale(dragIndexWithProp, bottomDragIndex, topDragIndex);
-
-	let bottomRow: any[] = Object.values(performance.value[tableName])[bottomIndex];
-	let topRow: any[] = Object.values(performance.value[tableName])[topIndex];
-	topIndex = topRow.findIndex(value => value[rowKey] >= compareValue);
-	if (topIndex === -1) {
-		return null; // Value too big
-	}
-	bottomIndex = topIndex - 1;
-	if (compareValue === topRow[topIndex][rowKey]) {
-		bottomIndex = topIndex;
-	}
-	if (bottomIndex < 0) {
-		return null; // Value too small
-	}
-
-	let weightRatio = scale(compareValue, bottomRow[bottomIndex][rowKey], bottomRow[topIndex][rowKey]);
-
-	let speed1 = bottomRow[bottomIndex][rowValue];
-	let speed2 = bottomRow[topIndex][rowValue];
-	let speed3 = topRow[bottomIndex][rowValue];
-	let speed4 = topRow[topIndex][rowValue];
-
-	let dragWeightedSpeed1 = isNaN(dragIndexRatio) ? speed1 : speed1 * (1 - dragIndexRatio) + speed3 * dragIndexRatio;
-	let dragWeightedSpeed2 = isNaN(dragIndexRatio) ? speed2 : speed2 * (1 - dragIndexRatio) + speed4 * dragIndexRatio;
-	let speed = isNaN(weightRatio) ? dragWeightedSpeed1 : dragWeightedSpeed1 * (1 - weightRatio) + dragWeightedSpeed2 * weightRatio;
-
-	return speed;
-}
-function bestGlideSpeed(feathered: boolean): number | null {
-	return interpolateFromData(feathered, "Glide Speed", "weight", "speed", aircraftWeight.value);
-}
-const bestGlideSpeedFeathered = computed(() => bestGlideSpeed(true)?.toFixed(0) ?? "--");
-const bestGlideSpeedUnfeathered = computed(() => bestGlideSpeed(false)?.toFixed(0) ?? "--");
-function bestGlideRange(feathered: boolean): number | null {
-	return interpolateFromData(feathered, "Glide Range", "altitude", "range", altitude.value);
-}
-const bestGlideRangeFeathered = computed(() => bestGlideRange(true)?.toFixed(1) ?? "--");
-const bestGlideRangeUnfeathered = computed(() => bestGlideRange(false)?.toFixed(1) ?? "--");
+const bestGlideSpeedFeathered = computed(() => performance.value ? GlidePerformance.bestGlideSpeed(performance.value, dragIndex.value, true, aircraftWeight.value)?.toFixed(0) ?? "--" : "--");
+const bestGlideSpeedUnfeathered = computed(() => performance.value ? GlidePerformance.bestGlideSpeed(performance.value, dragIndex.value, false, aircraftWeight.value)?.toFixed(0) ?? "--" : "--");
+const bestGlideRangeFeathered = computed(() => performance.value ? GlidePerformance.bestGlideRange(performance.value, dragIndex.value, true, altitude.value)?.toFixed(1) ?? "--" : "--");
+const bestGlideRangeUnfeathered = computed(() => performance.value ? GlidePerformance.bestGlideRange(performance.value, dragIndex.value, false, altitude.value)?.toFixed(1) ?? "--" : "--");
 
 function weightUpdater(secondsElapsed: number = 60) {
 	aircraftWeight.value -= Math.round(fuelFlow.value / 60 * secondsElapsed / 60); // Fuel flow per minute * minutes elapsed
@@ -209,7 +153,7 @@ watchEffect(() => {
 	if (weightUpdateInterval) {
 		clearInterval(weightUpdateInterval);
 	}
-	weightUpdateInterval = setInterval(weightUpdater, 60 * 1000); // Runs every minute
+	weightUpdateInterval = window.setInterval(weightUpdater, 60 * 1000); // Runs every minute
 
 	localStorage.setItem("aircraftWeight", aircraftWeight.value.toString());
 	localStorage.setItem("fuelFlow", fuelFlow.value.toString());
