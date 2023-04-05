@@ -88,6 +88,10 @@
 									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">ILLH</td>
 									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ illh }}°</td>
 								</tr>
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Pattern Altitude</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ patternAltitude }} ft</td>
+								</tr>
 							</tbody>
 						</table>
 					</div>
@@ -331,13 +335,13 @@ import {
 } from "@heroicons/vue/24/outline";
 import { ArrowUpCircleIcon } from "@heroicons/vue/24/solid";
 
-import { parse } from "csv-parse/browser/esm";
 import toml from "toml";
 
 import type { Performance } from "@/models/configuration";
 
 import * as ATLCPerformance from "@/performance/ATLC";
 import * as GlidePerformance from "@/performance/glide";
+import * as DAFIF from "@/performance/DAFIF";
 
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 
@@ -350,11 +354,11 @@ const temperature = ref(parseInt(localStorage.getItem("temperature") ?? "15"));
 const altimeter = ref(parseFloat(localStorage.getItem("altimeter") ?? "29.92"));
 const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "11000"));
 
-const selectedAirfield: Ref<Airport | null> = ref(null);
-const selectedAirfieldRunways: Ref<Runway[]> = ref([]);
-const selectedRunway: Ref<Runway | null> = ref(null);
+const selectedAirfield: Ref<DAFIF.Airport | null> = ref(null);
+const selectedAirfieldRunways: Ref<DAFIF.Runway[]> = ref([]);
+const selectedRunway: Ref<DAFIF.Runway | null> = ref(null);
 const selectedRunwayEnd: Ref<"HIGH" | "LOW"> = ref("HIGH");
-const selectedAirfieldComms: Ref<AirportComms[] | null> = ref(null);
+const selectedAirfieldComms: Ref<DAFIF.AirportComms[] | null> = ref(null);
 
 const pressureAltitude = computed(() => {
 	if (!selectedAirfield.value) return "--";
@@ -482,6 +486,12 @@ const illh = computed(() => {
 	else {
 		return selectedRunway.value.LOW_HDG;
 	}
+});
+const patternAltitude = computed(() => {
+	if (!selectedAirfield.value) return "--";
+	let fieldElevation = parseInt(selectedAirfield.value.ELEV);
+	let patternAltitude = Math.ceil(fieldElevation / 100) * 100 + 1500;
+	return patternAltitude.toLocaleString();
 });
 
 function windComponents(runwayHeading: number): [number, number, string, string] {
@@ -675,151 +685,39 @@ catch (err) {
 
 ///////////////////////////////////////////
 
-async function searchTSV<T>(url: string, predicate: (record: T) => boolean): Promise<T[]> {
-	return new Promise(async (resolve, reject) => {
-		const parser = parse({ columns: true, delimiter: "\t" });
-		let foundRecords: T[] = [];
-		parser.on("readable", () => {
-			let record: T;
-			while ((record = parser.read()) !== null) {
-				if (predicate(record)) {
-					foundRecords.push(record);
-				}
-			}
-		});
-		parser.on("end", () => {
-			if (foundRecords.length > 0) {
-				resolve(foundRecords);
-			}
-			else {
-				reject("Identifier not found via predicate");
-			}
-		});
-
-		let tsvContents = await fetch(url);
-		parser.write(await tsvContents.text());
-		parser.end();
-	});
-}
-
-interface Airport {
-	ARPT_IDENT: string;
-	BEACON: "Y" | "N";
-	ELEV: string; // Leading zero padded
-	ICAO: string;
-	FAA_HOST_ID: string;
-	MAG_VAR: string; // e.g. W007588 0123
-	NAME: string;
-}
-async function getAirportInfo(identifier: string): Promise<Airport> {
-	return searchTSV<Airport>("/download/DAFIFT/ARPT/ARPT.TXT", record => [record.ICAO.toUpperCase(), record.FAA_HOST_ID.toUpperCase()].includes(identifier.toUpperCase())).then(airport => airport[0]);
-}
-
-interface Runway {
-	ARPT_IDENT: string;
-	SURFACE: string; // See legend
-	LENGTH: string;
-	RWY_WIDTH: string; // Zero padded
-	CLD_RWY: "C" | ""; // Closed status
-
-	HIGH_IDENT: string;
-	HIGH_HDG: string; // Float
-	HE_ELEV: string; // Float
-	HE_SLOPE: string; // Float
-	HE_TDZE: string; // Float
-	HE_DT: string; // Displaced threshold, float
-	HE_DT_ELEV: string; // Float
-	HELAND_DIS: string;
-	HE_TAKEOFF: string;
-	HE_WGS_DLAT: string;
-	HE_WGS_DLONG: string;
-
-	LOW_IDENT: string;
-	LOW_HDG: string; // Float
-	LE_ELEV: string; // Float
-	LE_SLOPE: string; // Float
-	LE_TDZE: string; // Float
-	LE_DT: string; // Displaced threshold, float
-	LE_DT_ELEV: string; // Float
-	LELAND_DIS: string;
-	LE_TAKEOFF: string;
-	LE_WGS_DLAT: string;
-	LE_WGS_DLONG: string;
-}
-
-async function getRunwayInfo(airportIdentifier: string): Promise<Runway[]> {
-	return (await searchTSV<Runway>("/download/DAFIFT/ARPT/RWY.TXT", record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase())).map(runway => {
-		const surfaceTypes: { [abbr: string]: string } = {
-			"ASP": "Asphalt",
-			"BIT": "Tar",
-			"BRI": "Brick",
-			"CLA": "Clay",
-			"COM": "Composite (Temporary)",
-			"CON": "Concrete",
-			"COP": "Composite (Permanent)",
-			"COR": "Coral",
-			"GRE": "Graded Earth",
-			"GRS": "Grass",
-			"GVL": "Gravel",
-			"ICE": "Ice",
-			"LAT": "Laterite",
-			"MAC": "Macadam",
-			"MEM": "Plastic Membrane",
-			"MIX": "Mix",
-			"PEM": "Concrete/Asphalt",
-			"PER": "Unknown (Permanent)",
-			"PSP": "Steel Planking",
-			"SAN": "Sand",
-			"SNO": "Snow",
-			"U": "Unknown",
-		};
-		if (surfaceTypes[runway.SURFACE]) {
-			runway.SURFACE = surfaceTypes[runway.SURFACE];
-		}
-		return runway;
-	});
-}
-
-interface AirportComms {
-	ARPT_IDENT: string;
-	COMM_NAME: string;
-	COMM_TYPE: string;
-	FREQ_1: string;
-	FREQ_2: string;
-	FREQ_3: string;
-	FREQ_4: string;
-	FREQ_5: string;
-	S_OPR_H: string;
-}
-
-async function getCommInfo(airportIdentifier: string): Promise<AirportComms[]> {
-	return searchTSV<AirportComms>("/download/DAFIFT/ARPT/ACOM.TXT", record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase());
-}
-
 async function updateAirfield() {
-	let airport: Airport | null = selectedAirfield.value;
+	if (!openAlert) return;
+
+	let airport: DAFIF.Airport | null = selectedAirfield.value;
 	selectedAirfield.value = null; // Shows loading text
 	try {
-		airport = await getAirportInfo(icao.value);
+		airport = await DAFIF.getAirportInfo(icao.value);
 	}
 	catch (err) {
-		console.warn("Airport not found");
+		await openAlert("Airport not found", `The identifier ${icao.value.toUpperCase()} could not be found in the DAFIF database. Make sure it's a valid ICAO or FAA location identifier.`);
 		selectedAirfield.value = airport;
 		return;
 	}
-	selectedAirfieldRunways.value = await getRunwayInfo(airport.ARPT_IDENT);
+	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(airport.ARPT_IDENT);
 	selectedAirfield.value = airport;
 
+	let bestWindIndex = NaN;
 	runwaysDropdown.value = selectedAirfieldRunways.value
-		.flatMap(runway => [runway.HIGH_IDENT, runway.LOW_IDENT])
-		.sort()
-		.map((name, index) => {
-			let length = parseInt(selectedAirfieldRunways.value.find(runway => [runway.HIGH_IDENT, runway.LOW_IDENT].includes(name))!.LENGTH);
-			return { name, notes: `${length.toLocaleString()} ft` }
+		.flatMap(runway => [
+			{ name: runway.HIGH_IDENT, heading: runway.HIGH_HDG, length: runway.LENGTH },
+			{ name: runway.LOW_IDENT, heading: runway.LOW_HDG, length: runway.LENGTH }
+		])
+		.sort((a, b) => a.name.localeCompare(b.name))
+		.map((runway, index) => {
+			let length = parseInt(runway.length);
+			if (isBestWind(parseFloat(runway.heading)) && isNaN(bestWindIndex)) {
+				bestWindIndex = index;
+			}
+			return { name: runway.name, notes: `${length.toLocaleString()} ft` }
 		});
-	selectedDropdown.value = runwaysDropdown.value[0]; // TODO: select best wind
+	selectedDropdown.value = runwaysDropdown.value[bestWindIndex];
 
-	selectedAirfieldComms.value = (await getCommInfo(airport.ARPT_IDENT))
+	selectedAirfieldComms.value = (await DAFIF.getCommInfo(airport.ARPT_IDENT))
 		.filter(freq => freq.FREQ_1)
 		.map(freq => {
 			freq.FREQ_1 = freq.FREQ_1.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_1;
