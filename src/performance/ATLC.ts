@@ -768,67 +768,46 @@ function interpolateTable<T>(
 	y: number,
 	extractor: (tableEntry: T) => number | null,
 ): number | null {
-	let xValues = Object.keys(table).map(key => parseInt(key)).sort((a, b) => a - b);
-	let topXIndex: number = xValues.findIndex(value => value >= x);
-	if (topXIndex === -1) {
-		return null; // Value too big
-	}
-	let bottomXIndex: number = topXIndex - 1;
-	if (x === xValues[topXIndex]) {
-		bottomXIndex = topXIndex;
-	}
-	if (bottomXIndex < 0) {
-		return null; // Value too small
+	function findTableBounds(table: object, value: number): { top: number, bottom: number, ratio: number } | null {
+		let bounds = Object.keys(table).map(key => parseInt(key)).sort((a, b) => a - b);
+		let topIndex: number = bounds.findIndex(boundValue => boundValue >= value);
+		if (topIndex === -1) {
+			return null; // Value too big
+		}
+		let bottomIndex: number = topIndex - 1;
+		if (value === bounds[topIndex]) {
+			bottomIndex = topIndex;
+		}
+		if (bottomIndex < 0) {
+			return null; // Value too small
+		}
+
+		let topBound = bounds[topIndex];
+		let bottomBound = bounds[bottomIndex];
+		return {
+			"top": topBound,
+			"bottom": bottomBound,
+			"ratio": scale(value, bottomBound, topBound),
+		}
 	}
 
-	let topXValue = xValues[topXIndex];
-	let bottomXValue = xValues[bottomXIndex];
-	let xRatio = scale(x, bottomXValue, topXValue);
+	let xBounds = findTableBounds(table, x);
+	if (xBounds === null) return null;
+	let y1Bounds = findTableBounds(table[xBounds.bottom], y);
+	if (y1Bounds === null) return null;
+	let y2Bounds = findTableBounds(table[xBounds.top], y);
+	if (y2Bounds === null) return null;
 
-	let y1Values = Object.keys(table[bottomXValue]).map(key => parseInt(key)).sort((a, b) => a - b);
-	let topY1Index = y1Values.findIndex(value => value >= y);
-	if (topY1Index === -1) {
-		return null; // Value too big
-	}
-	let bottomY1Index = topY1Index - 1;
-	if (y === y1Values[topY1Index]) {
-		bottomY1Index = topY1Index;
-	}
-	if (bottomY1Index < 0) {
-		return null; // Value too small
-	}
-
-	let topY1Value = y1Values[topY1Index];
-	let bottomY1Value = y1Values[bottomY1Index];
-	let y1Ratio = scale(y, bottomY1Value, topY1Value);
-
-	let y2Values = Object.keys(table[topXValue]).map(key => parseInt(key)).sort((a, b) => a - b);
-	let topY2Index = y2Values.findIndex(value => value >= y);
-	if (topY2Index === -1) {
-		return null; // Value too big
-	}
-	let bottomY2Index = topY2Index - 1;
-	if (y === y2Values[topY2Index]) {
-		bottomY2Index = topY2Index;
-	}
-	if (bottomY2Index < 0) {
-		return null; // Value too small
-	}
-
-	let topY2Value = y2Values[topY2Index];
-	let bottomY2Value = y2Values[bottomY2Index];
-	let y2Ratio = scale(y, bottomY2Value, topY2Value);
-
-	let bottomLeft = extractor(table[bottomXValue][bottomY1Value]);
-	let bottomRight = extractor(table[bottomXValue][topY1Value]);
-	let topLeft = extractor(table[topXValue][bottomY2Value]);
-	let topRight = extractor(table[topXValue][topY2Value]);
+	let bottomLeft = extractor(table[xBounds.bottom][y1Bounds.bottom]);
+	let bottomRight = extractor(table[xBounds.bottom][y1Bounds.top]);
+	let topLeft = extractor(table[xBounds.top][y2Bounds.bottom]);
+	let topRight = extractor(table[xBounds.top][y2Bounds.top]);
 	if (bottomLeft === null || bottomRight === null || topLeft === null || topRight === null) {
 		return null;
 	}
 
-	let bottom = bottomLeft * (1 - y1Ratio) + bottomRight * y1Ratio;
-	let top = topLeft * (1 - y2Ratio) + topRight * y2Ratio;
-	let solution = bottom * (1 - xRatio) + top * xRatio;
+	let bottom = bottomLeft * (1 - y1Bounds.ratio) + bottomRight * y1Bounds.ratio;
+	let top = topLeft * (1 - y2Bounds.ratio) + topRight * y2Bounds.ratio;
+	let solution = bottom * (1 - xBounds.ratio) + top * xBounds.ratio;
 	return solution;
 }
