@@ -110,16 +110,16 @@
 										<p class="text-gray-900 font-medium">Rwy {{ runway.LOW_IDENT }} <span v-if="isBestWind(parseFloat(runway.LOW_HDG))" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
 										<p class="leading-8">
 											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(parseFloat(runway.LOW_HDG))[0] > 0 ? 'rotate-90' : '-rotate-90']" />
-											<span class="ml-1 text-gray-500">{{ Math.abs(windComponents(parseFloat(runway.LOW_HDG))[0]) }} kts</span>
+											<span class="ml-1 text-gray-500">{{ windComponents(parseFloat(runway.LOW_HDG))[2] }} kts</span>
 											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
-											<span :class="['ml-1', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ Math.abs(windComponents(parseFloat(runway.LOW_HDG))[1]) }} kts</span>
+											<span :class="['ml-1', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(parseFloat(runway.LOW_HDG))[3] }} kts</span>
 										</p>
 										<p class="text-gray-900 font-medium">Rwy {{ runway.HIGH_IDENT }} <span v-if="isBestWind(parseFloat(runway.HIGH_HDG))" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
 										<p class="leading-8">
 											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(parseFloat(runway.HIGH_HDG))[0] > 0 ? 'rotate-90' : '-rotate-90']" />
-											<span class="ml-1 text-gray-500">{{ Math.abs(windComponents(parseFloat(runway.HIGH_HDG))[0]) }} kts</span>
+											<span class="ml-1 text-gray-500">{{ windComponents(parseFloat(runway.HIGH_HDG))[2] }} kts</span>
 											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
-											<span :class="['ml-1', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ Math.abs(windComponents(parseFloat(runway.HIGH_HDG))[1]) }} kts</span>
+											<span :class="['ml-1', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(parseFloat(runway.HIGH_HDG))[3] }} kts</span>
 										</p>
 									</td>
 								</tr>
@@ -485,10 +485,20 @@ const illh = computed(() => {
 	}
 });
 
-function windComponents(runwayHeading: number): [number, number] {
-	let crosswind = Math.sin((runwayHeading - windDirection.value) * (Math.PI / 180)) * windSpeed.value;
-	let headwind = Math.cos((runwayHeading - windDirection.value) * (Math.PI / 180)) * windSpeed.value;
-	return [Math.round(crosswind), Math.round(headwind)];
+function windComponents(runwayHeading: number): [number, number, string, string] {
+	let maxWindSpeed = Math.max(windSpeed.value, windGust.value);
+	let crosswindProportion = Math.sin((runwayHeading - windDirection.value) * (Math.PI / 180));
+	let crosswind = Math.round(crosswindProportion * maxWindSpeed);
+	let steadyCrosswind = Math.round(crosswindProportion * windSpeed.value);
+	let headwindProportion = Math.cos((runwayHeading - windDirection.value) * (Math.PI / 180));
+	let headwind = Math.round(headwindProportion * maxWindSpeed);
+	let steadyHeadwind = Math.round(headwindProportion * windSpeed.value);
+	return [
+		crosswind,
+		headwind,
+		Math.abs(steadyCrosswind) < Math.abs(crosswind) ? `${Math.abs(steadyCrosswind)}-${Math.abs(crosswind)}` : Math.abs(crosswind).toString(),
+		Math.abs(steadyHeadwind)  < Math.abs(headwind)  ? `${Math.abs(steadyHeadwind)}-${Math.abs(headwind)}`   : Math.abs(headwind).toString(),
+	];
 }
 function isBestWind(runwayHeading: number): boolean {
 	let bestHeadwind = -Infinity;
