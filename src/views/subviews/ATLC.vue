@@ -314,6 +314,7 @@
 			</div>
 		</div>
 	</div>
+	<p class="text-center text-sm mt-4">All performance values for aircraft equipped with 4-blade prop and ATLC active</p>
 </template>
 
 <script setup lang="ts">
@@ -686,19 +687,19 @@ catch (err) {
 ///////////////////////////////////////////
 
 async function updateAirfield() {
-	if (!openAlert) return;
+	if (!openAlert || !performance.value) return;
 
 	let airport: DAFIF.Airport | null = selectedAirfield.value;
 	selectedAirfield.value = null; // Shows loading text
 	try {
-		airport = await DAFIF.getAirportInfo(icao.value);
+		airport = await DAFIF.getAirportInfo(performance.value.DAFIFLocation, icao.value);
 	}
 	catch (err) {
 		await openAlert("Airport not found", `The identifier ${icao.value.toUpperCase()} could not be found in the DAFIF database. Make sure it's a valid ICAO or FAA location identifier.`);
 		selectedAirfield.value = airport;
 		return;
 	}
-	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(airport.ARPT_IDENT);
+	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(performance.value.DAFIFLocation, airport.ARPT_IDENT);
 	selectedAirfield.value = airport;
 
 	let bestWindIndex = NaN;
@@ -717,7 +718,7 @@ async function updateAirfield() {
 		});
 	selectedDropdown.value = runwaysDropdown.value[bestWindIndex];
 
-	selectedAirfieldComms.value = (await DAFIF.getCommInfo(airport.ARPT_IDENT))
+	selectedAirfieldComms.value = (await DAFIF.getCommInfo(performance.value.DAFIFLocation, airport.ARPT_IDENT))
 		.filter(freq => freq.FREQ_1)
 		.map(freq => {
 			freq.FREQ_1 = freq.FREQ_1.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_1;

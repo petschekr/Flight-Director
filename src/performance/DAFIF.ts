@@ -36,8 +36,8 @@ export interface Airport {
 	MAG_VAR: string; // e.g. W007588 0123
 	NAME: string;
 }
-export async function getAirportInfo(identifier: string): Promise<Airport> {
-	return searchTSV<Airport>("/download/DAFIFT/ARPT/ARPT.TXT", record => [record.ICAO.toUpperCase(), record.FAA_HOST_ID.toUpperCase()].includes(identifier.toUpperCase())).then(airport => airport[0]);
+export async function getAirportInfo(dafifLocation: string, identifier: string): Promise<Airport> {
+	return searchTSV<Airport>(`/download/${dafifLocation}/DAFIFT/ARPT/ARPT.TXT`, record => [record.ICAO.toUpperCase(), record.FAA_HOST_ID.toUpperCase()].includes(identifier.toUpperCase())).then(airport => airport[0]);
 }
 
 export interface Runway {
@@ -71,8 +71,8 @@ export interface Runway {
 	LE_WGS_DLAT: string;
 	LE_WGS_DLONG: string;
 }
-export async function getRunwayInfo(airportIdentifier: string): Promise<Runway[]> {
-	return (await searchTSV<Runway>("/download/DAFIFT/ARPT/RWY.TXT", record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase())).map(runway => {
+export async function getRunwayInfo(dafifLocation: string, airportIdentifier: string): Promise<Runway[]> {
+	return (await searchTSV<Runway>(`/download/${dafifLocation}/DAFIFT/ARPT/RWY.TXT`, record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase())).map(runway => {
 		const surfaceTypes: { [abbr: string]: string } = {
 			"ASP": "Asphalt",
 			"BIT": "Tar",
@@ -115,6 +115,6 @@ export interface AirportComms {
 	FREQ_5: string;
 	S_OPR_H: string;
 }
-export async function getCommInfo(airportIdentifier: string): Promise<AirportComms[]> {
-	return searchTSV<AirportComms>("/download/DAFIFT/ARPT/ACOM.TXT", record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase());
+export async function getCommInfo(dafifLocation: string, airportIdentifier: string): Promise<AirportComms[]> {
+	return searchTSV<AirportComms>(`/download/${dafifLocation}/DAFIFT/ARPT/ACOM.TXT`, record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase());
 }

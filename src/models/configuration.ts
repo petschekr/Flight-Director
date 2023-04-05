@@ -45,6 +45,8 @@ export interface DragIndexEntry {
 	drag: number;
 }
 export interface Performance {
+	DAFIFLocation: string;
+
 	Propeller: {
 		feathered: number;
 		unfeathered: number;
