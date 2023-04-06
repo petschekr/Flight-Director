@@ -60,6 +60,7 @@ export interface Runway {
 	HE_ASDA: string;
 	HE_WGS_DLAT: string;
 	HE_WGS_DLONG: string;
+	HE_TRUE_HDG: string;
 
 	LOW_IDENT: string;
 	LOW_HDG: string; // Float
@@ -74,6 +75,7 @@ export interface Runway {
 	LE_ASDA: string;
 	LE_WGS_DLAT: string;
 	LE_WGS_DLONG: string;
+	LE_TRUE_HDG: string;
 }
 export async function getRunwayInfo(dafifLocation: string, airportIdentifier: string): Promise<Runway[]> {
 	return (await searchTSV<Runway>(`/download/${dafifLocation}/DAFIFT/ARPT/RWY.TXT`, record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase())).map(runway => {

@@ -44,7 +44,7 @@
 
 			<h1 v-if="selectedAirfield" class="mt-1 capitalize font-bold">{{ selectedAirfield?.NAME.toLowerCase().replace(/\bAB\b/ig, "AB").replace(/\bAFB\b/ig, "AFB") }}</h1>
 			<h1 v-else class="mt-1 capitalize italic">Loading...</h1>
-			<canvas class="mt-1 mb-3 bg-white w-full h-60 rounded-md"></canvas>
+			<canvas ref="map" class="mt-1 mb-3 bg-white w-full h-60 rounded-md"></canvas>
 
 			<div>
 				<div class="sm:hidden">
@@ -318,7 +318,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref, computed, inject, watchEffect } from "vue";
+import { ref, type Ref, computed, inject, watchEffect, onMounted, watch } from "vue";
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/vue/20/solid";
 import { AdjustmentsHorizontalIcon, ChevronDoubleRightIcon, RadioIcon, XCircleIcon } from "@heroicons/vue/20/solid";
@@ -466,14 +466,22 @@ const fieldElevation = computed(() => {
 	if (!selectedAirfield.value) return "--";
 	return parseInt(selectedAirfield.value.ELEV).toLocaleString();
 });
-const magVar = computed(() => {
-	if (!selectedAirfield.value) return "--";
+function getMagVar() {
+	if (!selectedAirfield.value) return 0;
 	let parsed = selectedAirfield.value.MAG_VAR.match(/^(E|W)(\d\d\d)(\d\d\d)/);
-	if (!parsed) return "--";
+	if (!parsed) return 0;
 
 	let variation = parseInt(parsed[2]);
 	variation += parseInt(parsed[3]) / 10 / 60;
-	return `${variation.toFixed(1)}° ${parsed[1]}`
+	if (parsed[1] === "W") {
+		variation *= -1;
+	}
+	return variation;
+}
+const magVar = computed(() => {
+	if (!selectedAirfield.value) return "--";
+	let variation = getMagVar();
+	return `${Math.abs(variation).toFixed(1)}° ${variation < 0 ? "W" : "E"}`;
 });
 const illa = computed(() => {
 	if (!selectedAirfield.value) return "--";
@@ -688,6 +696,139 @@ catch (err) {
 }
 
 ///////////////////////////////////////////
+const map: Ref<HTMLCanvasElement | null> = ref(null);
+
+function drawAirfieldDiagram() {
+	if (!selectedAirfield.value || !map.value) return;
+
+	let { width, height } = map.value.getBoundingClientRect();
+	width = Math.floor(width);
+	height = Math.floor(height);
+	if (width === 0 || height === 0) return;
+	map.value.width = width;
+	map.value.height = height;
+	const ctx = map.value.getContext("2d")!;
+	ctx.clearRect(0, 0, width, height);
+
+	let runwayCoordinates = selectedAirfieldRunways.value.flatMap(runway => [
+		[parseFloat(runway.HE_WGS_DLONG), parseFloat(runway.HE_WGS_DLAT)],
+		[parseFloat(runway.LE_WGS_DLONG), parseFloat(runway.LE_WGS_DLAT)],
+	]);
+
+	let minX = NaN, maxX = NaN, minY = NaN, maxY = NaN;
+	for (let coordinatePair of runwayCoordinates) {
+		if (coordinatePair[0] < minX || isNaN(minX)) {
+			minX = coordinatePair[0];
+		}
+		if (coordinatePair[0] > maxX || isNaN(maxX)) {
+			maxX = coordinatePair[0];
+		}
+		if (coordinatePair[1] < minY || isNaN(minY)) {
+			minY = coordinatePair[1];
+		}
+		if (coordinatePair[1] > maxY || isNaN(maxY)) {
+			maxY = coordinatePair[1];
+		}
+	}
+	const mapCoordinateToFrame = (coord: [number, number], additionalScale = 1): [number, number] => {
+		let scale = Math.min(width / (maxX - minX), height / (maxY - minY));
+		scale *= 0.95; // Don't crowd to edges
+		scale *= additionalScale;
+		let x = (coord[0] - minX) * scale;
+		let y = (coord[1] - minY) * scale;
+		// Shift to center
+		x += (width - ((maxX - minX) * scale)) / 2;
+		y += (height - ((maxY - minY) * scale)) / 2;
+
+		// Map origin point from lower left (maps) to upper left (canvas context)
+		y = -y + height;
+		return [x, y];
+	}
+
+	// Draw runways
+	for (let runway of selectedAirfieldRunways.value) {
+		let highEnd = mapCoordinateToFrame([parseFloat(runway.HE_WGS_DLONG), parseFloat(runway.HE_WGS_DLAT)], 0.8);
+		let lowEnd  = mapCoordinateToFrame([parseFloat(runway.LE_WGS_DLONG), parseFloat(runway.LE_WGS_DLAT)], 0.8);
+
+		ctx.lineWidth = 5;
+		ctx.strokeStyle = "black";
+		ctx.beginPath();
+		ctx.moveTo(highEnd[0], highEnd[1]);
+		ctx.lineTo(lowEnd[0], lowEnd[1]);
+		ctx.stroke();
+
+
+		const drawAngleText = (text: string, position: [number, number], angle: number) => {
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+
+			ctx.save();
+			ctx.translate(position[0], position[1]);
+			ctx.rotate(angle * (Math.PI / 180));
+			ctx.fillText(text, 0, 16);
+			ctx.restore();
+		};
+		ctx.font = "16px sans-serif";
+		drawAngleText(runway.HIGH_IDENT, highEnd, parseFloat(runway.HE_TRUE_HDG));
+		drawAngleText(runway.LOW_IDENT, lowEnd, parseFloat(runway.LE_TRUE_HDG));
+	}
+
+	// Draw wind marker
+
+	const windMarkerLength = 40;
+	let correctedWindDirection = windDirection.value - 90 - 180 + getMagVar();
+
+	let windMarkerCenter = [35, 35];
+	windMarkerCenter[0] -= Math.cos(correctedWindDirection * (Math.PI / 180)) * windMarkerLength / 2;
+	windMarkerCenter[1] -= Math.sin(correctedWindDirection * (Math.PI / 180)) * windMarkerLength / 2;
+
+	ctx.beginPath();
+	ctx.arc(windMarkerCenter[0], windMarkerCenter[1], 3, 0, 2 * Math.PI);
+	ctx.fillStyle = "black";
+	ctx.fill();
+
+	ctx.lineWidth = 2;
+	ctx.strokeStyle = "black";
+	ctx.beginPath();
+	ctx.moveTo(windMarkerCenter[0], windMarkerCenter[1]);
+	ctx.lineTo(
+		Math.cos(correctedWindDirection * (Math.PI / 180)) * windMarkerLength + windMarkerCenter[0],
+		Math.sin(correctedWindDirection * (Math.PI / 180)) * windMarkerLength + windMarkerCenter[1],
+	);
+	ctx.stroke();
+
+	function windMark(position: number, length: number) {
+		let positionLength = (windMarkerLength * 0.75 / 4) * position;
+
+		ctx.beginPath();
+		ctx.moveTo(
+			Math.cos(correctedWindDirection * (Math.PI / 180)) * (windMarkerLength - positionLength) + windMarkerCenter[0],
+			Math.sin(correctedWindDirection * (Math.PI / 180)) * (windMarkerLength - positionLength) + windMarkerCenter[1],
+		);
+		ctx.lineTo(
+			Math.cos(correctedWindDirection * (Math.PI / 180)) * (windMarkerLength - positionLength) + windMarkerCenter[0] + Math.cos((correctedWindDirection + 60) * (Math.PI / 180)) * length,
+			Math.sin(correctedWindDirection * (Math.PI / 180)) * (windMarkerLength - positionLength) + windMarkerCenter[1] + Math.sin((correctedWindDirection + 60) * (Math.PI / 180)) * length,
+		);
+		ctx.stroke();
+	}
+	let windMagnitude = Math.round(Math.max(windSpeed.value, windGust.value) / 5) * 5; // Round to nearest 5 knots
+	if (windMagnitude > 45) windMagnitude = 45;
+
+	if (windMagnitude === 1) {
+		windMark(1, 10);
+	}
+	else if (windMagnitude > 1) {
+		for (let i = 0; i < windMagnitude / 10; i++) {
+			windMark(i, i === Math.floor((windMagnitude / 10)) && (windMagnitude / 5) % 2 === 1 ? 10 : 15);
+		}
+	}
+}
+
+const resizeObserver = new ResizeObserver(entries => {
+	drawAirfieldDiagram();
+});
+onMounted(() => resizeObserver.observe(map.value!));
+watch([windDirection, windSpeed, windGust], () => drawAirfieldDiagram());
 
 async function updateAirfield() {
 	if (!openAlert || !performance.value) return;
@@ -731,6 +872,8 @@ async function updateAirfield() {
 			freq.FREQ_5 = freq.FREQ_5.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_5;
 			return freq;
 		});
+
+	drawAirfieldDiagram();
 }
 updateAirfield();
 
