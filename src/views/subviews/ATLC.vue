@@ -231,7 +231,7 @@
 					PA: <span class="font-semibold">{{ pressureAltitude }} ft</span> //
 					DA: <span class="font-semibold">{{ densityAltitude }} ft</span> //
 					ISA <span class="font-semibold">{{ isa }} °F</span> //
-					TODA: <span class="font-semibold">{{ toda }} ft</span> //
+					TORA: <span class="font-semibold">{{ tora }} ft</span> //
 					LDA: <span class="font-semibold">{{ lda }} ft</span>
 				</p>
 				<dl class="mt-4 grid grid-cols-2 xl:grid-cols-4 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
@@ -379,10 +379,10 @@ const isa = computed(() => {
 		return isa.toString();
 	}
 });
-const toda = computed(() => {
+const tora = computed(() => {
 	if (!selectedAirfield.value || !selectedRunway.value) return "--";
-	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HE_TAKEOFF : selectedRunway.value.LE_TAKEOFF);
-	if (distance === 1) {
+	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HE_TORA : selectedRunway.value.LE_TORA);
+	if (isNaN(distance)) {
 		distance = parseInt(selectedRunway.value.LENGTH);
 	}
 	return distance.toLocaleString();
@@ -390,6 +390,9 @@ const toda = computed(() => {
 const lda = computed(() => {
 	if (!selectedAirfield.value || !selectedRunway.value) return "-- ft";
 	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HELAND_DIS : selectedRunway.value.LELAND_DIS);
+	if (isNaN(distance)) {
+		distance = parseInt(selectedRunway.value.LENGTH);
+	}
 	return distance.toLocaleString();
 });
 const accelCheckTime = computed(() => {
@@ -598,8 +601,8 @@ watchEffect(() => {
 	}
 
 	// Runway limitations
-	if (parseInt(takeoffRoll.value.replace(",", "")) > parseInt(toda.value.replace(",", ""))) {
-		errors.value.push(`Takeoff roll of <b>${takeoffRoll.value} ft</b> exceeds takeoff distance available (${toda.value} ft)`);
+	if (parseInt(takeoffRoll.value.replace(",", "")) > parseInt(tora.value.replace(",", ""))) {
+		errors.value.push(`Takeoff roll of <b>${takeoffRoll.value} ft</b> exceeds takeoff run available (${tora.value} ft)`);
 	}
 	if (parseInt(landingRoll.value.replace(",", "")) > parseInt(lda.value.replace(",", ""))) {
 		errors.value.push(`Landing roll of <b>${landingRoll.value} ft</b> exceeds landing distance available (${lda.value} ft)`);

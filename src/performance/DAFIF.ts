@@ -55,7 +55,9 @@ export interface Runway {
 	HE_DT: string; // Displaced threshold, float
 	HE_DT_ELEV: string; // Float
 	HELAND_DIS: string;
-	HE_TAKEOFF: string;
+	HE_TORA: string;
+	HE_TODA: string;
+	HE_ASDA: string;
 	HE_WGS_DLAT: string;
 	HE_WGS_DLONG: string;
 
@@ -67,7 +69,9 @@ export interface Runway {
 	LE_DT: string; // Displaced threshold, float
 	LE_DT_ELEV: string; // Float
 	LELAND_DIS: string;
-	LE_TAKEOFF: string;
+	LE_TORA: string;
+	LE_TODA: string;
+	LE_ASDA: string;
 	LE_WGS_DLAT: string;
 	LE_WGS_DLONG: string;
 }
