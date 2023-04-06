@@ -699,7 +699,7 @@ catch (err) {
 const map: Ref<HTMLCanvasElement | null> = ref(null);
 
 function drawAirfieldDiagram() {
-	if (!selectedAirfield.value || !map.value) return;
+	if (!selectedAirfield.value || !selectedRunway.value || !map.value) return;
 
 	let { width, height } = map.value.getBoundingClientRect();
 	width = Math.floor(width);
@@ -747,16 +747,16 @@ function drawAirfieldDiagram() {
 
 	// Draw runways
 	for (let runway of selectedAirfieldRunways.value) {
+		let isSelected = runway.HIGH_IDENT === selectedRunway.value.HIGH_IDENT && runway.LOW_IDENT === selectedRunway.value.LOW_IDENT;
 		let highEnd = mapCoordinateToFrame([parseFloat(runway.HE_WGS_DLONG), parseFloat(runway.HE_WGS_DLAT)], 0.8);
 		let lowEnd  = mapCoordinateToFrame([parseFloat(runway.LE_WGS_DLONG), parseFloat(runway.LE_WGS_DLAT)], 0.8);
 
 		ctx.lineWidth = 5;
-		ctx.strokeStyle = "black";
+		ctx.strokeStyle = isSelected ? "#0284c7" : "black";
 		ctx.beginPath();
 		ctx.moveTo(highEnd[0], highEnd[1]);
 		ctx.lineTo(lowEnd[0], lowEnd[1]);
 		ctx.stroke();
-
 
 		const drawAngleText = (text: string, position: [number, number], angle: number) => {
 			ctx.textAlign = "center";
@@ -769,14 +769,25 @@ function drawAirfieldDiagram() {
 			ctx.restore();
 		};
 		ctx.font = "16px sans-serif";
+		if (isSelected && selectedRunwayEnd.value === "HIGH") {
+			ctx.fillStyle = "#0284c7";
+		}
+		else {
+			ctx.fillStyle = "black";
+		}
 		drawAngleText(runway.HIGH_IDENT, highEnd, parseFloat(runway.HE_TRUE_HDG));
+		if (isSelected && selectedRunwayEnd.value === "LOW") {
+			ctx.fillStyle = "#0284c7";
+		}
+		else {
+			ctx.fillStyle = "black";
+		}
 		drawAngleText(runway.LOW_IDENT, lowEnd, parseFloat(runway.LE_TRUE_HDG));
 	}
 
 	// Draw wind marker
-
 	const windMarkerLength = 40;
-	let correctedWindDirection = windDirection.value - 90 - 180 + getMagVar();
+	let correctedWindDirection = windDirection.value - 90 + getMagVar();
 
 	let windMarkerCenter = [35, 35];
 	windMarkerCenter[0] -= Math.cos(correctedWindDirection * (Math.PI / 180)) * windMarkerLength / 2;
@@ -828,7 +839,7 @@ const resizeObserver = new ResizeObserver(entries => {
 	drawAirfieldDiagram();
 });
 onMounted(() => resizeObserver.observe(map.value!));
-watch([windDirection, windSpeed, windGust], () => drawAirfieldDiagram());
+watch([windDirection, windSpeed, windGust, selectedRunway, selectedRunwayEnd], () => drawAirfieldDiagram());
 
 async function updateAirfield() {
 	if (!openAlert || !performance.value) return;
