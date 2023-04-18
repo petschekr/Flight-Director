@@ -842,7 +842,7 @@ onMounted(() => resizeObserver.observe(map.value!));
 watch([windDirection, windSpeed, windGust, selectedRunway, selectedRunwayEnd], () => drawAirfieldDiagram());
 
 async function updateAirfield() {
-	if (!openAlert || !performance.value) return;
+	if (!openAlert || !performance.value || !icao.value) return;
 
 	let airport: DAFIF.Airport | null = selectedAirfield.value;
 	selectedAirfield.value = null; // Shows loading text
