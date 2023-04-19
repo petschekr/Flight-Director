@@ -222,15 +222,21 @@ const processPathReplacements = inject<(file: string) => string>("processPathRep
 const defaultColor = "bg-sky-500";
 
 const isOpen = ref(false);
-watch(() => props.open, () => isOpen.value = props.open);
-watch(() => props.file, () => {
+watch(() => props.open, () => {
+	isOpen.value = props.open;
+	if (props.open && props.file === null) {
+		loadCardValues();
+	}
+});
+watch(() => props.file, loadCardValues);
+function loadCardValues() {
 	title.value = props.file?.name ?? "";
 	description.value = props.file?.description ?? "";
 	abbreviation.value = props.file?.abbreviation ?? "";
 	path.value = props.file?.rawPath ?? props.file?.path ?? "";
 	searchTerms.value = props.file?.searchTerms ?? "";
 	selectedColor.value = colors[colors.findIndex(color => props.file?.color === color)] ?? defaultColor;
-});
+}
 function close() {
 	isOpen.value = false;
 	emit("closed");
