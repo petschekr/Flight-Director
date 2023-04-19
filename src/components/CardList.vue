@@ -211,6 +211,7 @@ function dragStart(e: DragEvent, groupName: string, title: string) {
 	e.dataTransfer.effectAllowed = "move";
 	e.dataTransfer.setData("text/plain", title);
 	e.dataTransfer.setData("flightdirector/card", "");
+	e.dataTransfer.setData("tabName", props.tabName);
 	e.dataTransfer.setData("groupName", groupName);
 	e.dataTransfer.setData("title", title);
 }

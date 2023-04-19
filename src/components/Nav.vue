@@ -311,33 +311,64 @@
 	function dragEnter(e: DragEvent) {
 		let target = e.currentTarget as HTMLElement;
 		if (target === currentDragItem) return; // Don't react to being dragged over self
-		if (!e.dataTransfer?.types.includes("flightdirector/tab")) return;
+		if (!e.dataTransfer?.types.includes("flightdirector/tab") && !e.dataTransfer?.types.includes("flightdirector/card")) return;
 
 		target.classList.add(...dragTargetActiveStyles);
 	}
 	function dragLeave(e: DragEvent) {
 		let target = e.currentTarget as HTMLElement;
 		if (target === currentDragItem) return; // Don't react to being dragged over self
-		if (!e.dataTransfer?.types.includes("flightdirector/tab")) return;
+		if (!e.dataTransfer?.types.includes("flightdirector/tab") && !e.dataTransfer?.types.includes("flightdirector/card")) return;
 
 		target.classList.remove(...dragTargetActiveStyles);
 	}
 	function drop(e: DragEvent, targetTabIndex: number) {
 		let target = e.currentTarget as HTMLElement;
 		if (target === currentDragItem) return; // Don't react to being dropped on self
-		if (!e.dataTransfer?.types.includes("flightdirector/tab")) return;
 		if (!configuration?.value) return;
 
-		target.classList.remove(...dragTargetActiveStyles);
+		if (e.dataTransfer?.types.includes("flightdirector/tab")) {
+			// Tab was dropped on another tab to rearrange them
+			target.classList.remove(...dragTargetActiveStyles);
 
-		const sourceTabIndex = parseInt(e.dataTransfer.getData("tabIndex"));
+			const sourceTabIndex = parseInt(e.dataTransfer.getData("tabIndex"));
 
-		let tab = configuration.value.sidebarTab[sourceTabIndex]; // Grab the dragged tab out of the array
-		configuration.value.sidebarTab.splice(sourceTabIndex, 1); // Delete from the source array
-		configuration.value.sidebarTab.splice(targetTabIndex, 0, tab); // Add to the target array in the target's position, pushing everything else backwards
+			let tab = configuration.value.sidebarTab[sourceTabIndex]; // Grab the dragged tab out of the array
+			configuration.value.sidebarTab.splice(sourceTabIndex, 1); // Delete from the source array
+			configuration.value.sidebarTab.splice(targetTabIndex, 0, tab); // Add to the target array in the target's position, pushing everything else backwards
 
-		// TODO: Reorder tab contents object to match
+			// TODO: Reorder tab contents object to match
 
-		configuration.value.unsaved = true;
+			configuration.value.unsaved = true;
+		}
+		else if (e.dataTransfer?.types.includes("flightdirector/card")) {
+			// Card was dropped on a tab so move it to that tab
+			target.classList.remove(...dragTargetActiveStyles);
+
+			const oldTabName = e.dataTransfer.getData("tabName");
+			const newTabName = configuration.value.sidebarTab[targetTabIndex].name;
+			if (oldTabName === newTabName || !oldTabName || !newTabName) return;
+			if (configuration.value.sidebarTab[targetTabIndex].component !== "FileList") {
+				// Card was dropped on a tab that is not a FileList
+				return;
+			}
+
+			const sourceGroupName = e.dataTransfer.getData("groupName");
+			const sourceTitle = e.dataTransfer.getData("title");
+
+			let sourceIndex = configuration.value.tabs[oldTabName][sourceGroupName].findIndex(file => file.name === sourceTitle);
+			if (sourceIndex === -1) {
+				console.error("Dragged card doesn't exist in configuration(?)");
+				return;
+			}
+
+			let file = configuration.value.tabs[oldTabName][sourceGroupName][sourceIndex]; // Grab the dragged file out of the array
+			configuration.value.tabs[oldTabName][sourceGroupName].splice(sourceIndex, 1); // Delete from the source array
+
+			let newTabFileGroups = Object.keys(configuration.value.tabs[newTabName]);
+			configuration.value.tabs[newTabName][newTabFileGroups[newTabFileGroups.length - 1]].push(file); // Add to the last file group
+
+			configuration.value.unsaved = true;
+		}
 	}
 </script>
