@@ -4,10 +4,15 @@
 
 $hostLocation = "http://localhost:5050/"
 
+Add-Type -AssemblyName System.Security
+Add-Type -AssemblyName Microsoft.VisualBasic
+
 $http = [System.Net.HttpListener]::New()
 $http.Prefixes.Add($hostLocation)
 # $http.AuthenticationSchemes = [System.Net.AuthenticationSchemes]::IntegratedWindowsAuthentication
 $http.Start()
+
+$intelinkLoggedIn = $false
 
 New-PSDrive -Name FileServe -PSProvider FileSystem -Root "C:\Users\petsc\Pictures"
 # [System.Diagnostics.Process]::Start("msedge", $hostLocation) # Or "chrome"
@@ -118,6 +123,81 @@ try {
 				$streamReader = [System.IO.StreamReader]::new($req.InputStream)
 				$body = $streamReader.ReadToEnd()
 				New-Item -Path "FileServe:\$path" -ItemType File -Force -Value $body
+			}
+			elseif ($path.StartsWith("/sharepoint")) {
+				$site = $path.Replace("/sharepoint/", "");
+
+				# Bring the certificate prompt to foreground
+				[Microsoft.VisualBasic.Interaction]::AppActivate($PID)
+
+				# Filtering for cert requirements...
+				$ValidCerts = [System.Security.Cryptography.X509Certificates.X509Certificate2[]](dir Cert:\CurrentUser\My | where { $_.NotAfter -gt (Get-Date) })
+
+				# TODO: filter by issuer
+				# Write-Host $ValidCerts[0].Issuer
+
+				if (!($intelinkLoggedIn)) {
+					# Go through login process
+					$Cert = [System.Security.Cryptography.X509Certificates.X509Certificate2UI]::SelectFromCollection(
+						$ValidCerts,
+						'Choose a certificate',
+						'Choose a certificate',
+						'SingleSelection'
+					) | Select-Object -First 1
+
+					$InitialParams = @{
+						Uri             = "https://intelshare.intelink.gov/"
+						SessionVariable = "Session"
+						Method          = "GET"
+						Certificate     = $Cert
+					}
+					$Response = Invoke-WebRequest @InitialParams -UseBasicParsing
+
+					$LoginParams = @{
+						Uri         = "https://intelshare.intelink.gov/my.policy"
+						Method      = "POST"
+						Body        = @{
+							choice = "0"
+						}
+						WebSession  = $Session
+						Certificate = $Cert
+					}
+					$Response = Invoke-WebRequest @LoginParams -UseBasicParsing
+
+					$WResult = $Response.RawContent | Select-String -Pattern 'name="wresult" value="(.*?)"'
+					$WResult = $WResult.Matches[0].Groups[1]
+					$WResult = $WResult.Value.Replace("&lt;", "<").Replace("&quot;", '"')
+
+					$TrustParams = @{
+						Uri         = "https://intelshare.intelink.gov/_trust"
+						Method      = "POST"
+						Body        = @{
+							wa      = "wsignin1.0"
+							wresult = $WResult
+							wctx    = "https://intelshare.intelink.gov/_layouts/15/Authenticate.aspx?Source=%2F"
+						}
+						WebSession  = $Session
+						Certificate = $Cert
+					}
+					$Response = Invoke-WebRequest @TrustParams -UseBasicParsing
+					$intelinkLoggedIn = $true
+				}
+
+				$streamReader = [System.IO.StreamReader]::new($req.InputStream)
+				$body = $streamReader.ReadToEnd()
+
+				$ProxyParams = @{
+					Uri         = "https://" + $site
+					Method      = $req.HttpMethod
+					Body        = $body
+					ContentType = "text/xml; charset=UTF-8"
+					WebSession  = $Session
+					Certificate = $Cert
+				}
+				$Response = Invoke-WebRequest @ProxyParams -UseBasicParsing
+				# Write-Host ($Response | Format-List | Out-String)
+				$content = [System.Text.Encoding]::UTF8.GetBytes($Response.Content);
+				$res.ContentType = "text/xml"
 			}
 			else {
 				$content = [System.Text.Encoding]::UTF8.GetBytes("Invalid URL");

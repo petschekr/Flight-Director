@@ -24,27 +24,31 @@ export default defineConfig({
     host: true,
     proxy: {
       "/config": {
-        target: "http://localhost:5050/config",
+        target: "http://localhost:5050",
         changeOrigin: true,
       },
       "/performance": {
-        target: "http://localhost:5050/performance",
+        target: "http://localhost:5050",
         changeOrigin: true,
       },
       "/api": {
-        target: "http://localhost:5050/api",
+        target: "http://localhost:5050",
         changeOrigin: true,
       },
       "/open": {
-        target: "http://localhost:5050/open",
+        target: "http://localhost:5050",
         changeOrigin: true,
       },
       "/download": {
-        target: "http://localhost:5050/download",
+        target: "http://localhost:5050",
         changeOrigin: true,
       },
       "/save": {
-        target: "http://localhost:5050/save",
+        target: "http://localhost:5050",
+        changeOrigin: true,
+      },
+      "/sharepoint": {
+        target: "http://localhost:5050",
         changeOrigin: true,
       },
     }
