@@ -120,11 +120,88 @@
 
 											<div class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
+													<label for="card-location" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Link Type
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														When set to SharePoint, documents will automatically be pulled from SharePoint and cached in a local location
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<select id="card-location" v-model="location"
+														class="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-sky-500 sm:text-sm sm:leading-6">
+														<option>Local</option>
+														<option>SharePoint</option>
+													</select>
+												</div>
+											</div>
+
+											<div v-if="location === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
+													<label for="card-url" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														URL link to document
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														This determines which SharePoint list will be searched
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<input type="text" id="card-url" v-model="sharePointUrl"
+														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
+												</div>
+											</div>
+
+											<div v-if="location === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
+													<label for="card-document-name" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Document name
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														A Regular Expression used to search for the document to pull.
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<input type="text" id="card-document-name" v-model="sharePointSearch"
+														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
+												</div>
+											</div>
+
+											<div v-if="location === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
+													<label for="card-cache-location" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Cache location
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														The local Share Drive path where the document will be downloaded to and cached
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>&lt;callsign&gt;</code>: Full user-selected callsign
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>&lt;callsign-path&gt;</code>: Path associated with selected callsign
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>&lt;short-callsign&gt;</code>: Short version of selected callsign (ex: <code>WY11</code>)
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>&lt;DD MMM YY&gt;</code>: Full date formatting support
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<textarea id="card-path" rows="4" v-model="sharePointCachePath"
+														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"></textarea>
+													<br />
+													<code class="[overflow-wrap:anywhere]">{{cachePathPreview}}</code>
+												</div>
+											</div>
+
+											<div v-if="location === 'Local'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
 													<label for="card-path" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
 														Link or path
 													</label>
 													<p class="mt-1 text-sm text-gray-500">
-														Sharedrive path to the file or folder this card links to. Paths must be children of the root folder. Web links are also supported.
+														Share Drive path to the file or folder this card links to. Paths must be children of the root folder. Web links are also supported.
 													</p>
 													<p class="mt-1 text-sm text-gray-500">
 														<code>&lt;callsign&gt;</code>: Full user-selected callsign
@@ -233,7 +310,11 @@ function loadCardValues() {
 	title.value = props.file?.name ?? "";
 	description.value = props.file?.description ?? "";
 	abbreviation.value = props.file?.abbreviation ?? "";
+	location.value = props.file?.location ?? "Local";
 	path.value = props.file?.rawPath ?? props.file?.path ?? "";
+	sharePointUrl.value = props.file?.sharePoint?.url ?? "";
+	sharePointSearch.value = props.file?.sharePoint?.search ?? "";
+	sharePointCachePath.value = props.file?.sharePoint?.cachePath ?? "";
 	searchTerms.value = props.file?.searchTerms ?? "";
 	selectedColor.value = colors[colors.findIndex(color => props.file?.color === color)] ?? defaultColor;
 }
@@ -252,12 +333,20 @@ const title = ref("");
 const description = ref("");
 const selectedColor = ref(defaultColor); // Updated by props.file watcher
 const abbreviation = ref("");
+const location: Ref<File["location"]> = ref("Local");
 const path = ref("");
+const sharePointUrl = ref("");
+const sharePointSearch = ref("");
+const sharePointCachePath = ref("");
 const searchTerms = ref("");
 
 const pathPreview = computed(() => {
 	if (!processPathReplacements) return "";
 	return processPathReplacements(path.value);
+});
+const cachePathPreview = computed(() => {
+	if (!processPathReplacements) return "";
+	return processPathReplacements(sharePointCachePath.value);
 });
 
 async function saveCard() {
@@ -276,9 +365,25 @@ async function saveCard() {
 		await openAlert("Abbreviation required", "Please provide a short abbrevation to help quickly identify the card");
 		return;
 	}
-	if (!path.value) {
-		await openAlert("Path or link required", "Please provide a path or external web link that this card will link to");
-		return;
+	if (location.value === "Local") {
+		if (!path.value) {
+			await openAlert("Path or link required", "Please provide a path or external web link that this card will link to");
+			return;
+		}
+	}
+	else if (location.value === "SharePoint") {
+		if (!sharePointUrl.value) {
+			await openAlert("URL required", "Please provide a URL of a document that is in the same SharePoint list as what will be linked");
+			return;
+		}
+		if (!sharePointSearch.value) {
+			await openAlert("Document name", "Please provide a RegEx that defines what document is being looked for in the SharePoint list");
+			return;
+		}
+		if (!sharePointCachePath.value) {
+			await openAlert("Cache location required", "Please provide a local share drive path where the SharePoint document will be downloaded to and cached");
+			return;
+		}
 	}
 	// Check if there's already a card in this group with this name
 	let existingFileWithName = configuration.value.tabs[props.tabName][props.groupName].find(file => file.name === title.value);
@@ -287,14 +392,26 @@ async function saveCard() {
 		return;
 	}
 
-	const fileContents = {
+	const fileContents: File = {
 		name: title.value,
 		description: description.value,
 		color: selectedColor.value,
 		abbreviation: abbreviation.value,
+		location: location.value,
 		path: path.value,
+		sharePoint: {
+			url: sharePointUrl.value,
+			search: sharePointSearch.value,
+			cachePath: sharePointCachePath.value,
+		},
 		searchTerms: searchTerms.value.length === 0 ? undefined : searchTerms.value,
 	};
+	if (location.value !== "Local") {
+		delete fileContents.path;
+	}
+	if (location.value !== "SharePoint") {
+		delete fileContents.sharePoint;
+	}
 
 	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.file?.name);
 	if (!props.file || fileIndex === -1) {

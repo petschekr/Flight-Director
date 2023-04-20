@@ -7,8 +7,14 @@ export interface File {
 	description: string;
 	abbreviation: string;
 	color: string;
-	path: string;
+	location?: "Local" | "SharePoint";
+	path?: string;
 	rawPath?: string;
+	sharePoint?: {
+		url: string;
+		search: string;
+		cachePath: string;
+	};
 	searchTerms?: string; // Comma separated
 }
 

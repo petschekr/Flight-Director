@@ -168,7 +168,7 @@ const filteredFiles = computed((): ConfigFileEntry[] => {
 			return entry.name.toLowerCase().includes(q)
 				|| entry.description.toLowerCase().includes(q)
 				|| entry.searchTerms?.toLowerCase().includes(q)
-				|| entry.path.toLowerCase().includes(q);
+				|| entry.path?.toLowerCase().includes(q);
 		});
 		// .sort();
 	return files;
@@ -196,7 +196,7 @@ function onSelect(selection: string) {
 				if (file) {
 					let navItem = configuration.value.sidebarTab.find(item => item.name === tabName);
 					if (navItem) {
-						if (file.path.startsWith("http")) {
+						if (file.path?.startsWith("http")) {
 							// External link
 							window.open(file.path, "_blank");
 						}

@@ -99,7 +99,7 @@ function getPath(filePath: string): string {
 	return "/" + route.params.path[0] + "/" + encodeURIComponent(filePath);
 }
 function isExternal(file: File): boolean {
-	return file.path.startsWith("http");
+	return file.path?.startsWith("http") ?? false;
 }
 function openEditPanel(file: File | null, groupName: string, tabName: string) {
 	editPanelFile.value = file;

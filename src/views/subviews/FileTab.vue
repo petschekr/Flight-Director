@@ -104,7 +104,7 @@ function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
 	return {
 		...file,
 		rawPath: file.path,
-		path: processPathReplacements(file.path),
+		path: file.path ? processPathReplacements(file.path) : undefined,
 	};
 }
 
@@ -148,6 +148,7 @@ watchPostEffect(async () => {
 	routePath.shift(); // Remove first part of path that refers to selected sidebar tab
 
 	let filePath: string[] = [];
+	let fileEntry: ConfigFileEntry | undefined = undefined;
 	if (props.tabName !== "All Files") {
 		// Need to look up entry to find beginning of real path
 		let entryName = routePath.shift();
@@ -156,7 +157,7 @@ watchPostEffect(async () => {
 			return;
 		}
 		else {
-			let fileEntry = Object.values(configuration.value.tabs[props.tabName])
+			fileEntry = Object.values(configuration.value.tabs[props.tabName])
 				.flat()
 				.map(mapPathIdentifiers)
 				.find(file => file.name === entryName);
@@ -168,162 +169,243 @@ watchPostEffect(async () => {
 				router.push("/" + route.params.path[0]); // Navigate to root of the tab
 				return;
 			}
-			filePath = fileEntry.path.split("/");
 		}
 	}
-	filePath = filePath.concat(routePath); // If routePath still has items on it, they're subitems of the looked-up filePath
 
-	const regexPathReplacement = /<\|(.*?)\|>/;
-	let firstRegexPath = filePath.findIndex(path => path.match(regexPathReplacement) !== null);
-	let definitePath: string[] = filePath; // Definite path that does not contain regexes
-	let indefinitePath: string[] = []; // Part of path that does contain regexes
-	if (firstRegexPath !== -1) {
-		definitePath = filePath.slice(0, firstRegexPath);
-		indefinitePath = filePath.slice(firstRegexPath);
-	}
+	if (!fileEntry?.location || fileEntry.location === "Local") {
+		if (fileEntry?.path) {
+			filePath = fileEntry.path.split("/");
+		}
+		filePath = filePath.concat(routePath); // If routePath still has items on it, they're subitems of the looked-up filePath
 
-	let itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
-	if (itemInfoResponse.status === 200) {
-		let itemInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await itemInfoResponse.json();
+		const regexPathReplacement = /<\|(.*?)\|>/;
+		let firstRegexPath = filePath.findIndex(path => path.match(regexPathReplacement) !== null);
+		let definitePath: string[] = filePath; // Definite path that does not contain regexes
+		let indefinitePath: string[] = []; // Part of path that does contain regexes
+		if (firstRegexPath !== -1) {
+			definitePath = filePath.slice(0, firstRegexPath);
+			indefinitePath = filePath.slice(firstRegexPath);
+		}
 
-		while (indefinitePath.length > 0 && Array.isArray(itemInfo)) {
-			let indefinitePathComponent = indefinitePath.shift()!; // Undefined check is part of loop condition
-			let matcher: RegExp;
-			// TODO Limitation: right now, each indefinite path component is evaluated as either 100% regex or 100% not
-			if (indefinitePathComponent.match(regexPathReplacement) !== null) {
-				// Path component contains a regex
-				let matcherText = indefinitePathComponent.replace(new RegExp(regexPathReplacement, "g"), (_, expression) => expression);
-				try {
-					matcher = new RegExp(matcherText);
+		let itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+		if (itemInfoResponse.status === 200) {
+			let itemInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await itemInfoResponse.json();
+
+			while (indefinitePath.length > 0 && Array.isArray(itemInfo)) {
+				let indefinitePathComponent = indefinitePath.shift()!; // Undefined check is part of loop condition
+				let matcher: RegExp;
+				// TODO Limitation: right now, each indefinite path component is evaluated as either 100% regex or 100% not
+				if (indefinitePathComponent.match(regexPathReplacement) !== null) {
+					// Path component contains a regex
+					let matcherText = indefinitePathComponent.replace(new RegExp(regexPathReplacement, "g"), (_, expression) => expression);
+					try {
+						matcher = new RegExp(matcherText);
+					}
+					catch (err) {
+						await openAlert(
+							"Invalid regular expression",
+							`The path for this card contains an invalid regular expression for the path component ${matcherText}: ${(err as SyntaxError).message}`
+						);
+						router.push("/" + route.params.path[0]); // Navigate to root of the tab
+						return;
+					}
 				}
-				catch (err) {
+				else {
+					// Use literal path component
+					indefinitePathComponent = indefinitePathComponent.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&"); // Escape Regex characters
+					matcher = new RegExp("^" + indefinitePathComponent + "$"); // Wrap in start/end match symbols
+				}
+
+				let unfilteredItemInfo = itemInfo;
+				itemInfo = itemInfo.filter(item => item.name.match(matcher) !== null);
+				if (itemInfo.length === 0) {
 					await openAlert(
-						"Invalid regular expression",
-						`The path for this card contains an invalid regular expression for the path component ${matcherText}: ${(err as SyntaxError).message}`
+						"File or directory not found",
+						`Couldn't find file or directory with RegEx as specified in the configuration: ${filePath.join("/")}. Going to the folder that might contain it.`
 					);
-					router.push("/" + route.params.path[0]); // Navigate to root of the tab
+					itemInfo = unfilteredItemInfo;
+					continue;
+				}
+
+				async function loadItem(item: FileFromAPI | DirectoryFromAPI) {
+					definitePath.push(item.name);
+					if (item.kind === "file") {
+						// Show as single file instead of a list of files
+						itemInfo = item;
+					}
+					else {
+						// Load directory's contents
+						itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+						itemInfo = await itemInfoResponse.json();
+					}
+				}
+
+				if (indefinitePath.length === 0 && itemInfo.length === 1) {
+					// This is the final path item and there is only one RegEx match
+					await loadItem(itemInfo[0]);
+				}
+				else if (indefinitePath.length > 0) {
+					// More indefinite path items remaining
+					if (indefinitePath[0].match(regexPathReplacement) === null && indefinitePath[0].match(matcher) !== null) {
+						// If the next non-regex indefinite path item matches the current matcher, this may be a subitem of the match list
+						let matchedItem = itemInfo.find(item => item.name === indefinitePath[0]);
+						if (matchedItem) {
+							indefinitePath.shift();
+							await loadItem(matchedItem);
+						}
+					}
+					else {
+						// If not, go down a level and see if we can find it there
+						// Only folders can have something within them so filter on that
+						itemInfo = itemInfo.filter(item => item.kind === "directory");
+						if (itemInfo.length === 0) {
+							await openAlert(
+								"Directory not found",
+								`Couldn't find directory (only files) with RegEx as specified in the configuration: ${filePath.join("/")}. Going to the last matching folder.`
+							);
+							itemInfo = unfilteredItemInfo;
+							break;
+						}
+						if (itemInfo.length > 1) {
+							await openAlert(
+								"Multiple matches",
+								`The RegEx path ${matcher} returned multiple matches. Please update the card path to be more specific. Using the first result.`
+							);
+						}
+						definitePath.push(itemInfo[0].name);
+						itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+						itemInfo = await itemInfoResponse.json();
+					}
+				}
+			}
+
+			if (Array.isArray(itemInfo)) {
+				// Directory
+				directoryRendered.value = {
+					directory: itemInfo,
+					location: {
+						path: definitePath,
+						fromRoot: props.tabName === "All Files",
+					},
+				};
+
+				renderType.value = RenderType.Directory;
+			}
+			else {
+				// Find common name for this file from configuration's name for it
+				let commonName = itemInfo.name;
+				if (configuration?.value && props.tabName !== "All Files") {
+					// TODO doesn't work for single files specified via RegEx
+					commonName = Object.values(configuration.value.tabs[props.tabName])
+						.flat()
+						.map(mapPathIdentifiers)
+						.find(file => file.path?.toLowerCase() === definitePath.join("/").toLowerCase())?.name
+						?? itemInfo.name;
+				}
+
+				fileRendered.value = {
+					file: itemInfo,
+					path: definitePath,
+					commonName,
+				};
+
+				renderType.value = RenderType.File;
+			}
+		}
+		else {
+			// Specified file or folder not found
+			await openAlert(
+				"File or directory not found",
+				`Couldn't find file or directory as specified in the configuration: ${filePath.join("/")}. Going to the folder that might contain it.`
+			);
+
+			// Recurse upwards until we find a folder that exists
+			while (filePath.length > 0) {
+				filePath.pop();
+				let itemInfoResponse = await fetch("/api/" + filePath.join("/"));
+				if (itemInfoResponse.status === 200) {
+					router.push("/files/" + filePath.join("/"));
 					return;
 				}
 			}
-			else {
-				// Use literal path component
-				indefinitePathComponent = indefinitePathComponent.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&"); // Escape Regex characters
-				matcher = new RegExp("^" + indefinitePathComponent + "$"); // Wrap in start/end match symbols
-			}
+			router.push("/" + route.params.path[0]); // Navigate to root of the tab
+		}
+	}
+	else if (fileEntry.location === "SharePoint" && fileEntry.sharePoint) {
+		let matcher = new RegExp("");
+		try {
+			matcher = new RegExp(fileEntry.sharePoint.search);
+		}
+		catch (err) {
+			await openAlert(
+				"Invalid regular expression",
+				`The SharePoint file RegEx for this card contains an invalid regular expression /${fileEntry.sharePoint.search}/: ${(err as SyntaxError).message}`
+			);
+			router.push("/" + route.params.path[0]); // Navigate to root of the tab
+			return;
+		}
 
-			let unfilteredItemInfo = itemInfo;
-			itemInfo = itemInfo.filter(item => item.name.match(matcher) !== null);
-			if (itemInfo.length === 0) {
-				await openAlert(
-					"File or directory not found",
-					`Couldn't find file or directory with RegEx as specified in the configuration: ${filePath.join("/")}. Going to the folder that might contain it.`
-				);
-				itemInfo = unfilteredItemInfo;
-				continue;
-			}
+		let url = new URL(fileEntry.sharePoint.url);
+		let urlPath = url.pathname.split("/");
+		urlPath.pop(); // Remove file name at end
+		let listName = decodeURIComponent(urlPath.pop() ?? "");
+		let sharepointSite = url.hostname + urlPath.join("/");
 
-			async function loadItem(item: FileFromAPI | DirectoryFromAPI) {
-				definitePath.push(item.name);
-				if (item.kind === "file") {
-					// Show as single file instead of a list of files
-					itemInfo = item;
-				}
-				else {
-					// Load directory's contents
-					itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
-					itemInfo = await itemInfoResponse.json();
-				}
-			}
-
-			if (indefinitePath.length === 0 && itemInfo.length === 1) {
-				// This is the final path item and there is only one RegEx match
-				await loadItem(itemInfo[0]);
-			}
-			else if (indefinitePath.length > 0) {
-				// More indefinite path items remaining
-				if (indefinitePath[0].match(regexPathReplacement) === null && indefinitePath[0].match(matcher) !== null) {
-					// If the next non-regex indefinite path item matches the current matcher, this may be a subitem of the match list
-					let matchedItem = itemInfo.find(item => item.name === indefinitePath[0]);
-					if (matchedItem) {
-						indefinitePath.shift();
-						await loadItem(matchedItem);
-					}
-				}
-				else {
-					// If not, go down a level and see if we can find it there
-					// Only folders can have something within them so filter on that
-					itemInfo = itemInfo.filter(item => item.kind === "directory");
-					if (itemInfo.length === 0) {
-						await openAlert(
-							"Directory not found",
-							`Couldn't find directory (only files) with RegEx as specified in the configuration: ${filePath.join("/")}. Going to the last matching folder.`
-						);
-						itemInfo = unfilteredItemInfo;
-						break;
-					}
-					if (itemInfo.length > 1) {
-						await openAlert(
-							"Multiple matches",
-							`The RegEx path ${matcher} returned multiple matches. Please update the card path to be more specific. Using the first result.`
-						);
-					}
-					definitePath.push(itemInfo[0].name);
-					itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
-					itemInfo = await itemInfoResponse.json();
-				}
+		interface SharePointListItem {
+			File: {
+				Name: string;
+				ServerRelativeUrl: string;
+				TimeLastModified: string;
 			}
 		}
 
-		if (Array.isArray(itemInfo)) {
-			// Directory
-			directoryRendered.value = {
-				directory: itemInfo,
-				location: {
-					path: definitePath,
-					fromRoot: props.tabName === "All Files",
-				},
-			};
-
-			renderType.value = RenderType.Directory;
-		}
-		else {
-			// Find common name for this file from configuration's name for it
-			let commonName = itemInfo.name;
-			if (configuration?.value && props.tabName !== "All Files") {
-				// TODO doesn't work for single files specified via RegEx
-				commonName = Object.values(configuration.value.tabs[props.tabName])
-					.flat()
-					.map(mapPathIdentifiers)
-					.find(file => file.path.toLowerCase() === definitePath.join("/").toLowerCase())?.name
-					?? itemInfo.name;
+		async function getSharePointData(): Promise<SharePointListItem[]> {
+			let request = await fetch(`/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&orderby=Modified%20desc&$top=6`);
+			try {
+				let files: SharePointListItem[] = (await request.json()).d.results;
+				return files;
 			}
+			catch {
+				await fetch(`/sharepoint/login`);
+				return getSharePointData();
+			}
+		}
 
+		let mostRecentMatch = (await getSharePointData()).filter(file => file.File.Name.match(matcher)).pop(); // Files are already sorted by modified time in request
+		if (!mostRecentMatch) {
+			await openAlert(
+				"SharePoint document not found",
+				`Could not find a document in the SharePoint item list that matches the regular expression /${fileEntry.sharePoint.search}/`
+			);
+			router.push("/" + route.params.path[0]); // Navigate to root of the tab
+			return;
+		}
+
+		// Download file to cache location
+		let cachePath = processPathReplacements(fileEntry.sharePoint.cachePath);
+		await fetch(`/sharepoint/download/${url.hostname}${mostRecentMatch.File.ServerRelativeUrl}?location=${encodeURIComponent(cachePath)}`);
+
+		let itemInfoResponse = await fetch("/api/" + cachePath);
+		if (itemInfoResponse.status === 200) {
+			let itemInfo: FileFromAPI = await itemInfoResponse.json();
+
+			// Open from cache location
 			fileRendered.value = {
 				file: itemInfo,
-				path: definitePath,
-				commonName,
+				path: cachePath.split("/"),
+				commonName: mostRecentMatch.File.Name,
 			};
 
 			renderType.value = RenderType.File;
 		}
-	}
-	else {
-		// Specified file or folder not found
-		await openAlert(
-			"File or directory not found",
-			`Couldn't find file or directory as specified in the configuration: ${filePath.join("/")}. Going to the folder that might contain it.`
-		);
-
-		// Recurse upwards until we find a folder that exists
-		while (filePath.length > 0) {
-			filePath.pop();
-			let itemInfoResponse = await fetch("/api/" + filePath.join("/"));
-			if (itemInfoResponse.status === 200) {
-				router.push("/files/" + filePath.join("/"));
-				return;
-			}
+		else {
+			await openAlert(
+				"Cached SharePoint file not found",
+				`Couldn't find cached SharePoint file in specified location: ${cachePath}`
+			);
+			router.push("/" + route.params.path[0]); // Navigate to root of the tab
+			return;
 		}
-		router.push("/" + route.params.path[0]); // Navigate to root of the tab
 	}
 });
 </script>

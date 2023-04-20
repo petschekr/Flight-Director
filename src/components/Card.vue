@@ -34,6 +34,6 @@ defineProps<{
 const editMode = inject<Ref<boolean>>("editMode");
 
 function isExternal(file: File): boolean {
-	return file.path.startsWith("http");
+	return file.path?.startsWith("http") ?? false;
 }
 </script>
