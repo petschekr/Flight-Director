@@ -124,11 +124,15 @@ try {
 				$body = $streamReader.ReadToEnd()
 				New-Item -Path "FileServe:\$path" -ItemType File -Force -Value $body
 			}
+			elseif ($path.StartsWith("/sharepoint/relogin")) {
+				$intelinkLoggedIn = $false
+				$res.StatusCode = 204;
+			}
 			elseif ($path.StartsWith("/sharepoint")) {
-				$site = $path.Replace("/sharepoint/", "");
+				$site = $req.Url.PathAndQuery.Replace("/sharepoint/", "");
 
 				# Bring the certificate prompt to foreground
-				[Microsoft.VisualBasic.Interaction]::AppActivate($PID)
+				# [Microsoft.VisualBasic.Interaction]::AppActivate($PID)
 
 				# Filtering for cert requirements...
 				$ValidCerts = [System.Security.Cryptography.X509Certificates.X509Certificate2[]](dir Cert:\CurrentUser\My | where { $_.NotAfter -gt (Get-Date) })
@@ -189,15 +193,25 @@ try {
 				$ProxyParams = @{
 					Uri         = "https://" + $site
 					Method      = $req.HttpMethod
-					Body        = $body
-					ContentType = "text/xml; charset=UTF-8"
+					Headers     = @{
+						Accept = "application/json;odata=verbose"
+					}
+					# ContentType = "text/xml; charset=UTF-8"
 					WebSession  = $Session
 					Certificate = $Cert
 				}
-				$Response = Invoke-WebRequest @ProxyParams -UseBasicParsing
-				# Write-Host ($Response | Format-List | Out-String)
-				$content = [System.Text.Encoding]::UTF8.GetBytes($Response.Content);
-				$res.ContentType = "text/xml"
+				if ($req.HttpMethod -eq "POST") {
+					$ProxyParams.Body = $body
+				}
+				try {
+					$Response = Invoke-WebRequest @ProxyParams -UseBasicParsing
+					$content = [System.Text.Encoding]::UTF8.GetBytes($Response.Content);
+					$res.ContentType = "application/json"
+				}
+				catch {
+					Write-Host ($_.Exception.Response | Format-List | Out-String)
+					$res.StatusCode = 502
+				}
 			}
 			else {
 				$content = [System.Text.Encoding]::UTF8.GetBytes("Invalid URL");
