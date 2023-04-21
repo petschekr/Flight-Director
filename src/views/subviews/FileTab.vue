@@ -462,7 +462,6 @@ watchPostEffect(async () => {
 		itemInfoResponse = await fetch("/api/" + cachePath);
 		let itemInfo: FileFromAPI = await itemInfoResponse.json();
 
-		loadingModalOpen.value = false;
 		// Open from cache location
 		fileRendered.value = {
 			file: itemInfo,
@@ -470,7 +469,11 @@ watchPostEffect(async () => {
 			commonName: mostRecentMatch.File.Name,
 		};
 
-		renderType.value = RenderType.File;
+		// Don't show file if the loading process was canceled
+		if (loadingModalOpen.value) {
+			loadingModalOpen.value = false;
+			renderType.value = RenderType.File;
+		}
 	}
 });
 </script>
