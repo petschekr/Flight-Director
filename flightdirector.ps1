@@ -12,8 +12,6 @@ $http.Prefixes.Add($hostLocation)
 # $http.AuthenticationSchemes = [System.Net.AuthenticationSchemes]::IntegratedWindowsAuthentication
 $http.Start()
 
-$intelinkLoggedIn = $false
-
 New-PSDrive -Name FileServe -PSProvider FileSystem -Root "C:\Users\petsc\Pictures"
 # [System.Diagnostics.Process]::Start("msedge", $hostLocation) # Or "chrome"
 Start-Process $hostLocation
@@ -124,68 +122,80 @@ try {
 				$body = $streamReader.ReadToEnd()
 				New-Item -Path "FileServe:\$path" -ItemType File -Force -Value $body
 			}
-			elseif ($path.StartsWith("/sharepoint/relogin")) {
-				$intelinkLoggedIn = $false
-				$res.StatusCode = 204;
-			}
-			elseif ($path.StartsWith("/sharepoint")) {
-				$site = $req.Url.PathAndQuery.Replace("/sharepoint/", "");
-
+			elseif ($path.StartsWith("/sharepoint/login")) {
 				# Bring the certificate prompt to foreground
 				# [Microsoft.VisualBasic.Interaction]::AppActivate($PID)
 
-				# Filtering for cert requirements...
+				# Go through login process
 				$ValidCerts = [System.Security.Cryptography.X509Certificates.X509Certificate2[]](dir Cert:\CurrentUser\My | where { $_.NotAfter -gt (Get-Date) })
+				$Cert = [System.Security.Cryptography.X509Certificates.X509Certificate2UI]::SelectFromCollection(
+					$ValidCerts,
+					'Choose a certificate',
+					'Choose a certificate',
+					'SingleSelection'
+				) | Select-Object -First 1
 
-				# TODO: filter by issuer
-				# Write-Host $ValidCerts[0].Issuer
-
-				if (!($intelinkLoggedIn)) {
-					# Go through login process
-					$Cert = [System.Security.Cryptography.X509Certificates.X509Certificate2UI]::SelectFromCollection(
-						$ValidCerts,
-						'Choose a certificate',
-						'Choose a certificate',
-						'SingleSelection'
-					) | Select-Object -First 1
-
-					$InitialParams = @{
-						Uri             = "https://intelshare.intelink.gov/"
-						SessionVariable = "Session"
-						Method          = "GET"
-						Certificate     = $Cert
-					}
-					$Response = Invoke-WebRequest @InitialParams -UseBasicParsing
-
-					$LoginParams = @{
-						Uri         = "https://intelshare.intelink.gov/my.policy"
-						Method      = "POST"
-						Body        = @{
-							choice = "0"
-						}
-						WebSession  = $Session
-						Certificate = $Cert
-					}
-					$Response = Invoke-WebRequest @LoginParams -UseBasicParsing
-
-					$WResult = $Response.RawContent | Select-String -Pattern 'name="wresult" value="(.*?)"'
-					$WResult = $WResult.Matches[0].Groups[1]
-					$WResult = $WResult.Value.Replace("&lt;", "<").Replace("&quot;", '"')
-
-					$TrustParams = @{
-						Uri         = "https://intelshare.intelink.gov/_trust"
-						Method      = "POST"
-						Body        = @{
-							wa      = "wsignin1.0"
-							wresult = $WResult
-							wctx    = "https://intelshare.intelink.gov/_layouts/15/Authenticate.aspx?Source=%2F"
-						}
-						WebSession  = $Session
-						Certificate = $Cert
-					}
-					$Response = Invoke-WebRequest @TrustParams -UseBasicParsing
-					$intelinkLoggedIn = $true
+				Write-Host "Logging in..."
+				$InitialParams = @{
+					Uri             = "https://intelshare.intelink.gov/"
+					SessionVariable = "Session"
+					Method          = "GET"
+					Certificate     = $Cert
 				}
+				$Response = Invoke-WebRequest @InitialParams -UseBasicParsing
+
+				Write-Host "Accepting policy..."
+				$LoginParams = @{
+					Uri         = "https://intelshare.intelink.gov/my.policy"
+					Method      = "POST"
+					Body        = @{
+						choice = "0"
+					}
+					WebSession  = $Session
+					Certificate = $Cert
+				}
+				$Response = Invoke-WebRequest @LoginParams -UseBasicParsing
+
+				Write-Host "Submitting trust authentication..."
+				$WResult = $Response.RawContent | Select-String -Pattern 'name="wresult" value="(.*?)"'
+				$WResult = $WResult.Matches[0].Groups[1]
+				$WResult = $WResult.Value.Replace("&lt;", "<").Replace("&quot;", '"')
+
+				$TrustParams = @{
+					Uri         = "https://intelshare.intelink.gov/_trust"
+					Method      = "POST"
+					Body        = @{
+						wa      = "wsignin1.0"
+						wresult = $WResult
+						wctx    = "https://intelshare.intelink.gov/_layouts/15/Authenticate.aspx?Source=%2F"
+					}
+					WebSession  = $Session
+					Certificate = $Cert
+				}
+				$Response = Invoke-WebRequest @TrustParams -UseBasicParsing
+				Write-Host "Done!"
+				$res.StatusCode = 204;
+			}
+			elseif ($path.StartsWith("/sharepoint/download")) {
+				$site = $path.Replace("/sharepoint/download/", "");
+				$downloadLocation = [System.Web.HttpUtility]::ParseQueryString($req.Url.Query).Get("location");
+
+				$ProxyParams = @{
+					Uri         = "https://" + $site
+					OutFile     = "FileServe:\$downloadLocation"
+					WebSession  = $Session
+					Certificate = $Cert
+				}
+				try {
+					Invoke-WebRequest @ProxyParams -UseBasicParsing
+				}
+				catch {
+					Write-Host ($_.Exception.Response | Format-List | Out-String)
+					$res.StatusCode = 502
+				}
+			}
+			elseif ($path.StartsWith("/sharepoint")) {
+				$site = $req.Url.PathAndQuery.Replace("/sharepoint/", "");
 
 				$streamReader = [System.IO.StreamReader]::new($req.InputStream)
 				$body = $streamReader.ReadToEnd()
