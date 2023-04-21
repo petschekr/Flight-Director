@@ -51,6 +51,7 @@
 										<div class="mt-2 text-left">
 											<p class="text-sm text-gray-500">This might take a while when opening any SharePoint file for the first time. It'll be faster next time!</p>
 											<p class="text-sm text-gray-500 mt-2">Make sure there isn't an unanswered PIN prompt!</p>
+											<p class="text-sm text-gray-900 font-semibold text-center mt-2">{{ loadingState }}</p>
 										</div>
 									</div>
 								</div>
@@ -95,6 +96,7 @@ const openAlert = inject<(title: string, message: string, okText?: string) => Pr
 const editMode = inject<Ref<boolean>>("editMode");
 const editCallsignsPanelOpen = ref(false);
 const loadingModalOpen = ref(false);
+const loadingState = ref("");
 
 function navigateToRoot() {
 	loadingModalOpen.value = false;
@@ -406,12 +408,14 @@ watchPostEffect(async () => {
 
 		let retryCount = 0;
 		async function getSharePointData(): Promise<SharePointListItem[]> {
+			loadingState.value = "Getting data from SharePoint...";
 			let request = await fetch(`/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&orderby=Modified%20desc&$top=6`);
 			try {
 				let files: SharePointListItem[] = (await request.json()).d.results;
 				return files;
 			}
 			catch {
+				loadingState.value = "Logging in to SharePoint...";
 				await fetch(`/sharepoint/login`);
 				if (++retryCount >= 3) {
 					return [];
@@ -432,31 +436,41 @@ watchPostEffect(async () => {
 
 		// Download file to cache location
 		let cachePath = processPathReplacements(fileEntry.sharePoint.cachePath);
-		await fetch(`/sharepoint/download/${url.hostname}${mostRecentMatch.File.ServerRelativeUrl}?location=${encodeURIComponent(cachePath)}`);
+
+		let fileNeedsUpdate = false;
 
 		let itemInfoResponse = await fetch("/api/" + cachePath);
 		if (itemInfoResponse.status === 200) {
 			let itemInfo: FileFromAPI = await itemInfoResponse.json();
 
-			loadingModalOpen.value = false;
-
-			// Open from cache location
-			fileRendered.value = {
-				file: itemInfo,
-				path: cachePath.split("/"),
-				commonName: mostRecentMatch.File.Name,
-			};
-
-			renderType.value = RenderType.File;
+			let localLastModified = new Date(itemInfo.lastModified);
+			let remoteLastModified = new Date(mostRecentMatch.File.TimeLastModified);
+			if (localLastModified.valueOf() < remoteLastModified.valueOf()) {
+				// Local copy is too old
+				fileNeedsUpdate = true;
+			}
 		}
 		else {
-			await openAlert(
-				"Cached SharePoint file not found",
-				`Couldn't find cached SharePoint file in specified location: ${cachePath}`
-			);
-			navigateToRoot();
-			return;
+			fileNeedsUpdate = true;
 		}
+
+		if (fileNeedsUpdate) {
+			loadingState.value = "Downloading file from SharePoint...";
+			await fetch(`/sharepoint/download/${url.hostname}${mostRecentMatch.File.ServerRelativeUrl}?location=${encodeURIComponent(cachePath)}`);
+		}
+
+		itemInfoResponse = await fetch("/api/" + cachePath);
+		let itemInfo: FileFromAPI = await itemInfoResponse.json();
+
+		loadingModalOpen.value = false;
+		// Open from cache location
+		fileRendered.value = {
+			file: itemInfo,
+			path: cachePath.split("/"),
+			commonName: mostRecentMatch.File.Name,
+		};
+
+		renderType.value = RenderType.File;
 	}
 });
 </script>
