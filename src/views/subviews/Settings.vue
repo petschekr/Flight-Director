@@ -12,9 +12,10 @@
 			</Switch>
 		</SwitchGroup>
 		<div class="text-center text-lg mt-2">
-			<code>Flight Director v0.7.1 @ {{commitHash}}</code>
+			<code>Flight Director v0.8.0 @ {{commitHash}}</code>
 		</div>
 		<div class="mt-2">
+			<p><code>v0.8.0</code>: SharePoint files now supported, cards can be moved to another tab via drag and drop, minor bugfixes</p>
 			<p><code>v0.7.0</code>: ATLC performance tab added</p>
 			<p><code>v0.6.0</code>: Regular Expression support in card paths, better looking confirmation and alert dialogs, various bugfixes</p>
 			<p><code>v0.5.0</code>: Loadable profiles and user-editable design</p>
