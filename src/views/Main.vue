@@ -205,6 +205,10 @@ async function saveConfiguration() {
 	const stream = await fileHandle.createWritable();
 
 	configuration.value.unsaved = undefined;
+	if (localStorage.getItem("configuration")) {
+		// Update localStorage configuration if the current configuration was already loaded from there
+		localStorage.setItem("configuration", JSON.stringify(configuration.value));
+	}
 	await stream.write(JSON.stringify(configuration.value, null, "\t"));
 	await stream.close();
 }
