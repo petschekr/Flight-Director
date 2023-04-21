@@ -27,12 +27,50 @@
 		<File :file="fileRendered" v-if="renderType === RenderType.File" />
 		<FileList :directory="directoryRendered" v-if="renderType === RenderType.Directory" />
 		<EditCallsigns :open="editCallsignsPanelOpen" @closed="editCallsignsPanelOpen = false" />
+
+		<TransitionRoot as="template" :show="loadingModalOpen">
+			<Dialog as="div" class="relative z-20">
+				<TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0">
+					<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+				</TransitionChild>
+
+				<div class="fixed inset-0 z-10 overflow-y-auto">
+					<div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+						<TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+							<DialogPanel class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
+								<div>
+									<div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full">
+										<!-- <svg class="animate-spin -ml-1 mr-3 h-12 w-12 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+										</svg> -->
+										<CloudArrowDownIcon class="animate-pulse h-12 w-12 text-sky-500" />
+									</div>
+									<div class="mt-2 text-center">
+										<DialogTitle as="h3" class="text-lg font-semibold leading-6 text-gray-900">Loading...</DialogTitle>
+										<div class="mt-2 text-left">
+											<p class="text-sm text-gray-500">This might take a while when opening any SharePoint file for the first time. It'll be faster next time!</p>
+											<p class="text-sm text-gray-500 mt-2">Make sure there isn't an unanswered PIN prompt!</p>
+										</div>
+									</div>
+								</div>
+								<div class="mt-5 sm:mt-6">
+									<button type="button" class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0" @click="navigateToRoot">Cancel</button>
+								</div>
+							</DialogPanel>
+						</TransitionChild>
+					</div>
+				</div>
+			</Dialog>
+		</TransitionRoot>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { provide, inject, ref, watch, computed, type Ref, watchPostEffect } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
+import { CloudArrowDownIcon } from "@heroicons/vue/24/solid";
 
 import type { File as ConfigFileEntry, Configuration } from "@/models/configuration";
 import type { FileRender, DirectoryRender, FileFromAPI, DirectoryFromAPI } from "@/models/file-explorer";
@@ -56,6 +94,12 @@ const configuration = inject<Ref<Configuration | null>>("configuration");
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 const editMode = inject<Ref<boolean>>("editMode");
 const editCallsignsPanelOpen = ref(false);
+const loadingModalOpen = ref(false);
+
+function navigateToRoot() {
+	loadingModalOpen.value = false;
+	router.push("/" + route.params.path[0]); // Navigate to root of the tab
+}
 
 const selectedDate = ref(localStorage.getItem("selectedDate") ?? new Date().toISOString().split("T")[0]); // Returns today's date
 watch(selectedDate, () => {
@@ -166,7 +210,7 @@ watchPostEffect(async () => {
 					"Entry not found in configuration",
 					`Couldn't find entry in the configuration: ${entryName}`
 				);
-				router.push("/" + route.params.path[0]); // Navigate to root of the tab
+				navigateToRoot();
 				return;
 			}
 		}
@@ -206,7 +250,7 @@ watchPostEffect(async () => {
 							"Invalid regular expression",
 							`The path for this card contains an invalid regular expression for the path component ${matcherText}: ${(err as SyntaxError).message}`
 						);
-						router.push("/" + route.params.path[0]); // Navigate to root of the tab
+						navigateToRoot();
 						return;
 					}
 				}
@@ -328,10 +372,11 @@ watchPostEffect(async () => {
 					return;
 				}
 			}
-			router.push("/" + route.params.path[0]); // Navigate to root of the tab
+			navigateToRoot();
 		}
 	}
 	else if (fileEntry.location === "SharePoint" && fileEntry.sharePoint) {
+		loadingModalOpen.value = true;
 		let matcher = new RegExp("");
 		try {
 			matcher = new RegExp(fileEntry.sharePoint.search);
@@ -341,7 +386,7 @@ watchPostEffect(async () => {
 				"Invalid regular expression",
 				`The SharePoint file RegEx for this card contains an invalid regular expression /${fileEntry.sharePoint.search}/: ${(err as SyntaxError).message}`
 			);
-			router.push("/" + route.params.path[0]); // Navigate to root of the tab
+			navigateToRoot();
 			return;
 		}
 
@@ -359,6 +404,7 @@ watchPostEffect(async () => {
 			}
 		}
 
+		let retryCount = 0;
 		async function getSharePointData(): Promise<SharePointListItem[]> {
 			let request = await fetch(`/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&orderby=Modified%20desc&$top=6`);
 			try {
@@ -367,6 +413,9 @@ watchPostEffect(async () => {
 			}
 			catch {
 				await fetch(`/sharepoint/login`);
+				if (++retryCount >= 3) {
+					return [];
+				}
 				return getSharePointData();
 			}
 		}
@@ -377,7 +426,7 @@ watchPostEffect(async () => {
 				"SharePoint document not found",
 				`Could not find a document in the SharePoint item list that matches the regular expression /${fileEntry.sharePoint.search}/`
 			);
-			router.push("/" + route.params.path[0]); // Navigate to root of the tab
+			navigateToRoot();
 			return;
 		}
 
@@ -388,6 +437,8 @@ watchPostEffect(async () => {
 		let itemInfoResponse = await fetch("/api/" + cachePath);
 		if (itemInfoResponse.status === 200) {
 			let itemInfo: FileFromAPI = await itemInfoResponse.json();
+
+			loadingModalOpen.value = false;
 
 			// Open from cache location
 			fileRendered.value = {
@@ -403,7 +454,7 @@ watchPostEffect(async () => {
 				"Cached SharePoint file not found",
 				`Couldn't find cached SharePoint file in specified location: ${cachePath}`
 			);
-			router.push("/" + route.params.path[0]); // Navigate to root of the tab
+			navigateToRoot();
 			return;
 		}
 	}

@@ -135,46 +135,51 @@ try {
 					'SingleSelection'
 				) | Select-Object -First 1
 
-				Write-Host "Logging in..."
-				$InitialParams = @{
-					Uri             = "https://intelshare.intelink.gov/"
-					SessionVariable = "Session"
-					Method          = "GET"
-					Certificate     = $Cert
-				}
-				$Response = Invoke-WebRequest @InitialParams -UseBasicParsing
-
-				Write-Host "Accepting policy..."
-				$LoginParams = @{
-					Uri         = "https://intelshare.intelink.gov/my.policy"
-					Method      = "POST"
-					Body        = @{
-						choice = "0"
+				if ($Cert) {
+					Write-Host "Logging in..."
+					$InitialParams = @{
+						Uri             = "https://intelshare.intelink.gov/"
+						SessionVariable = "Session"
+						Method          = "GET"
+						Certificate     = $Cert
 					}
-					WebSession  = $Session
-					Certificate = $Cert
-				}
-				$Response = Invoke-WebRequest @LoginParams -UseBasicParsing
+					$Response = Invoke-WebRequest @InitialParams -UseBasicParsing
 
-				Write-Host "Submitting trust authentication..."
-				$WResult = $Response.RawContent | Select-String -Pattern 'name="wresult" value="(.*?)"'
-				$WResult = $WResult.Matches[0].Groups[1]
-				$WResult = $WResult.Value.Replace("&lt;", "<").Replace("&quot;", '"')
-
-				$TrustParams = @{
-					Uri         = "https://intelshare.intelink.gov/_trust"
-					Method      = "POST"
-					Body        = @{
-						wa      = "wsignin1.0"
-						wresult = $WResult
-						wctx    = "https://intelshare.intelink.gov/_layouts/15/Authenticate.aspx?Source=%2F"
+					Write-Host "Accepting policy..."
+					$LoginParams = @{
+						Uri         = "https://intelshare.intelink.gov/my.policy"
+						Method      = "POST"
+						Body        = @{
+							choice = "0"
+						}
+						WebSession  = $Session
+						Certificate = $Cert
 					}
-					WebSession  = $Session
-					Certificate = $Cert
+					$Response = Invoke-WebRequest @LoginParams -UseBasicParsing
+
+					Write-Host "Submitting trust authentication..."
+					$WResult = $Response.RawContent | Select-String -Pattern 'name="wresult" value="(.*?)"'
+					$WResult = $WResult.Matches[0].Groups[1]
+					$WResult = $WResult.Value.Replace("&lt;", "<").Replace("&quot;", '"')
+
+					$TrustParams = @{
+						Uri         = "https://intelshare.intelink.gov/_trust"
+						Method      = "POST"
+						Body        = @{
+							wa      = "wsignin1.0"
+							wresult = $WResult
+							wctx    = "https://intelshare.intelink.gov/_layouts/15/Authenticate.aspx?Source=%2F"
+						}
+						WebSession  = $Session
+						Certificate = $Cert
+					}
+					$Response = Invoke-WebRequest @TrustParams -UseBasicParsing
+					Write-Host "Done!"
+					$res.StatusCode = 204;
 				}
-				$Response = Invoke-WebRequest @TrustParams -UseBasicParsing
-				Write-Host "Done!"
-				$res.StatusCode = 204;
+				else {
+					$res.StatusCode = 401;
+				}
 			}
 			elseif ($path.StartsWith("/sharepoint/download")) {
 				$site = $path.Replace("/sharepoint/download/", "");
