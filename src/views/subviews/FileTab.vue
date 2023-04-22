@@ -222,7 +222,7 @@ watchPostEffect(async () => {
 		}
 	}
 
-	if (!fileEntry?.location || fileEntry.location === "Local") {
+	if (!fileEntry?.type || fileEntry.type === "Local") {
 		if (fileEntry?.path) {
 			filePath = fileEntry.path.split("/");
 		}
@@ -381,7 +381,7 @@ watchPostEffect(async () => {
 			navigateToRoot();
 		}
 	}
-	else if (fileEntry.location === "SharePoint" && fileEntry.sharePoint) {
+	else if (fileEntry.type === "SharePoint" && fileEntry.sharePoint) {
 		loadingModalOpen.value = true;
 		cachedCopyAvailable.value = false;
 

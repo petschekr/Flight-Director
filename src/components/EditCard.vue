@@ -120,23 +120,27 @@
 
 											<div class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
-													<label for="card-location" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
-														Link Type
+													<label for="card-type" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Document Type
 													</label>
 													<p class="mt-1 text-sm text-gray-500">
-														When set to SharePoint, documents will automatically be pulled from SharePoint and cached in a local location
+														When set to <code>SharePoint</code>, documents will automatically be pulled from SharePoint and cached in a local location
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														Setting to <code>Markdown</code> will display customizable rich text content
 													</p>
 												</div>
 												<div class="sm:col-span-2">
-													<select id="card-location" v-model="location"
+													<select id="card-type" v-model="cardType"
 														class="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-sky-500 sm:text-sm sm:leading-6">
-														<option>Local</option>
-														<option>SharePoint</option>
+														<option value="Local">Local</option>
+														<option value="SharePoint">SharePoint</option>
+														<option value="Markdown">Markdown</option>
 													</select>
 												</div>
 											</div>
 
-											<div v-if="location === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+											<div v-if="cardType === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="card-url" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
 														URL link to document
@@ -151,7 +155,7 @@
 												</div>
 											</div>
 
-											<div v-if="location === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+											<div v-if="cardType === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="card-document-name" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
 														Document name
@@ -166,7 +170,7 @@
 												</div>
 											</div>
 
-											<div v-if="location === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+											<div v-if="cardType === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="card-cache-location" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
 														Cache location
@@ -195,7 +199,7 @@
 												</div>
 											</div>
 
-											<div v-if="location === 'Local'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+											<div v-if="cardType === 'Local'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="card-path" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
 														Link or path
@@ -310,11 +314,12 @@ function loadCardValues() {
 	title.value = props.file?.name ?? "";
 	description.value = props.file?.description ?? "";
 	abbreviation.value = props.file?.abbreviation ?? "";
-	location.value = props.file?.location ?? "Local";
+	cardType.value = props.file?.type ?? "Local";
 	path.value = props.file?.rawPath ?? props.file?.path ?? "";
 	sharePointUrl.value = props.file?.sharePoint?.url ?? "";
 	sharePointSearch.value = props.file?.sharePoint?.search ?? "";
 	sharePointCachePath.value = props.file?.sharePoint?.cachePath ?? "";
+	markdownTemplate.value = props.file?.markdown?.template ?? "";
 	searchTerms.value = props.file?.searchTerms ?? "";
 	selectedColor.value = colors[colors.findIndex(color => props.file?.color === color)] ?? defaultColor;
 }
@@ -333,11 +338,12 @@ const title = ref("");
 const description = ref("");
 const selectedColor = ref(defaultColor); // Updated by props.file watcher
 const abbreviation = ref("");
-const location: Ref<File["location"]> = ref("Local");
+const cardType: Ref<File["type"]> = ref("Local");
 const path = ref("");
 const sharePointUrl = ref("");
 const sharePointSearch = ref("");
 const sharePointCachePath = ref("");
+const markdownTemplate = ref("");
 const searchTerms = ref("");
 
 const pathPreview = computed(() => {
@@ -365,13 +371,13 @@ async function saveCard() {
 		await openAlert("Abbreviation required", "Please provide a short abbrevation to help quickly identify the card");
 		return;
 	}
-	if (location.value === "Local") {
+	if (cardType.value === "Local") {
 		if (!path.value) {
 			await openAlert("Path or link required", "Please provide a path or external web link that this card will link to");
 			return;
 		}
 	}
-	else if (location.value === "SharePoint") {
+	else if (cardType.value === "SharePoint") {
 		if (!sharePointUrl.value) {
 			await openAlert("URL required", "Please provide a URL of a document that is in the same SharePoint list as what will be linked");
 			return;
@@ -397,20 +403,26 @@ async function saveCard() {
 		description: description.value,
 		color: selectedColor.value,
 		abbreviation: abbreviation.value,
-		location: location.value,
+		type: cardType.value,
 		path: path.value,
 		sharePoint: {
 			url: sharePointUrl.value,
 			search: sharePointSearch.value,
 			cachePath: sharePointCachePath.value,
 		},
+		markdown: {
+			template: markdownTemplate.value,
+		},
 		searchTerms: searchTerms.value.length === 0 ? undefined : searchTerms.value,
 	};
-	if (location.value !== "Local") {
+	if (cardType.value !== "Local") {
 		delete fileContents.path;
 	}
-	if (location.value !== "SharePoint") {
+	if (cardType.value !== "SharePoint") {
 		delete fileContents.sharePoint;
+	}
+	if (cardType.value !== "Markdown") {
+		delete fileContents.markdown;
 	}
 
 	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.file?.name);

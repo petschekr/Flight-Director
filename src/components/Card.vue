@@ -8,7 +8,7 @@
 			<p class="text-lg font-medium text-gray-900 truncate hover:text-gray-600">
 				{{ file.name }}
 				<ArrowTopRightOnSquareIcon v-if="isExternal(file)" class="inline w-4 h-4 mb-0.5" />
-				<CloudIcon v-if="file.location === 'SharePoint'" class="inline w-4 h-4 mb-0.5" />
+				<CloudIcon v-if="file.type === 'SharePoint'" class="inline w-4 h-4 mb-0.5" />
 			</p>
 			<p class="text-gray-500 line-clamp-2 whitespace-normal">{{ file.description }}</p>
 		</div>

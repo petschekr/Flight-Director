@@ -7,13 +7,16 @@ export interface File {
 	description: string;
 	abbreviation: string;
 	color: string;
-	location?: "Local" | "SharePoint";
+	type?: "Local" | "SharePoint" | "Markdown";
 	path?: string;
 	rawPath?: string;
 	sharePoint?: {
 		url: string;
 		search: string;
 		cachePath: string;
+	};
+	markdown?: {
+		template: string;
 	};
 	searchTerms?: string; // Comma separated
 }
