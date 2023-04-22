@@ -55,8 +55,9 @@
 										</div>
 									</div>
 								</div>
-								<div class="mt-5 sm:mt-6">
-									<button type="button" class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0" @click="navigateToRoot">Cancel</button>
+								<div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+									<button class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0" @click="navigateToRoot">Cancel</button>
+									<button :disabled="!cachedCopyAvailable" class="inline-flex w-full justify-center rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 sm:col-start-2 disabled:opacity-25" @click="useCachedCopy">Use Cached Copy</button>
 								</div>
 							</DialogPanel>
 						</TransitionChild>
@@ -97,11 +98,14 @@ const editMode = inject<Ref<boolean>>("editMode");
 const editCallsignsPanelOpen = ref(false);
 const loadingModalOpen = ref(false);
 const loadingState = ref("");
+const cachedCopyAvailable = ref(false);
 
 function navigateToRoot() {
 	loadingModalOpen.value = false;
 	router.push("/" + route.params.path[0]); // Navigate to root of the tab
 }
+
+let useCachedCopy = () => {};
 
 const selectedDate = ref(localStorage.getItem("selectedDate") ?? new Date().toISOString().split("T")[0]); // Returns today's date
 watch(selectedDate, () => {
@@ -379,6 +383,32 @@ watchPostEffect(async () => {
 	}
 	else if (fileEntry.location === "SharePoint" && fileEntry.sharePoint) {
 		loadingModalOpen.value = true;
+		cachedCopyAvailable.value = false;
+
+		let cachePath = processPathReplacements(fileEntry.sharePoint.cachePath);
+		let cachedFileInfoRequest = await fetch("/api/" + cachePath)
+		cachedCopyAvailable.value = cachedFileInfoRequest.status === 200; // Only if the file exists
+
+		let abortController = new AbortController();
+
+		// Set function to be called by "Use Cached Copy" button
+		useCachedCopy = async () => {
+			if (!loadingModalOpen.value) return;
+			abortController.abort();
+
+			let cachedFileInfo: FileFromAPI = await cachedFileInfoRequest.json();
+
+			// Open from cache location
+			fileRendered.value = {
+				file: cachedFileInfo,
+				path: cachePath.split("/"),
+				commonName: cachedFileInfo.name,
+			};
+
+			loadingModalOpen.value = false;
+			renderType.value = RenderType.File;
+		};
+
 		let matcher = new RegExp("");
 		try {
 			matcher = new RegExp(fileEntry.sharePoint.search);
@@ -409,14 +439,20 @@ watchPostEffect(async () => {
 		let retryCount = 0;
 		async function getSharePointData(): Promise<SharePointListItem[]> {
 			loadingState.value = "Getting data from SharePoint...";
-			let request = await fetch(`/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&orderby=Modified%20desc&$top=6`);
+			let request = await fetch(
+				`/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&orderby=Modified%20desc&$top=6`,
+				{ signal: abortController.signal },
+			);
 			try {
 				let files: SharePointListItem[] = (await request.json()).d.results;
 				return files;
 			}
 			catch {
 				loadingState.value = "Logging in to SharePoint...";
-				await fetch(`/sharepoint/login`);
+				await fetch(
+					`/sharepoint/login`,
+					{ signal: abortController.signal },
+				);
 				if (++retryCount >= 3) {
 					return [];
 				}
@@ -435,8 +471,6 @@ watchPostEffect(async () => {
 		}
 
 		// Download file to cache location
-		let cachePath = processPathReplacements(fileEntry.sharePoint.cachePath);
-
 		let fileNeedsUpdate = false;
 
 		let itemInfoResponse = await fetch("/api/" + cachePath);
@@ -451,12 +485,16 @@ watchPostEffect(async () => {
 			}
 		}
 		else {
+			// Local copy doesn't exist
 			fileNeedsUpdate = true;
 		}
 
 		if (fileNeedsUpdate) {
 			loadingState.value = "Downloading file from SharePoint...";
-			await fetch(`/sharepoint/download/${url.hostname}${mostRecentMatch.File.ServerRelativeUrl}?location=${encodeURIComponent(cachePath)}`);
+			await fetch(
+				`/sharepoint/download/${url.hostname}${mostRecentMatch.File.ServerRelativeUrl}?location=${encodeURIComponent(cachePath)}`,
+				{ signal: abortController.signal },
+			);
 		}
 
 		itemInfoResponse = await fetch("/api/" + cachePath);
