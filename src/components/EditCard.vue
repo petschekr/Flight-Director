@@ -137,6 +137,8 @@
 														<option value="SharePoint">SharePoint</option>
 														<option value="Markdown">Markdown</option>
 													</select>
+
+													<button v-if="cardType === 'Markdown'" @click="editCard" type="button" class="mt-4 block w-full rounded-md bg-sky-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600">Edit content</button>
 												</div>
 											</div>
 
@@ -283,6 +285,7 @@ import {
 } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
+import { useRouter, useRoute } from "vue-router";
 
 import type { Card, Configuration } from "@/models/configuration";
 
@@ -295,6 +298,9 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: "closed"): void;
 }>();
+
+const router = useRouter();
+const route = useRoute();
 
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
@@ -355,6 +361,13 @@ const cachePathPreview = computed(() => {
 	return processPathReplacements(sharePointCachePath.value);
 });
 
+async function editCard() {
+	await saveCard();
+	if (isOpen.value) return; // Return if saveCard() rejected for some reason
+	// Edit view is shown by opening the card, so navigate to it
+	// Make a root path for browser and append to the current tab name
+	router.push("/" + route.params.path[0] + "/" + encodeURIComponent(title.value));
+}
 async function saveCard() {
 	if (!configuration?.value || !openAlert) return;
 	if (!props.groupName || !props.tabName) return;

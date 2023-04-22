@@ -1,6 +1,6 @@
 <template>
-	<div class="bg-white sm:rounded-lg sm:shadow h-[calc(100vh-7rem)] flex flex-col">
-		<div class="border-b border-gray-200 bg-white px-4 py-5 sm:px-6 sm:rounded-t-lg">
+	<div class="bg-white rounded-lg sm:shadow h-[calc(100vh-7rem)] flex flex-col">
+		<div class="border-b border-gray-200 bg-white px-4 py-5 sm:px-6 rounded-t-lg">
 			<div class="-ml-4 -mt-2 flex flex-nowrap items-center justify-between truncate">
 				<div class="ml-4 mt-2 truncate">
 					<div class="flex items-center">

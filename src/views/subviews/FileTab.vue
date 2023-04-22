@@ -26,6 +26,7 @@
 		<CardList :card-groups="cardGroups" :tabName="tabName as string" v-if="renderType === RenderType.Overview" />
 		<File :file="fileRendered" v-if="renderType === RenderType.File" />
 		<FileList :directory="directoryRendered" v-if="renderType === RenderType.Directory" />
+		<Markdown :card="markdownCard" v-if="renderType === RenderType.Markdown" />
 		<EditCallsigns :open="editCallsignsPanelOpen" @closed="editCallsignsPanelOpen = false" />
 
 		<TransitionRoot as="template" :show="loadingModalOpen">
@@ -40,10 +41,6 @@
 							<DialogPanel class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
 								<div>
 									<div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full">
-										<!-- <svg class="animate-spin -ml-1 mr-3 h-12 w-12 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-										</svg> -->
 										<CloudArrowDownIcon class="animate-pulse h-12 w-12 text-sky-500" />
 									</div>
 									<div class="mt-2 text-center">
@@ -80,6 +77,7 @@ import type { FileRender, DirectoryRender, FileFromAPI, DirectoryFromAPI } from 
 import CardList from "@/components/CardList.vue";
 import File from "@/components/File.vue";
 import FileList from "@/components/FileList.vue";
+import Markdown from "@/components/Markdown.vue";
 import EditCallsigns from "@/components/EditCallsigns.vue";
 
 import dayjs from "dayjs";
@@ -175,11 +173,13 @@ enum RenderType {
 	Overview, // Grid with file links
 	File,
 	Directory,
+	Markdown,
 }
 const renderType: Ref<RenderType> = ref(RenderType.Overview);
 
 const fileRendered: Ref<FileRender| null> = ref(null);
 const directoryRendered: Ref<DirectoryRender | null> = ref(null);
+const markdownCard: Ref<Card | null> = ref(null);
 
 const router = useRouter();
 const route = useRoute();
@@ -512,6 +512,10 @@ watchPostEffect(async () => {
 			loadingModalOpen.value = false;
 			renderType.value = RenderType.File;
 		}
+	}
+	else if (cardEntry.type === "Markdown" && cardEntry.markdown) {
+		markdownCard.value = cardEntry;
+		renderType.value = RenderType.Markdown;
 	}
 });
 </script>
