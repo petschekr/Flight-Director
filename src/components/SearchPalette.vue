@@ -111,7 +111,7 @@ import {
 	TransitionRoot,
 } from "@headlessui/vue";
 
-import type { File as ConfigFileEntry, Configuration } from "@/models/configuration";
+import type { Card as ConfigFileEntry, Configuration } from "@/models/configuration";
 
 const props = defineProps<{
 	open: boolean;

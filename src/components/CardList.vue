@@ -1,38 +1,38 @@
 <template>
-	<div v-for="fileGroup in fileGroups" :key="fileGroup.groupName" class="">
+	<div v-for="cardGroup in cardGroups" :key="cardGroup.groupName" class="">
 		<div class="relative mt-2">
 			<div class="absolute inset-0 top-1 flex items-center" aria-hidden="true">
 				<div v-if="!editMode" class="w-full border-t border-gray-300" />
 			</div>
 			<div class="relative flex justify-start">
-				<span v-if="!editMode" class="bg-gray-100 pr-3 text-lg font-medium text-gray-900">{{fileGroup.groupName}}</span>
-				<input v-if="editMode" type="text" :value="fileGroup.groupName" @keydown.enter="($event.target as HTMLInputElement).blur()" @blur="updateGroupName(fileGroup.groupName, $event)"
+				<span v-if="!editMode" class="bg-gray-100 pr-3 text-lg font-medium text-gray-900">{{cardGroup.groupName}}</span>
+				<input v-if="editMode" type="text" :value="cardGroup.groupName" @keydown.enter="($event.target as HTMLInputElement).blur()" @blur="updateGroupName(cardGroup.groupName, $event)"
 					class="rounded-md bg-gray-50 border-gray-300 shadow-sm font-medium text-gray-900 focus:border-sky-500 focus:ring-sky-500" />
-				<ChevronUpIcon v-if="editMode" @click="moveGroup(fileGroup.groupName, 'up')"
+				<ChevronUpIcon v-if="editMode" @click="moveGroup(cardGroup.groupName, 'up')"
 					class="w-8 h-8 px-1 ml-1 self-center rounded-full text-gray-400 cursor-pointer transition-colors hover:bg-gray-200" />
-				<ChevronDownIcon v-if="editMode" @click="moveGroup(fileGroup.groupName, 'down')"
+				<ChevronDownIcon v-if="editMode" @click="moveGroup(cardGroup.groupName, 'down')"
 					class="w-8 h-8 px-1 ml-1 self-center rounded-full text-gray-400 cursor-pointer transition-colors hover:bg-gray-200" />
 			</div>
 		</div>
 		<ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-			<li v-for="file in fileGroup.files" :key="file.name" :class="[editMode ? 'disable-child-pointer-events' : '', 'col-span-1 flex rounded-md shadow-sm transition hover:shadow-md h-24']"
-				@click="editMode && openEditPanel(file, fileGroup.groupName, fileGroup.tabName)"
+			<li v-for="card in cardGroup.cards" :key="card.name" :class="[editMode ? 'disable-child-pointer-events' : '', 'col-span-1 flex rounded-md shadow-sm transition hover:shadow-md h-24']"
+				@click="editMode && openEditPanel(card, cardGroup.groupName, cardGroup.tabName)"
 				:draggable="editMode ? 'true' : 'false'"
-				@dragstart="dragStart($event, fileGroup.groupName, file.name)" @dragend="dragEnd"
-				@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, fileGroup.groupName, file.name)">
+				@dragstart="dragStart($event, cardGroup.groupName, card.name)" @dragend="dragEnd"
+				@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, cardGroup.groupName, card.name)">
 				<!-- External links need an <a> -->
-				<a v-if="isExternal(file)" :href="file.path" target="_blank" class="contents">
-					<Card :file="file" />
+				<a v-if="isExternal(card)" :href="card.path" target="_blank" class="contents">
+					<Card :card="card" />
 				</a>
 				<!-- Internal links can be handled with the Vue router -->
-				<RouterLink v-if="!isExternal(file)" :to="getPath(file.name)" class="contents">
-					<Card :file="file" />
+				<RouterLink v-if="!isExternal(card)" :to="getPath(card.name)" class="contents">
+					<Card :card="card" />
 				</RouterLink>
 			</li>
 			<!-- New card button appears in edit mode -->
 			<li v-if="editMode" :class="[editMode ? 'disable-child-pointer-events' : '', 'col-span-1 flex rounded-md h-24 mb-4 transition border-4 border-dashed border-gray-300 hover:border-solid cursor-pointer hover:scale-105']"
-				@click="editMode && openEditPanel(null, fileGroup.groupName, fileGroup.tabName)"
-				@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, fileGroup.groupName)">
+				@click="editMode && openEditPanel(null, cardGroup.groupName, cardGroup.tabName)"
+				@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, cardGroup.groupName)">
 				<a class="contents">
 					<div class="flex flex-1 items-center justify-center">
 						<SquaresPlusIcon class="h-12 w-12 text-gray-300" />
@@ -52,7 +52,7 @@
 		</div>
 	</div>
 
-	<EditCard :file="editPanelFile" :group-name="editPanelGroupName" :tab-name="editPanelTabName" :open="editPanelOpen" @closed="editPanelOpen = false" />
+	<EditCard :card="editPanelCard" :group-name="editPanelGroupName" :tab-name="editPanelTabName" :open="editPanelOpen" @closed="editPanelOpen = false" />
 </template>
 
 <style>
@@ -66,7 +66,7 @@
 import { inject, type Ref, ref } from "vue";
 import { useRoute } from "vue-router";
 
-import type { File, Configuration } from "@/models/configuration";
+import type { Card as CardConfig, Configuration } from "@/models/configuration";
 
 import { SquaresPlusIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/vue/24/outline";
 
@@ -74,10 +74,10 @@ import Card from "@/components/Card.vue";
 import EditCard from "@/components/EditCard.vue";
 
 const props = defineProps<{
-	fileGroups: {
+	cardGroups: {
 		tabName: string;
 		groupName: string;
-		files: File[];
+		cards: CardConfig[];
 	}[];
 	tabName: string;
 }>();
@@ -88,7 +88,7 @@ const openConfirm = inject<(title: string, message: string, confirmText?: string
 
 const editMode = inject<Ref<boolean>>("editMode");
 const editPanelOpen: Ref<boolean> = ref(false);
-const editPanelFile: Ref<File | null> = ref(null);
+const editPanelCard: Ref<CardConfig | null> = ref(null);
 const editPanelGroupName: Ref<string | null> = ref(null);
 const editPanelTabName: Ref<string | null> = ref(null);
 
@@ -98,11 +98,11 @@ function getPath(filePath: string): string {
 	// Make a root path for browser and append to the current tab name
 	return "/" + route.params.path[0] + "/" + encodeURIComponent(filePath);
 }
-function isExternal(file: File): boolean {
-	return file.path?.startsWith("http") ?? false;
+function isExternal(card: CardConfig): boolean {
+	return card.path?.startsWith("http") ?? false;
 }
-function openEditPanel(file: File | null, groupName: string, tabName: string) {
-	editPanelFile.value = file;
+function openEditPanel(file: CardConfig | null, groupName: string, tabName: string) {
+	editPanelCard.value = file;
 	editPanelGroupName.value = groupName;
 	editPanelTabName.value = tabName;
 	editPanelOpen.value = true;
@@ -158,7 +158,7 @@ function moveGroup(moveGroupName: string, direction: "up" | "down") {
 	if (!configuration?.value) return;
 
 	let newTabContents = {};
-	let buffer: [string, File[]] | null = null; // Holds a card object as it gets moved around between loop iterations
+	let buffer: [string, CardConfig[]] | null = null; // Holds a card object as it gets moved around between loop iterations
 	for (let [groupName, group] of Object.entries(configuration.value.tabs[props.tabName])) {
 		if (direction === "up") {
 			if (groupName === moveGroupName) {

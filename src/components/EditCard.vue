@@ -284,11 +284,11 @@ import {
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 
-import type { File, Configuration } from "@/models/configuration";
+import type { Card, Configuration } from "@/models/configuration";
 
 const props = defineProps<{
 	open: boolean;
-	file: File | null;
+	card: Card | null;
 	groupName: string | null;
 	tabName: string | null;
 }>();
@@ -305,23 +305,23 @@ const defaultColor = "bg-sky-500";
 const isOpen = ref(false);
 watch(() => props.open, () => {
 	isOpen.value = props.open;
-	if (props.open && props.file === null) {
+	if (props.open && props.card === null) {
 		loadCardValues();
 	}
 });
-watch(() => props.file, loadCardValues);
+watch(() => props.card, loadCardValues);
 function loadCardValues() {
-	title.value = props.file?.name ?? "";
-	description.value = props.file?.description ?? "";
-	abbreviation.value = props.file?.abbreviation ?? "";
-	cardType.value = props.file?.type ?? "Local";
-	path.value = props.file?.rawPath ?? props.file?.path ?? "";
-	sharePointUrl.value = props.file?.sharePoint?.url ?? "";
-	sharePointSearch.value = props.file?.sharePoint?.search ?? "";
-	sharePointCachePath.value = props.file?.sharePoint?.cachePath ?? "";
-	markdownTemplate.value = props.file?.markdown?.template ?? "";
-	searchTerms.value = props.file?.searchTerms ?? "";
-	selectedColor.value = colors[colors.findIndex(color => props.file?.color === color)] ?? defaultColor;
+	title.value = props.card?.name ?? "";
+	description.value = props.card?.description ?? "";
+	abbreviation.value = props.card?.abbreviation ?? "";
+	cardType.value = props.card?.type ?? "Local";
+	path.value = props.card?.rawPath ?? props.card?.path ?? "";
+	sharePointUrl.value = props.card?.sharePoint?.url ?? "";
+	sharePointSearch.value = props.card?.sharePoint?.search ?? "";
+	sharePointCachePath.value = props.card?.sharePoint?.cachePath ?? "";
+	markdownTemplate.value = props.card?.markdown?.template ?? "";
+	searchTerms.value = props.card?.searchTerms ?? "";
+	selectedColor.value = colors[colors.findIndex(color => props.card?.color === color)] ?? defaultColor;
 }
 function close() {
 	isOpen.value = false;
@@ -336,9 +336,9 @@ const colors: string[] = colorBases.reduce((prev, color, index) => {
 
 const title = ref("");
 const description = ref("");
-const selectedColor = ref(defaultColor); // Updated by props.file watcher
+const selectedColor = ref(defaultColor); // Updated by props.card watcher
 const abbreviation = ref("");
-const cardType: Ref<File["type"]> = ref("Local");
+const cardType: Ref<Card["type"]> = ref("Local");
 const path = ref("");
 const sharePointUrl = ref("");
 const sharePointSearch = ref("");
@@ -393,12 +393,12 @@ async function saveCard() {
 	}
 	// Check if there's already a card in this group with this name
 	let existingFileWithName = configuration.value.tabs[props.tabName][props.groupName].find(file => file.name === title.value);
-	if (existingFileWithName && props.file?.name !== title.value) {
+	if (existingFileWithName && props.card?.name !== title.value) {
 		await openAlert("Invalid title", "A card with that title already exists in this group. Please choose a different title.");
 		return;
 	}
 
-	const fileContents: File = {
+	const fileContents: Card = {
 		name: title.value,
 		description: description.value,
 		color: selectedColor.value,
@@ -425,8 +425,8 @@ async function saveCard() {
 		delete fileContents.markdown;
 	}
 
-	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.file?.name);
-	if (!props.file || fileIndex === -1) {
+	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.card?.name);
+	if (!props.card || fileIndex === -1) {
 		// Create a new file
 		configuration.value.tabs[props.tabName][props.groupName].push(fileContents);
 	}
@@ -443,7 +443,7 @@ async function deleteCard() {
 
 	if (!await openConfirm("Delete card?", "Are you sure you want to delete this card?")) return;
 
-	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.file?.name);
+	let fileIndex = configuration.value.tabs[props.tabName][props.groupName].findIndex(file => file.name === props.card?.name);
 	if (fileIndex === -1) return; // Not found
 
 	configuration.value.tabs[props.tabName][props.groupName].splice(fileIndex, 1);

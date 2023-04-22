@@ -23,7 +23,7 @@
 				</div>
 			</div>
 		</div>
-		<CardList :file-groups="fileGroups" :tabName="tabName as string" v-if="renderType === RenderType.Overview" />
+		<CardList :card-groups="cardGroups" :tabName="tabName as string" v-if="renderType === RenderType.Overview" />
 		<File :file="fileRendered" v-if="renderType === RenderType.File" />
 		<FileList :directory="directoryRendered" v-if="renderType === RenderType.Directory" />
 		<EditCallsigns :open="editCallsignsPanelOpen" @closed="editCallsignsPanelOpen = false" />
@@ -74,7 +74,7 @@ import { useRouter, useRoute } from "vue-router";
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
 import { CloudArrowDownIcon } from "@heroicons/vue/24/solid";
 
-import type { File as ConfigFileEntry, Configuration } from "@/models/configuration";
+import type { Configuration, Card } from "@/models/configuration";
 import type { FileRender, DirectoryRender, FileFromAPI, DirectoryFromAPI } from "@/models/file-explorer";
 
 import CardList from "@/components/CardList.vue";
@@ -150,23 +150,23 @@ function processPathReplacements(path: string, callsign: string = props.selected
 	return path;
 }
 provide("processPathReplacements", processPathReplacements);
-function mapPathIdentifiers(file: ConfigFileEntry): ConfigFileEntry {
+function mapPathIdentifiers(card: Card): Card {
 	return {
-		...file,
-		rawPath: file.path,
-		path: file.path ? processPathReplacements(file.path) : undefined,
+		...card,
+		rawPath: card.path,
+		path: card.path ? processPathReplacements(card.path) : undefined,
 	};
 }
 
 // Files for grid list overview
-const fileGroups = computed(() => {
+const cardGroups = computed(() => {
 	if (!configuration || !configuration.value || props.tabName === "All Files" || !configuration.value.tabs[props.tabName]) return [];
 
 	return Object.entries(configuration.value.tabs[props.tabName]).map(entry => {
 		return {
 			tabName: props.tabName.toString(),
 			groupName: entry[0],
-			files: entry[1].map(mapPathIdentifiers),
+			cards: entry[1].map(mapPathIdentifiers),
 		};
 	});
 });
@@ -198,7 +198,7 @@ watchPostEffect(async () => {
 	routePath.shift(); // Remove first part of path that refers to selected sidebar tab
 
 	let filePath: string[] = [];
-	let fileEntry: ConfigFileEntry | undefined = undefined;
+	let cardEntry: Card | undefined = undefined;
 	if (props.tabName !== "All Files") {
 		// Need to look up entry to find beginning of real path
 		let entryName = routePath.shift();
@@ -207,11 +207,11 @@ watchPostEffect(async () => {
 			return;
 		}
 		else {
-			fileEntry = Object.values(configuration.value.tabs[props.tabName])
+			cardEntry = Object.values(configuration.value.tabs[props.tabName])
 				.flat()
 				.map(mapPathIdentifiers)
 				.find(file => file.name === entryName);
-			if (!fileEntry) {
+			if (!cardEntry) {
 				await openAlert(
 					"Entry not found in configuration",
 					`Couldn't find entry in the configuration: ${entryName}`
@@ -222,9 +222,9 @@ watchPostEffect(async () => {
 		}
 	}
 
-	if (!fileEntry?.type || fileEntry.type === "Local") {
-		if (fileEntry?.path) {
-			filePath = fileEntry.path.split("/");
+	if (!cardEntry?.type || cardEntry.type === "Local") {
+		if (cardEntry?.path) {
+			filePath = cardEntry.path.split("/");
 		}
 		filePath = filePath.concat(routePath); // If routePath still has items on it, they're subitems of the looked-up filePath
 
@@ -381,11 +381,11 @@ watchPostEffect(async () => {
 			navigateToRoot();
 		}
 	}
-	else if (fileEntry.type === "SharePoint" && fileEntry.sharePoint) {
+	else if (cardEntry.type === "SharePoint" && cardEntry.sharePoint) {
 		loadingModalOpen.value = true;
 		cachedCopyAvailable.value = false;
 
-		let cachePath = processPathReplacements(fileEntry.sharePoint.cachePath);
+		let cachePath = processPathReplacements(cardEntry.sharePoint.cachePath);
 		let cachedFileInfoRequest = await fetch("/api/" + cachePath)
 		cachedCopyAvailable.value = cachedFileInfoRequest.status === 200; // Only if the file exists
 
@@ -411,18 +411,18 @@ watchPostEffect(async () => {
 
 		let matcher = new RegExp("");
 		try {
-			matcher = new RegExp(fileEntry.sharePoint.search);
+			matcher = new RegExp(cardEntry.sharePoint.search);
 		}
 		catch (err) {
 			await openAlert(
 				"Invalid regular expression",
-				`The SharePoint file RegEx for this card contains an invalid regular expression /${fileEntry.sharePoint.search}/: ${(err as SyntaxError).message}`
+				`The SharePoint file RegEx for this card contains an invalid regular expression /${cardEntry.sharePoint.search}/: ${(err as SyntaxError).message}`
 			);
 			navigateToRoot();
 			return;
 		}
 
-		let url = new URL(fileEntry.sharePoint.url);
+		let url = new URL(cardEntry.sharePoint.url);
 		let urlPath = url.pathname.split("/");
 		urlPath.pop(); // Remove file name at end
 		let listName = decodeURIComponent(urlPath.pop() ?? "");
@@ -464,7 +464,7 @@ watchPostEffect(async () => {
 		if (!mostRecentMatch) {
 			await openAlert(
 				"SharePoint document not found",
-				`Could not find a document in the SharePoint item list that matches the regular expression /${fileEntry.sharePoint.search}/`
+				`Could not find a document in the SharePoint item list that matches the regular expression /${cardEntry.sharePoint.search}/`
 			);
 			navigateToRoot();
 			return;

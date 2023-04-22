@@ -2,7 +2,7 @@ import type * as HeroIcons from '@heroicons/vue/24/outline';
 export type IconName = keyof typeof HeroIcons;
 export type Component = "FileList" | "AllFiles" | "Performance" | "ATLC" | "Settings" | "Spacer";
 
-export interface File {
+export interface Card {
 	name: string;
 	description: string;
 	abbreviation: string;
@@ -41,7 +41,7 @@ export interface Configuration {
 
 	tabs: {
 		[tabName: string]: {
-			[fileGroup: string]: File[];
+			[fileGroup: string]: Card[];
 		};
 	};
 
