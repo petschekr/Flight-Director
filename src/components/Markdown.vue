@@ -28,21 +28,32 @@
 				</div>
 			</div>
 		</div>
-		<div v-if="currentMode === Mode.Edit" class="shadow-inner p-4">
-			<textarea></textarea>
+		<div v-show="currentMode === Mode.Edit" class="shadow-inner outline-none h-full grid grid-cols-2 divide-x-2 overflow-auto">
+
+			<div class="p-4 outline-none" contenteditable @input="templateUpdate" ref="editBox"></div>
+			<div class="p-4 prose prose-sm max-w-none" v-html="renderedOutput"></div>
 		</div>
-		<article v-if="currentMode === Mode.View" class="shadow-inner p-4 prose max-md:prose-sm" v-html="renderedOutput"></article>
+		<article v-if="currentMode === Mode.View" class="shadow-inner p-4 prose max-md:prose-sm max-w-none overflow-auto" v-html="renderedOutput"></article>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref, inject, watchEffect, computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { ref, type Ref, inject, watchEffect, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 
 import type { Configuration, Card } from "@/models/configuration";
 
 import { marked } from "marked";
+
+// Open links in a new tab
+marked.use({
+	renderer: {
+		link(href, title, text) {
+			return `<a target="_blank" href="${href ?? ""}" title="${title ?? ""}">${text}</a>`;
+		}
+	}
+})
 
 const props = defineProps<{
 	card: Card | null;
@@ -51,7 +62,6 @@ const props = defineProps<{
 const configuration = inject<Ref<Configuration | null>>("configuration");
 const profileEditMode = inject<Ref<boolean>>("editMode");
 
-const router = useRouter();
 const route = useRoute();
 
 enum Mode {
@@ -67,6 +77,18 @@ watchEffect(() => {
 		currentMode.value = Mode.View;
 	}
 });
+
+const editBox: Ref<HTMLElement | null> = ref(null);
+onMounted(() => {
+	if (!editBox.value || !props.card?.markdown) return;
+	editBox.value.innerText = props.card?.markdown?.template ?? ""
+});
+
+function templateUpdate(e: Event) {
+	if (!props.card?.markdown || !configuration?.value) return true;
+	props.card.markdown.template = (e.target as HTMLElement).innerText;
+	configuration.value.unsaved = true;
+}
 
 const renderedOutput = computed((): string => {
 	let template = props.card?.markdown?.template;
