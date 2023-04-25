@@ -430,7 +430,7 @@ watchPostEffect(async () => {
 
 		interface SharePointListItem {
 			File: {
-				Name: string;
+				Name?: string;
 				ServerRelativeUrl: string;
 				TimeLastModified: string;
 			}
@@ -440,7 +440,7 @@ watchPostEffect(async () => {
 		async function getSharePointData(): Promise<SharePointListItem[]> {
 			loadingState.value = "Getting data from SharePoint...";
 			let request = await fetch(
-				`/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&orderby=Modified%20desc&$top=6`,
+				`/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&$orderby=Modified%20desc&$top=6`,
 				{ signal: abortController.signal },
 			);
 			try {
@@ -460,7 +460,7 @@ watchPostEffect(async () => {
 			}
 		}
 
-		let mostRecentMatch = (await getSharePointData()).filter(file => file.File.Name.match(matcher)).pop(); // Files are already sorted by modified time in request
+		let mostRecentMatch = (await getSharePointData()).filter(file => file.File.Name?.match(matcher)).shift(); // Files are already sorted by modified time in request (most recent first)
 		if (!mostRecentMatch) {
 			await openAlert(
 				"SharePoint document not found",
@@ -504,7 +504,7 @@ watchPostEffect(async () => {
 		fileRendered.value = {
 			file: itemInfo,
 			path: cachePath.split("/"),
-			commonName: mostRecentMatch.File.Name,
+			commonName: mostRecentMatch.File.Name ?? cachePath.split("/").pop() ?? "Unknown",
 		};
 
 		// Don't show file if the loading process was canceled
