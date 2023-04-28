@@ -685,7 +685,7 @@ watchEffect(() => {
 
 // Load configuration
 try {
-	let response = await fetch("/performance");
+	let response = await fetch("/api/performance");
 	performance.value = toml.parse(await response.text());
 }
 catch (err) {

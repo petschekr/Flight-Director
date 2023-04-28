@@ -237,7 +237,7 @@ watchPostEffect(async () => {
 			indefinitePath = filePath.slice(firstRegexPath);
 		}
 
-		let itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+		let itemInfoResponse = await fetch("/api/list/" + definitePath.join("/"));
 		if (itemInfoResponse.status === 200) {
 			let itemInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await itemInfoResponse.json();
 
@@ -285,7 +285,7 @@ watchPostEffect(async () => {
 					}
 					else {
 						// Load directory's contents
-						itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+						itemInfoResponse = await fetch("/api/list/" + definitePath.join("/"));
 						itemInfo = await itemInfoResponse.json();
 					}
 				}
@@ -323,7 +323,7 @@ watchPostEffect(async () => {
 							);
 						}
 						definitePath.push(itemInfo[0].name);
-						itemInfoResponse = await fetch("/api/" + definitePath.join("/"));
+						itemInfoResponse = await fetch("/api/list/" + definitePath.join("/"));
 						itemInfo = await itemInfoResponse.json();
 					}
 				}
@@ -372,7 +372,7 @@ watchPostEffect(async () => {
 			// Recurse upwards until we find a folder that exists
 			while (filePath.length > 0) {
 				filePath.pop();
-				let itemInfoResponse = await fetch("/api/" + filePath.join("/"));
+				let itemInfoResponse = await fetch("/api/list/" + filePath.join("/"));
 				if (itemInfoResponse.status === 200) {
 					router.push("/files/" + filePath.join("/"));
 					return;
@@ -386,7 +386,7 @@ watchPostEffect(async () => {
 		cachedCopyAvailable.value = false;
 
 		let cachePath = processPathReplacements(cardEntry.sharePoint.cachePath);
-		let cachedFileInfoRequest = await fetch("/api/" + cachePath)
+		let cachedFileInfoRequest = await fetch("/api/list/" + cachePath)
 		cachedCopyAvailable.value = cachedFileInfoRequest.status === 200; // Only if the file exists
 
 		let abortController = new AbortController();
@@ -440,7 +440,7 @@ watchPostEffect(async () => {
 		async function getSharePointData(): Promise<SharePointListItem[]> {
 			loadingState.value = "Getting data from SharePoint...";
 			let request = await fetch(
-				`/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&$orderby=Modified%20desc&$top=6`,
+				`/api/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&$orderby=Modified%20desc&$top=6`,
 				{ signal: abortController.signal },
 			);
 			try {
@@ -450,7 +450,7 @@ watchPostEffect(async () => {
 			catch {
 				loadingState.value = "Logging in to SharePoint...";
 				await fetch(
-					`/sharepoint/login`,
+					`/api/sharepoint/login`,
 					{ signal: abortController.signal },
 				);
 				if (++retryCount >= 3) {
@@ -473,7 +473,7 @@ watchPostEffect(async () => {
 		// Download file to cache location
 		let fileNeedsUpdate = false;
 
-		let itemInfoResponse = await fetch("/api/" + cachePath);
+		let itemInfoResponse = await fetch("/api/list/" + cachePath);
 		if (itemInfoResponse.status === 200) {
 			let itemInfo: FileFromAPI = await itemInfoResponse.json();
 
@@ -492,12 +492,12 @@ watchPostEffect(async () => {
 		if (fileNeedsUpdate) {
 			loadingState.value = "Downloading file from SharePoint...";
 			await fetch(
-				`/sharepoint/download/${url.hostname}${mostRecentMatch.File.ServerRelativeUrl}?location=${encodeURIComponent(cachePath)}`,
+				`/api/sharepoint/download/${url.hostname}${mostRecentMatch.File.ServerRelativeUrl}?location=${encodeURIComponent(cachePath)}`,
 				{ signal: abortController.signal },
 			);
 		}
 
-		itemInfoResponse = await fetch("/api/" + cachePath);
+		itemInfoResponse = await fetch("/api/list/" + cachePath);
 		let itemInfo: FileFromAPI = await itemInfoResponse.json();
 
 		// Open from cache location

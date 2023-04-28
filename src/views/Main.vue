@@ -173,7 +173,7 @@ async function openConfiguration() {
 }
 async function loadDefaultConfiguration() {
 	// Default configuration location is set in the PowerShell server
-	let response = await fetch("/config");
+	let response = await fetch("/api/config");
 	let configContents = await response.text();
 	await loadConfiguration(configContents, false); // Don't cache the default configuration so the most recent version is always loaded
 }

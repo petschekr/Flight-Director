@@ -124,7 +124,7 @@ function stringToArray(input: string[] | string): string[] {
 }
 async function openExternally() {
 	if (!props.directory) return;
-	return fetch("/open/" + props.directory.location.path.join("/"));
+	return fetch("/api/open/" + props.directory.location.path.join("/"));
 }
 
 const path = computed(() => {
@@ -163,7 +163,7 @@ watchEffect(async () => {
 	for (const item of props.directory.directory.values()) {
 		if (item.kind === "directory") {
 			let subitems = 0;
-			let subitemInfoResponse = await fetch(`/api/${props.directory.location.path.join("/")}/${item.name}`);
+			let subitemInfoResponse = await fetch(`/api/list/${props.directory.location.path.join("/")}/${item.name}`);
 			if (subitemInfoResponse.status === 200) {
 				let itemInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await subitemInfoResponse.json();
 				subitems = Array.isArray(itemInfo) ? itemInfo.length : 0;

@@ -27,7 +27,7 @@
 				</div>
 			</div>
 		</div>
-		<embed v-if="shouldPreview" :src="'/download/' + (props.file?.path.join('/') ?? '') + '?page=0'" class="w-full sm:rounded-b-lg flex-grow object-scale-down" />
+		<embed v-if="shouldPreview" :src="'/api/download/' + (props.file?.path.join('/') ?? '') + '?page=0'" class="w-full sm:rounded-b-lg flex-grow object-scale-down" />
 		<div v-else class="flex flex-col flex-grow justify-center items-center shadow-inner">
 			<RocketLaunchIconOutline class="h-10 w-10" />
 			<p class="text-lg font-medium my-4">Opening in your default app...</p>
@@ -61,7 +61,7 @@ const route = useRoute();
 
 async function openExternally() {
 	if (!props.file) return;
-	fetch("/open/" + props.file.path.join("/"));
+	fetch("/api/open/" + props.file.path.join("/"));
 }
 
 const shouldPreview: Ref<boolean> = ref(false);

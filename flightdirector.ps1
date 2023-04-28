@@ -35,27 +35,21 @@ try {
 		$content = ""
 
 		try {
-			# Serve app
-			if ($path -eq "/") {
-				$item = Get-Item -LiteralPath "FileServe:\Flight Director.html" -Force -ErrorAction Stop
-				$res.ContentType = "text/html"
-				$content = [System.IO.File]::ReadAllBytes($item)
-			}
 			# Serve default config file
-			elseif ($path.StartsWith("/config")) {
+			if ($path.StartsWith("/api/config")) {
 				$item = Get-Item -LiteralPath "FileServe:\flightdirector.toml" -Force -ErrorAction Stop
 				$res.ContentType = "text/plain"
 				$content = [System.IO.File]::ReadAllBytes($item)
 			}
 			# Serve default performance file
-			elseif ($path.StartsWith("/performance")) {
+			elseif ($path.StartsWith("/api/performance")) {
 				$item = Get-Item -LiteralPath "FileServe:\performance.toml" -Force -ErrorAction Stop
 				$res.ContentType = "text/plain"
 				$content = [System.IO.File]::ReadAllBytes($item)
 			}
 			# List directory or file details
-			elseif ($path.StartsWith("/api")) {
-				$path = $path.Replace("/api", "");
+			elseif ($path.StartsWith("/api/list")) {
+				$path = $path.Replace("/api/list", "");
 				$item = Get-Item -LiteralPath "FileServe:\$path" -Force -ErrorAction Stop
 				if ($item.Attributes -match "Directory") {
 					# Directory
@@ -98,15 +92,15 @@ try {
 				$content = [System.Text.Encoding]::UTF8.GetBytes($content)
 			}
 			# Open natively
-			elseif ($path.StartsWith("/open")) {
-				$path = $path.Replace("/open", "");
+			elseif ($path.StartsWith("/api/open")) {
+				$path = $path.Replace("/api/open", "");
 				$item = Get-Item -LiteralPath "FileServe:\$path" -Force -ErrorAction Stop
 				# Invoke-Item $item # Opens behind for some reason
 				explorer $item
 			}
 			# Serve file (i.e. download)
-			elseif ($path.StartsWith("/download")) {
-				$path = $path.Replace("/download", "");
+			elseif ($path.StartsWith("/api/download")) {
+				$path = $path.Replace("/api/download", "");
 				$item = Get-Item -LiteralPath "FileServe:\$path" -Force -ErrorAction Stop
 				try {
 					$res.ContentType = [System.Web.MimeMapping]::GetMimeMapping($item.FullName)
@@ -116,13 +110,13 @@ try {
 				}
 				$content = [System.IO.File]::ReadAllBytes($item.FullName)
 			}
-			elseif ($path.StartsWith("/save")) {
-				$path = $path.Replace("/save", "");
+			elseif ($path.StartsWith("/api/save")) {
+				$path = $path.Replace("/api/save", "");
 				$streamReader = [System.IO.StreamReader]::new($req.InputStream)
 				$body = $streamReader.ReadToEnd()
 				New-Item -Path "FileServe:\$path" -ItemType File -Force -Value $body
 			}
-			elseif ($path.StartsWith("/sharepoint/login")) {
+			elseif ($path.StartsWith("/api/sharepoint/login")) {
 				# Bring the certificate prompt to foreground
 				# [Microsoft.VisualBasic.Interaction]::AppActivate($PID)
 
@@ -181,8 +175,8 @@ try {
 					$res.StatusCode = 401;
 				}
 			}
-			elseif ($path.StartsWith("/sharepoint/download")) {
-				$site = $path.Replace("/sharepoint/download/", "");
+			elseif ($path.StartsWith("/api/sharepoint/download")) {
+				$site = $path.Replace("/api/sharepoint/download/", "");
 				$downloadLocation = [System.Web.HttpUtility]::ParseQueryString($req.Url.Query).Get("location");
 
 				$ProxyParams = @{
@@ -199,8 +193,8 @@ try {
 					$res.StatusCode = 502
 				}
 			}
-			elseif ($path.StartsWith("/sharepoint")) {
-				$site = $req.Url.PathAndQuery.Replace("/sharepoint/", "");
+			elseif ($path.StartsWith("/api/sharepoint")) {
+				$site = $req.Url.PathAndQuery.Replace("/api/sharepoint/", "");
 
 				$streamReader = [System.IO.StreamReader]::new($req.InputStream)
 				$body = $streamReader.ReadToEnd()
@@ -229,7 +223,11 @@ try {
 				}
 			}
 			else {
-				$content = [System.Text.Encoding]::UTF8.GetBytes("Invalid URL");
+				# Serve app at root URL
+				# The Vue router handles user-facing, non-API URLs
+				$item = Get-Item -LiteralPath "FileServe:\Flight Director.html" -Force -ErrorAction Stop
+				$res.ContentType = "text/html"
+				$content = [System.IO.File]::ReadAllBytes($item)
 			}
 		}
 		catch [System.Management.Automation.ItemNotFoundException] {

@@ -37,7 +37,7 @@ export interface Airport {
 	NAME: string;
 }
 export async function getAirportInfo(dafifLocation: string, identifier: string): Promise<Airport> {
-	return searchTSV<Airport>(`/download/${dafifLocation}/DAFIFT/ARPT/ARPT.TXT`, record => [record.ICAO.toUpperCase(), record.FAA_HOST_ID.toUpperCase()].includes(identifier.toUpperCase())).then(airport => airport[0]);
+	return searchTSV<Airport>(`/api/download/${dafifLocation}/DAFIFT/ARPT/ARPT.TXT`, record => [record.ICAO.toUpperCase(), record.FAA_HOST_ID.toUpperCase()].includes(identifier.toUpperCase())).then(airport => airport[0]);
 }
 
 export interface Runway {
@@ -78,7 +78,7 @@ export interface Runway {
 	LE_TRUE_HDG: string;
 }
 export async function getRunwayInfo(dafifLocation: string, airportIdentifier: string): Promise<Runway[]> {
-	return (await searchTSV<Runway>(`/download/${dafifLocation}/DAFIFT/ARPT/RWY.TXT`, record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase())).map(runway => {
+	return (await searchTSV<Runway>(`/api/download/${dafifLocation}/DAFIFT/ARPT/RWY.TXT`, record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase())).map(runway => {
 		const surfaceTypes: { [abbr: string]: string } = {
 			"ASP": "Asphalt",
 			"BIT": "Tar",
@@ -122,5 +122,5 @@ export interface AirportComms {
 	S_OPR_H: string;
 }
 export async function getCommInfo(dafifLocation: string, airportIdentifier: string): Promise<AirportComms[]> {
-	return searchTSV<AirportComms>(`/download/${dafifLocation}/DAFIFT/ARPT/ACOM.TXT`, record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase());
+	return searchTSV<AirportComms>(`/api/download/${dafifLocation}/DAFIFT/ARPT/ACOM.TXT`, record => record.ARPT_IDENT.toUpperCase() === airportIdentifier.toUpperCase());
 }

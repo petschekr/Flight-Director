@@ -208,7 +208,7 @@ async function feedbackSubmit() {
 	}
 
 	let pathSafeTitle = title.value.replace(/[<>:"\/\\\|\?\*]/g, "-");
-	await fetch(`/save/${configuration?.value?.feedbackLocation}/${encodeURIComponent(feedbackType.value)}/${Date.now()} - ${encodeURIComponent(pathSafeTitle)}.txt`, {
+	await fetch(`/api/save/${configuration?.value?.feedbackLocation}/${encodeURIComponent(feedbackType.value)}/${Date.now()} - ${encodeURIComponent(pathSafeTitle)}.txt`, {
 		method: "POST",
 		headers: { "Content-Type": "text/plain" },
 		body: `${title.value} - ${feedbackType.value}\r\n\r\n${description.value}`
