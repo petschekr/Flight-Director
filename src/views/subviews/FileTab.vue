@@ -81,6 +81,7 @@ import Markdown from "@/components/Markdown.vue";
 import EditCallsigns from "@/components/EditCallsigns.vue";
 
 import dayjs from "dayjs";
+import { compileExpression } from "filtrex";
 
 const props = defineProps<{
 	tabName: keyof Configuration["tabs"] | "All Files";
@@ -382,135 +383,210 @@ watchPostEffect(async () => {
 		}
 	}
 	else if (cardEntry.type === "SharePoint" && cardEntry.sharePoint) {
-		loadingModalOpen.value = true;
-		cachedCopyAvailable.value = false;
-
 		let cachePath = processPathReplacements(cardEntry.sharePoint.cachePath);
-		let cachedFileInfoRequest = await fetch("/api/list/" + cachePath)
-		cachedCopyAvailable.value = cachedFileInfoRequest.status === 200; // Only if the file exists
+		if (routePath.length === 0) {
+			// Main SharePoint card requested
+			loadingModalOpen.value = true;
+			cachedCopyAvailable.value = false;
 
-		let abortController = new AbortController();
+			let cachedFileInfoRequest = await fetch("/api/list/" + cachePath)
+			cachedCopyAvailable.value = cachedFileInfoRequest.status === 200; // Only if the file exists
 
-		// Set function to be called by "Use Cached Copy" button
-		useCachedCopy = async () => {
-			if (!loadingModalOpen.value) return;
-			abortController.abort();
+			let abortController = new AbortController();
 
-			let cachedFileInfo: FileFromAPI = await cachedFileInfoRequest.json();
+			// Set function to be called by "Use Cached Copy" button
+			useCachedCopy = async () => {
+				if (!loadingModalOpen.value) return;
+				abortController.abort();
 
-			// Open from cache location
-			fileRendered.value = {
-				file: cachedFileInfo,
-				path: cachePath.split("/"),
-				commonName: cachedFileInfo.name,
+				let cachedFileInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await cachedFileInfoRequest.json();
+				// Open from cache location
+				if (Array.isArray(cachedFileInfo)) {
+					directoryRendered.value = {
+						directory: cachedFileInfo,
+						location: {
+							path: cachePath.split("/"),
+							fromRoot: false,
+						},
+					};
+
+					renderType.value = RenderType.Directory;
+				}
+				else {
+					fileRendered.value = {
+						file: cachedFileInfo,
+						path: cachePath.split("/"),
+						commonName: cachedFileInfo.name,
+					};
+
+					renderType.value = RenderType.File;
+				}
+				loadingModalOpen.value = false;
 			};
 
-			loadingModalOpen.value = false;
-			renderType.value = RenderType.File;
-		};
+			let matcher: (obj: any) => boolean;
+			try {
+				matcher = compileExpression(cardEntry.sharePoint.searchExpression, { extraFunctions: {
+					includes: (text: string, searchString: string) => text.includes(searchString),
+					date: (format: string) => {
+						const date = dayjs(selectedDate.value);
+						return date.format(format);
+					}
+				}});
+			}
+			catch (err) {
+				await openAlert(
+					"Invalid search expression",
+					`The search expression for this card cannot be parsed: /${cardEntry.sharePoint.searchExpression}/: ${(err as SyntaxError).message}`
+				);
+				navigateToRoot();
+				return;
+			}
 
-		let matcher = new RegExp("");
-		try {
-			matcher = new RegExp(cardEntry.sharePoint.search);
-		}
-		catch (err) {
-			await openAlert(
-				"Invalid regular expression",
-				`The SharePoint file RegEx for this card contains an invalid regular expression /${cardEntry.sharePoint.search}/: ${(err as SyntaxError).message}`
-			);
-			navigateToRoot();
-			return;
-		}
-
-		let url = new URL(cardEntry.sharePoint.url);
-		let urlPath = url.pathname.split("/");
-		urlPath.pop(); // Remove file name at end
-		let listName = decodeURIComponent(urlPath.pop() ?? "");
-		let sharepointSite = url.hostname + urlPath.join("/");
-
-		interface SharePointListItem {
-			File: {
+			interface SharePointFile {
 				Name?: string;
 				ServerRelativeUrl: string;
 				TimeLastModified: string;
 			}
-		}
-
-		let retryCount = 0;
-		async function getSharePointData(): Promise<SharePointListItem[]> {
-			loadingState.value = "Getting data from SharePoint...";
-			let request = await fetch(
-				`/api/sharepoint/${sharepointSite}/_api/web/lists/getbytitle('${encodeURIComponent(listName)}')/items?$expand=File&$select=File&$orderby=Modified%20desc&$top=6`,
-				{ signal: abortController.signal },
-			);
-			try {
-				let files: SharePointListItem[] = (await request.json()).d.results;
-				return files;
+			interface SharePointListItem {
+				File: SharePointFile;
 			}
-			catch {
-				loadingState.value = "Logging in to SharePoint...";
-				await fetch(
-					`/api/sharepoint/login`,
+
+			let retryCount = 0;
+			async function getSharePointData(): Promise<SharePointFile[]> {
+				if (!cardEntry?.sharePoint) return [];
+				loadingState.value = "Getting data from SharePoint...";
+
+				let requestUrl = cardEntry.sharePoint.collection.type === "List"
+					? `/_api/web/lists/getbytitle('${encodeURIComponent(cardEntry.sharePoint.collection.name)}')/items?$expand=File&$select=File&$orderby=Modified%20desc&$top=${cardEntry.sharePoint.searchSize}`
+					: `/_api/web/getfolderbyserverrelativeurl('${encodeURIComponent(cardEntry.sharePoint.collection.name)}')/Files?$orderby=TimeLastModified%20desc&$top=${cardEntry.sharePoint.searchSize}`;
+
+				let baseUrl = new URL(cardEntry.sharePoint.baseUrl);
+				let request = await fetch(
+					`/api/sharepoint/${baseUrl.hostname}${baseUrl.pathname}${requestUrl}`,
 					{ signal: abortController.signal },
 				);
-				if (++retryCount >= 3) {
-					return [];
+				try {
+					let files: (SharePointListItem | SharePointFile)[] = (await request.json()).d.results;
+					if (cardEntry.sharePoint.collection.type === "List") {
+						return (files as SharePointListItem[]).map(file => file.File);
+					}
+					else {
+						return files as SharePointFile[];
+					}
 				}
-				return getSharePointData();
+				catch {
+					loadingState.value = "Logging in to SharePoint...";
+					await fetch(
+						`/api/sharepoint/login`,
+						{ signal: abortController.signal },
+					);
+					if (++retryCount >= 3) {
+						return [];
+					}
+					return getSharePointData();
+				}
 			}
-		}
 
-		let mostRecentMatch = (await getSharePointData()).filter(file => file.File.Name?.match(matcher)).shift(); // Files are already sorted by modified time in request (most recent first)
-		if (!mostRecentMatch) {
-			await openAlert(
-				"SharePoint document not found",
-				`Could not find a document in the SharePoint item list that matches the regular expression /${cardEntry.sharePoint.search}/`
-			);
-			navigateToRoot();
-			return;
-		}
+			// Files are already sorted by modified time in request (most recent first)
+			let mostRecentMatches = (await getSharePointData()).filter(file => {
+				let fileNameComponents = file.Name?.split(".") ?? [];
+				let extension = fileNameComponents.pop() ?? "";
+				let fileName = fileNameComponents.join(".");
+				return matcher({ name: fileName, extension });
+			});
+			if (mostRecentMatches.length === 0) {
+				await openAlert(
+					"SharePoint document(s) not found",
+					`Could not find a document in the SharePoint item list that matches the search expression /${cardEntry.sharePoint.searchExpression}/`
+				);
+				navigateToRoot();
+				return;
+			}
+			for (let match of cardEntry.sharePoint.multiple ? mostRecentMatches : [mostRecentMatches[0]]) {
+				// Download file to cache location
+				let fileNeedsUpdate = false;
 
-		// Download file to cache location
-		let fileNeedsUpdate = false;
+				let localPath = cachePath;
+				if (cardEntry.sharePoint.multiple) {
+					localPath += "/" + match.Name!;
+				}
 
-		let itemInfoResponse = await fetch("/api/list/" + cachePath);
-		if (itemInfoResponse.status === 200) {
-			let itemInfo: FileFromAPI = await itemInfoResponse.json();
+				let cacheInfoResponse = await fetch("/api/list/" + localPath);
+				if (cacheInfoResponse.status === 200) {
+					let cacheInfo: FileFromAPI = await cacheInfoResponse.json();
 
-			let localLastModified = new Date(itemInfo.lastModified);
-			let remoteLastModified = new Date(mostRecentMatch.File.TimeLastModified);
-			if (localLastModified.valueOf() < remoteLastModified.valueOf()) {
-				// Local copy is too old
-				fileNeedsUpdate = true;
+					let localLastModified = new Date(cacheInfo.lastModified);
+					let remoteLastModified = new Date(match.TimeLastModified);
+					if (localLastModified.valueOf() < remoteLastModified.valueOf()) {
+						// Local copy is too old
+						fileNeedsUpdate = true;
+					}
+				}
+				else {
+					// Local copy doesn't exist
+					fileNeedsUpdate = true;
+				}
+
+				if (fileNeedsUpdate) {
+					loadingState.value = "Downloading file from SharePoint...";
+					await fetch(
+						`/api/sharepoint/download/${new URL(cardEntry.sharePoint.baseUrl).hostname}${match.ServerRelativeUrl}?location=${encodeURIComponent(localPath)}`,
+						{ signal: abortController.signal },
+					);
+				}
+			}
+
+			let cacheInfoResponse = await fetch("/api/list/" + cachePath);
+			let cacheInfo: FileFromAPI | (DirectoryFromAPI | FileFromAPI)[] = await cacheInfoResponse.json();
+
+			// Don't show file if the loading process was canceled
+			if (loadingModalOpen.value) {
+				// Open from cache location
+				if (!Array.isArray(cacheInfo)) {
+					// Display file
+					fileRendered.value = {
+						file: cacheInfo,
+						path: cachePath.split("/"),
+						commonName: mostRecentMatches[0].Name ?? cachePath.split("/").pop() ?? "Unknown",
+					};
+					renderType.value = RenderType.File;
+				}
+				else {
+					// Display folder (for when multiple is enabled)
+					directoryRendered.value = {
+						directory: cacheInfo,
+						location: {
+							path: cachePath.split("/"),
+							fromRoot: false,
+						},
+					};
+					renderType.value = RenderType.Directory;
+				}
+
+				loadingModalOpen.value = false;
 			}
 		}
 		else {
-			// Local copy doesn't exist
-			fileNeedsUpdate = true;
-		}
+			// Requested URL is a subpath of the main card (file in folder)
+			let fileInfoRequest = await fetch(`/api/list/${cachePath}/${routePath.join("/")}`);
+			if (fileInfoRequest.status === 200) {
+				let fileInfo: FileFromAPI = await fileInfoRequest.json();
+				fileRendered.value = {
+					file: fileInfo,
+					path: cachePath.split("/").concat(routePath),
+					commonName: fileInfo.name,
+				};
 
-		if (fileNeedsUpdate) {
-			loadingState.value = "Downloading file from SharePoint...";
-			await fetch(
-				`/api/sharepoint/download/${url.hostname}${mostRecentMatch.File.ServerRelativeUrl}?location=${encodeURIComponent(cachePath)}`,
-				{ signal: abortController.signal },
-			);
-		}
-
-		itemInfoResponse = await fetch("/api/list/" + cachePath);
-		let itemInfo: FileFromAPI = await itemInfoResponse.json();
-
-		// Open from cache location
-		fileRendered.value = {
-			file: itemInfo,
-			path: cachePath.split("/"),
-			commonName: mostRecentMatch.File.Name ?? cachePath.split("/").pop() ?? "Unknown",
-		};
-
-		// Don't show file if the loading process was canceled
-		if (loadingModalOpen.value) {
-			loadingModalOpen.value = false;
-			renderType.value = RenderType.File;
+				renderType.value = RenderType.File;
+			}
+			else {
+				await openAlert(
+					"File not found",
+					`Couldn't find cached SharePoint file at requested path: ${cachePath}/${routePath.join("/")}`
+				);
+				navigateToRoot();
+			}
 		}
 	}
 	else if (cardEntry.type === "Markdown" && cardEntry.markdown) {

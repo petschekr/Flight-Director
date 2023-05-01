@@ -178,6 +178,7 @@ try {
 			elseif ($path.StartsWith("/api/sharepoint/download")) {
 				$site = $path.Replace("/api/sharepoint/download/", "");
 				$downloadLocation = [System.Web.HttpUtility]::ParseQueryString($req.Url.Query).Get("location");
+				New-Item -Path "FileServe:\$downloadLocation" -ItemType File -Force
 
 				$ProxyParams = @{
 					Uri         = "https://" + $site

@@ -17,6 +17,7 @@
     "@types/marked": "^4.0.8",
     "csv-parse": "^5.3.6",
     "dayjs": "^1.11.5",
+    "filtrex": "^3.0.0",
     "marked": "^4.3.0",
     "pinia": "^2.0.21",
     "toml": "^3.0.0",

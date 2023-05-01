@@ -121,7 +121,7 @@
 											<div class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="card-type" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
-														Document Type
+														Document type
 													</label>
 													<p class="mt-1 text-sm text-gray-500">
 														When set to <code>SharePoint</code>, documents will automatically be pulled from SharePoint and cached in a local location
@@ -145,29 +145,102 @@
 											<div v-if="cardType === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="card-url" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
-														URL link to document
+														SharePoint site URL
 													</label>
 													<p class="mt-1 text-sm text-gray-500">
-														This determines which SharePoint list will be searched
+														Keep in mind this might be a subsite
 													</p>
 												</div>
 												<div class="sm:col-span-2">
-													<input type="text" id="card-url" v-model="sharePointUrl"
+													<input type="url" id="card-url" v-model="sharePointBaseUrl"
 														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
 												</div>
 											</div>
 
 											<div v-if="cardType === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
-													<label for="card-document-name" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
-														Document name
+													<label for="card-type" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Collection type
 													</label>
 													<p class="mt-1 text-sm text-gray-500">
-														A Regular Expression used to search for the document to pull.
+														Most documents are in a SharePoint list but sometimes they can only be found in a specific folder
 													</p>
 												</div>
 												<div class="sm:col-span-2">
-													<input type="text" id="card-document-name" v-model="sharePointSearch"
+													<select id="card-collection-type" v-model="sharePointCollectionType"
+														class="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-sky-500 sm:text-sm sm:leading-6">
+														<option value="List">List</option>
+														<option value="Folder">Folder</option>
+													</select>
+												</div>
+											</div>
+
+											<div v-if="cardType === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
+													<label for="card-collection-name" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Collection name
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														The list name or folder path of the document
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<input type="text" id="card-collection-name" v-model="sharePointCollectionName"
+														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
+												</div>
+											</div>
+
+
+											<SwitchGroup v-if="cardType === 'SharePoint'" as="div" class="space-y-1 px-4 flex items-center justify-between sm:space-y-0 sm:px-6 sm:py-5">
+												<span class="flex flex-grow flex-col">
+													<SwitchLabel as="span" class="text-sm font-medium leading-6 text-gray-900" passive>Multiple results</SwitchLabel>
+													<SwitchDescription as="span" class="text-sm text-gray-500">If enabled, will search for multiple matching documents and download them all</SwitchDescription>
+												</span>
+												<Switch v-model="sharePointMultiple" :class="[sharePointMultiple ? 'bg-sky-600' : 'bg-gray-200', 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2']">
+													<span aria-hidden="true" :class="[sharePointMultiple ? 'translate-x-5' : 'translate-x-0', 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out']" />
+												</Switch>
+											</SwitchGroup>
+
+											<div v-if="cardType === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
+													<label for="card-cache-location" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Search expression
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														This expression will determine which document(s) are downloaded and returned
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>name</code>: Document's file name without extension
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>extension</code>: Document's file extension (e.g. <code>docx</code>)
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>includes("text", "search string")</code>: Determines if text contains search string
+													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>date("YYYY-MM-DD")</code>: Returns a formatted date string
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<textarea id="card-path" rows="4" v-model="sharePointSearchExpression"
+														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"></textarea>
+													<!-- <br />
+													<code class="[overflow-wrap:anywhere]">{{cachePathPreview}}</code> -->
+												</div>
+											</div>
+
+											<div v-if="cardType === 'SharePoint'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
+													<label for="card-search-size" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Search size
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														The number of most recent files returned from the server to search through. Keep this as small as possible for better performance.
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<input type="number" min="1" max="100" id="card-search-size" v-model="sharePointSearchSize"
 														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
 												</div>
 											</div>
@@ -282,6 +355,7 @@ import {
 	Dialog, DialogPanel, DialogTitle,
 	TransitionChild, TransitionRoot,
 	Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions,
+	Switch, SwitchDescription, SwitchGroup, SwitchLabel,
 } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
@@ -322,8 +396,12 @@ function loadCardValues() {
 	abbreviation.value = props.card?.abbreviation ?? "";
 	cardType.value = props.card?.type ?? "Local";
 	path.value = props.card?.rawPath ?? props.card?.path ?? "";
-	sharePointUrl.value = props.card?.sharePoint?.url ?? "";
-	sharePointSearch.value = props.card?.sharePoint?.search ?? "";
+	sharePointBaseUrl.value = props.card?.sharePoint?.baseUrl ?? "";
+	sharePointCollectionType.value = props.card?.sharePoint?.collection.type ?? "List";
+	sharePointCollectionName.value = props.card?.sharePoint?.collection.name ?? "";
+	sharePointMultiple.value = props.card?.sharePoint?.multiple ?? false;
+	sharePointSearchExpression.value = props.card?.sharePoint?.searchExpression ?? "";
+	sharePointSearchSize.value = props.card?.sharePoint?.searchSize ?? 6;
 	sharePointCachePath.value = props.card?.sharePoint?.cachePath ?? "";
 	markdownTemplate.value = props.card?.markdown?.template ?? "";
 	searchTerms.value = props.card?.searchTerms ?? "";
@@ -346,8 +424,12 @@ const selectedColor = ref(defaultColor); // Updated by props.card watcher
 const abbreviation = ref("");
 const cardType: Ref<Card["type"]> = ref("Local");
 const path = ref("");
-const sharePointUrl = ref("");
-const sharePointSearch = ref("");
+const sharePointBaseUrl = ref("");
+const sharePointCollectionType: Ref<Required<Card>["sharePoint"]["collection"]["type"]> = ref("List");
+const sharePointCollectionName = ref("");
+const sharePointMultiple = ref(false);
+const sharePointSearchExpression = ref("");
+const sharePointSearchSize = ref(6);
 const sharePointCachePath = ref("");
 const markdownTemplate = ref("");
 const searchTerms = ref("");
@@ -391,17 +473,24 @@ async function saveCard() {
 		}
 	}
 	else if (cardType.value === "SharePoint") {
-		if (!sharePointUrl.value) {
-			await openAlert("URL required", "Please provide a URL of a document that is in the same SharePoint list as what will be linked");
+		if (!sharePointBaseUrl.value) {
+			await openAlert("Base URL required", "Please provide the URL of the SharePoint site");
 			return;
 		}
-		if (!sharePointSearch.value) {
-			await openAlert("Document name", "Please provide a RegEx that defines what document is being looked for in the SharePoint list");
+		if (!sharePointCollectionName.value) {
+			await openAlert("Collection name required", "Please provide the list name or folder name that contains the SharePoint document(s)");
+			return;
+		}
+		if (!sharePointSearchExpression.value) {
+			await openAlert("Search expression required", "Please provide a search expression that defines what documents are selected and returned");
 			return;
 		}
 		if (!sharePointCachePath.value) {
-			await openAlert("Cache location required", "Please provide a local share drive path where the SharePoint document will be downloaded to and cached");
+			await openAlert("Cache location required", "Please provide a local share drive path where the SharePoint document(s) will be downloaded to and cached");
 			return;
+		}
+		if (sharePointSearchSize.value < 1) {
+			sharePointSearchSize.value = 1;
 		}
 	}
 	// Check if there's already a card in this group with this name
@@ -419,8 +508,14 @@ async function saveCard() {
 		type: cardType.value,
 		path: path.value,
 		sharePoint: {
-			url: sharePointUrl.value,
-			search: sharePointSearch.value,
+			baseUrl: sharePointBaseUrl.value,
+			collection: {
+				type: sharePointCollectionType.value,
+				name: sharePointCollectionName.value,
+			},
+			multiple: sharePointMultiple.value,
+			searchExpression: sharePointSearchExpression.value,
+			searchSize: sharePointSearchSize.value,
 			cachePath: sharePointCachePath.value,
 		},
 		markdown: {

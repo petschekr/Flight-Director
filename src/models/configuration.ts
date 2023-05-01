@@ -11,8 +11,14 @@ export interface Card {
 	path?: string;
 	rawPath?: string;
 	sharePoint?: {
-		url: string;
-		search: string;
+		baseUrl: string;
+		collection: {
+			type: "List" | "Folder";
+			name: string;
+		};
+		multiple: boolean;
+		searchExpression: string;
+		searchSize: number;
 		cachePath: string;
 	};
 	markdown?: {
