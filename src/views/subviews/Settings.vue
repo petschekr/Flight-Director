@@ -12,7 +12,7 @@
 			</Switch>
 		</SwitchGroup>
 		<div class="text-center text-lg mt-2">
-			<code>Flight Director v0.9.0 @ {{commitHash}}</code>
+			<code>Flight Director v0.9.1 @ {{commitHash}}</code>
 		</div>
 		<div class="mt-2">
 			<p><code>v0.9.0</code>: Cards that display Markdown content, cancel SharePoint loading process to immediately open cached copy</p>
