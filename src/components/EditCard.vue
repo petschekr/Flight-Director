@@ -221,6 +221,9 @@
 													<p class="mt-1 text-sm text-gray-500">
 														<code>date("YYYY-MM-DD")</code>: Returns a formatted date string
 													</p>
+													<p class="mt-1 text-sm text-gray-500">
+														<code>letterDate("YYYY-MM-DD")</code>: Returns two letter date used by CENTCOM SharePoint starting from the date specified
+													</p>
 												</div>
 												<div class="sm:col-span-2">
 													<textarea id="card-path" rows="4" v-model="sharePointSearchExpression"

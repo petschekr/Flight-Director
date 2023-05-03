@@ -431,7 +431,15 @@ watchPostEffect(async () => {
 					date: (format: string) => {
 						const date = dayjs(selectedDate.value);
 						return date.format(format);
-					}
+					},
+					letterDate: (startDateString: string) => {
+						const date = dayjs(selectedDate.value);
+						const startDate = dayjs(startDateString);
+						let days = date.diff(startDate, "days");
+						let char1 = Math.floor(days / 26) % 26;
+						let char2 = days % 26;
+						return String.fromCharCode(char1 + "A".charCodeAt(0)) + String.fromCharCode(char2 + "A".charCodeAt(0));
+					},
 				}});
 			}
 			catch (err) {
