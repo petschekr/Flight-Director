@@ -427,12 +427,12 @@ watchPostEffect(async () => {
 			let matcher: (obj: any) => boolean;
 			try {
 				matcher = compileExpression(cardEntry.sharePoint.searchExpression, { extraFunctions: {
-					includes: (text: string, searchString: string) => text.includes(searchString),
+					includes: (text: string, searchString: string) => text.toLowerCase().includes(searchString.toLowerCase()),
 					date: (format: string) => {
 						const date = dayjs(selectedDate.value);
 						return date.format(format);
 					},
-					letterDate: (startDateString: string) => {
+					letterDate: (startDateString: string = "2022-05-04") => {
 						const date = dayjs(selectedDate.value);
 						const startDate = dayjs(startDateString);
 						let days = date.diff(startDate, "days");
