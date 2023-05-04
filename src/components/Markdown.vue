@@ -1,5 +1,5 @@
 <template>
-	<div class="bg-white rounded-lg sm:shadow h-[calc(100vh-7rem)] flex flex-col">
+	<div class="bg-white rounded-lg sm:shadow h-[calc(100vh-10rem)] flex flex-col max-w-5xl mx-auto">
 		<div class="border-b border-gray-200 bg-white px-4 py-5 sm:px-6 rounded-t-lg">
 			<div class="-ml-4 -mt-2 flex flex-nowrap items-center justify-between truncate">
 				<div class="ml-4 mt-2 truncate">
@@ -29,11 +29,10 @@
 			</div>
 		</div>
 		<div v-show="currentMode === Mode.Edit" class="shadow-inner outline-none h-full grid grid-cols-2 divide-x-2 overflow-auto">
-
-			<div class="p-4 outline-none" contenteditable @input="templateUpdate" ref="editBox"></div>
-			<div class="p-4 prose prose-sm max-w-none" v-html="renderedOutput"></div>
+			<textarea class="m-4 rounded-md outline-none active:outline-none border-0 focus:ring-2 focus:ring-inset focus:ring-sky-600 font-mono" @input="templateUpdate" ref="editBox"></textarea>
+			<div class="p-4 prose prose-sm max-w-none prose-code:before:content-[''] prose-code:after:content-['']" v-html="renderedOutput"></div>
 		</div>
-		<article v-if="currentMode === Mode.View" class="shadow-inner p-4 prose max-md:prose-sm max-w-none overflow-auto" v-html="renderedOutput"></article>
+		<article v-if="currentMode === Mode.View" class="shadow-inner py-6 px-10 prose max-md:prose-sm max-w-none overflow-auto prose-code:before:content-[''] prose-code:after:content-[''] prose-img:mx-auto" v-html="renderedOutput"></article>
 	</div>
 </template>
 
@@ -78,15 +77,15 @@ watchEffect(() => {
 	}
 });
 
-const editBox: Ref<HTMLElement | null> = ref(null);
+const editBox: Ref<HTMLTextAreaElement | null> = ref(null);
 onMounted(() => {
 	if (!editBox.value || !props.card?.markdown) return;
-	editBox.value.innerText = props.card?.markdown?.template ?? ""
+	editBox.value.value = props.card?.markdown?.template ?? ""
 });
 
 function templateUpdate(e: Event) {
 	if (!props.card?.markdown || !configuration?.value) return true;
-	props.card.markdown.template = (e.target as HTMLElement).innerText;
+	props.card.markdown.template = (e.target as HTMLTextAreaElement).value;
 	configuration.value.unsaved = true;
 }
 
