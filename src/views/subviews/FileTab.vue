@@ -424,6 +424,14 @@ watchPostEffect(async () => {
 				loadingModalOpen.value = false;
 			};
 
+			// When navigating back to the directory view from a file view, don't reload from SharePoint
+			let parentOfBack = router.options.history.state.back?.toString().split("/");
+			parentOfBack?.pop();
+			if (cardEntry.sharePoint.multiple && router.options.history.state.current === parentOfBack?.join("/") && cachedFileInfoRequest.status === 200) {
+				useCachedCopy();
+				return;
+			}
+
 			let matcher: (obj: any) => boolean;
 			try {
 				matcher = compileExpression(cardEntry.sharePoint.searchExpression, { extraFunctions: {
