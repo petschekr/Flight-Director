@@ -486,7 +486,7 @@ watchPostEffect(async () => {
 				catch {
 					loadingState.value = "Logging in to SharePoint...";
 					await fetch(
-						`/api/sharepoint/login`,
+						`/api/sharepoint/login/${baseUrl.hostname}`,
 						{ signal: abortController.signal },
 					);
 					if (++retryCount >= 3) {
