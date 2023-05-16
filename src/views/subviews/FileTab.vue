@@ -106,9 +106,15 @@ function navigateToRoot() {
 
 let useCachedCopy = () => {};
 
+const selectedDateSet = parseInt(localStorage.getItem("selectedDateSet") ?? "0");
+// If selectedDate was set >24 hours ago, don't load selectedDate (so it will default to today)
+if (Date.now() - selectedDateSet.valueOf() > 24 * 60 * 60 * 1000) {
+	localStorage.removeItem("selectedDate");
+}
 const selectedDate = ref(localStorage.getItem("selectedDate") ?? new Date().toISOString().split("T")[0]); // Returns today's date
 watch(selectedDate, () => {
 	localStorage.setItem("selectedDate", selectedDate.value);
+	localStorage.setItem("selectedDateSet", Date.now().toString());
 });
 const callsigns = computed(() => {
 	if (!configuration || !configuration.value) return [];
