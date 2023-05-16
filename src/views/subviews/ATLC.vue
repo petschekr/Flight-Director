@@ -626,8 +626,8 @@ watchEffect(() => {
 	if (aircraftWeight.value > 10_500) {
 		errors.value.push(`AV weight of <b>${aircraftWeight.value.toLocaleString()} lbs</b> exceeds maximum normal landing weight (10,500 lbs)`);
 	}
-	else if (aircraftWeight.value > 8_500) {
-		errors.value.push(`AV weight of <b>${aircraftWeight.value.toLocaleString()} lbs</b> exceeds maximum ATLC landing weight (8,500 lbs)`);
+	else if (aircraftWeight.value > 9_500) {
+		errors.value.push(`AV weight of <b>${aircraftWeight.value.toLocaleString()} lbs</b> exceeds maximum ATLC landing weight (9,500 lbs)`);
 	}
 
 	// Weather limitations
