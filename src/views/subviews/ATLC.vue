@@ -487,15 +487,24 @@ const illa = computed(() => {
 	if (!selectedAirfield.value) return "--";
 	let fieldElevation = parseInt(selectedAirfield.value.ELEV);
 	let illa = Math.ceil(fieldElevation / 100) * 100 + 500;
+	if (icao.value.toUpperCase() === "OMAM") {
+		illa = 500; // Defined by ADAB LRE standards
+	}
 	return illa.toLocaleString();
 });
 const illh = computed(() => {
 	if (!selectedAirfield.value) return "--";
 	if (!selectedRunway.value) return "--";
 	if (selectedRunwayEnd.value === "HIGH") {
+		if (icao.value.toUpperCase() === "OMAM") {
+			return "306.0"; // Defined by ADAB LRE standards
+		}
 		return selectedRunway.value.HIGH_HDG;
 	}
 	else {
+		if (icao.value.toUpperCase() === "OMAM") {
+			return "126.0"; // Defined by ADAB LRE standards
+		}
 		return selectedRunway.value.LOW_HDG;
 	}
 });
@@ -503,6 +512,9 @@ const patternAltitude = computed(() => {
 	if (!selectedAirfield.value) return "--";
 	let fieldElevation = parseInt(selectedAirfield.value.ELEV);
 	let patternAltitude = Math.ceil(fieldElevation / 100) * 100 + 1500;
+	if (icao.value.toUpperCase() === "OMAM") {
+		patternAltitude = 1_500; // Defined by ADAB LRE standards
+	}
 	return patternAltitude.toLocaleString();
 });
 
