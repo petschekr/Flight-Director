@@ -30,7 +30,7 @@
 		<EditCallsigns :open="editCallsignsPanelOpen" @closed="editCallsignsPanelOpen = false" />
 
 		<TransitionRoot as="template" :show="loadingModalOpen">
-			<Dialog as="div" class="relative z-20">
+			<Dialog as="div" class="relative z-20" :initial-focus="cancelButton">
 				<TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0">
 					<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
 				</TransitionChild>
@@ -47,13 +47,16 @@
 										<DialogTitle as="h3" class="text-lg font-semibold leading-6 text-gray-900">Loading...</DialogTitle>
 										<div class="mt-2 text-left">
 											<p class="text-sm text-gray-500">This might take a while when opening any SharePoint file for the first time. It'll be faster next time!</p>
-											<p class="text-sm text-gray-500 mt-2">Make sure there isn't an unanswered PIN prompt!</p>
+											<p class="text-sm text-gray-500 mt-2"><em>Make sure there isn't an unanswered PIN prompt!</em></p>
 											<p class="text-sm text-gray-900 font-semibold text-center mt-2">{{ loadingState }}</p>
+											<p class="text-sm text-sky-700 text-center mt-5">
+												<a target="_blank" :href="directSharePointLink" class="flex items-center justify-center hover:underline">Go directly to SharePoint site <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" /></a>
+											</p>
 										</div>
 									</div>
 								</div>
-								<div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-									<button class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0" @click="navigateToRoot">Cancel</button>
+								<div class="mt-3 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+									<button class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0" @click="navigateToRoot" ref="cancelButton">Cancel</button>
 									<button :disabled="!cachedCopyAvailable" class="inline-flex w-full justify-center rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 sm:col-start-2 disabled:opacity-25" @click="useCachedCopy">Use Cached Copy</button>
 								</div>
 							</DialogPanel>
@@ -69,7 +72,7 @@
 import { provide, inject, ref, watch, computed, type Ref, watchPostEffect } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
-import { CloudArrowDownIcon } from "@heroicons/vue/24/solid";
+import { CloudArrowDownIcon, ArrowTopRightOnSquareIcon } from "@heroicons/vue/24/solid";
 
 import type { Configuration, Card } from "@/models/configuration";
 import type { FileRender, DirectoryRender, FileFromAPI, DirectoryFromAPI } from "@/models/file-explorer";
@@ -98,6 +101,8 @@ const editCallsignsPanelOpen = ref(false);
 const loadingModalOpen = ref(false);
 const loadingState = ref("");
 const cachedCopyAvailable = ref(false);
+const directSharePointLink = ref("");
+const cancelButton = ref(null);
 
 function navigateToRoot() {
 	loadingModalOpen.value = false;
@@ -394,6 +399,7 @@ watchPostEffect(async () => {
 			// Main SharePoint card requested
 			loadingModalOpen.value = true;
 			cachedCopyAvailable.value = false;
+			directSharePointLink.value = cardEntry.sharePoint.baseUrl;
 
 			let cachedFileInfoRequest = await fetch("/api/list/" + cachePath)
 			cachedCopyAvailable.value = cachedFileInfoRequest.status === 200; // Only if the file exists
