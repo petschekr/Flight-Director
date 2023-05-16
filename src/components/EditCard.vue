@@ -1,7 +1,10 @@
 <template>
 	<TransitionRoot as="template" :show="isOpen">
-		<Dialog as="div" class="relative z-50" @close="close()">
-			<div class="fixed inset-0" />
+		<Dialog as="div" class="relative z-50">
+			<TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100"
+				leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0">
+				<div class="fixed inset-0 bg-gray-500 bg-opacity-70 transition-opacity" />
+			</TransitionChild>
 
 			<div class="fixed inset-0 overflow-hidden">
 				<div class="absolute inset-0 overflow-hidden">
@@ -12,23 +15,23 @@
 							leave="transform transition ease-in-out duration-500 sm:duration-500"
 							leave-from="translate-x-0" leave-to="translate-x-full">
 							<DialogPanel class="pointer-events-auto w-screen max-w-2xl">
-								<form class="flex h-full flex-col overflow-y-scroll bg-white shadow-xl" @submit.prevent>
-									<div class="flex-1">
-										<!-- Header -->
-										<div class="bg-gray-50 px-4 py-6 sm:px-6">
-											<div class="flex items-start justify-between space-x-3">
-												<div class="space-y-1">
-													<DialogTitle class="text-lg font-medium text-gray-900">Edit Card</DialogTitle>
-													<p class="text-sm text-gray-500 font-mono">{{tabName}} > {{groupName}} > {{title}}</p>
-												</div>
-												<div class="flex h-7 items-center">
-													<button type="button" @click="close()" class="text-gray-400 hover:text-gray-500">
-														<XMarkIcon class="h-6 w-6" />
-													</button>
-												</div>
+								<form class="flex h-full flex-col bg-white shadow-xl" @submit.prevent>
+									<!-- Header -->
+									<div class="bg-gray-50 px-4 py-6 sm:px-6">
+										<div class="flex items-start justify-between space-x-3">
+											<div class="space-y-1">
+												<DialogTitle class="text-lg font-medium text-gray-900">Edit Card</DialogTitle>
+												<p class="text-sm text-gray-500 font-mono">{{tabName}} > {{groupName}} > {{title}}</p>
+											</div>
+											<div class="flex h-7 items-center">
+												<button type="button" @click="close()" class="text-gray-400 hover:text-gray-500">
+													<XMarkIcon class="h-6 w-6" />
+												</button>
 											</div>
 										</div>
+									</div>
 
+									<div class="flex-1 h-full overflow-y-auto">
 										<!-- Divider container -->
 										<div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
 											<div class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
