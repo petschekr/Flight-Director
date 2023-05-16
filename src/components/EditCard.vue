@@ -231,8 +231,8 @@
 												<div class="sm:col-span-2">
 													<textarea id="card-path" rows="4" v-model="sharePointSearchExpression"
 														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"></textarea>
-													<!-- <br />
-													<code class="[overflow-wrap:anywhere]">{{cachePathPreview}}</code> -->
+													<br />
+													<code class="[overflow-wrap:anywhere] whitespace-pre-wrap">{{searchExpressionError}}</code>
 												</div>
 											</div>
 
@@ -369,6 +369,8 @@ import { useRouter, useRoute } from "vue-router";
 
 import type { Card, Configuration } from "@/models/configuration";
 
+import { compileExpression } from "filtrex";
+
 const props = defineProps<{
 	open: boolean;
 	card: Card | null;
@@ -447,6 +449,26 @@ const pathPreview = computed(() => {
 const cachePathPreview = computed(() => {
 	if (!processPathReplacements) return "";
 	return processPathReplacements(sharePointCachePath.value);
+});
+
+const searchExpressionError = computed(() => {
+	try {
+		// We're just trying to see if the expression is valid
+		// Therefore all data and functions are simply stubbed out
+		let matcher = compileExpression(sharePointSearchExpression.value, { extraFunctions: {
+			includes: (text: string, searchString: string) => "",
+			date: (format: string) => "",
+			letterDate: (startDateString: string) => "",
+		}});
+		let result = matcher({name: "", extension: ""});
+		if (result.message) {
+			return result.message;
+		}
+	}
+	catch (err) {
+		return (err as SyntaxError).message;
+	}
+	return "";
 });
 
 async function editCard() {
