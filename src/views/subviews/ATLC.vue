@@ -634,6 +634,9 @@ watchEffect(() => {
 	if (ATLCPerformance.deltaISA_F(parseInt(selectedAirfield.value.ELEV), temperature.value) > 70) {
 		errors.value.push(`Airfield temperature exceeds +70 °F ISA. Performance calculations are not valid.`);
 	}
+	if (ATLCPerformance.cToF(temperature.value) >= 95) {
+		errors.value.push(`Airfield temperature exceeds 95 °F. ATLC operations should not be performed due to risk of aircraft overheating.`);
+	}
 });
 
 ///////////////////////////////////////////
