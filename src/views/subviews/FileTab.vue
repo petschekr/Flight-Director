@@ -138,7 +138,7 @@ function callsignChange(event: Event) {
 
 function generateShortCallsign(callsign: string): string {
 	let shortCallsign = callsign;
-	let callsignComponents = callsign.match(/^([a-zA-Z]+)(\d+)$/);
+	let callsignComponents = callsign.match(/^([a-zA-Z]+)(\d.*)$/);
 	if (callsignComponents) {
 		shortCallsign = (callsignComponents[1][0] + callsignComponents[1][callsignComponents[1].length - 1]).toUpperCase() + callsignComponents[2]; // Grabs first + last letter + numbers of callsign
 	}
