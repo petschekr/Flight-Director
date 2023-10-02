@@ -763,7 +763,7 @@ export function refusalSpeed(weight: number, pressureAltitude: number, deltaISA_
  * @param extractor A function which evaluates a final value from a value in the table
  * @returns An interpolated value from the table
  */
-function interpolateTable<T>(
+export function interpolateTable<T>(
 	table: { [xKey: string]: { [yKey: string]: T } },
 	x: number,
 	y: number,

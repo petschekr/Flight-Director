@@ -1,23 +1,27 @@
 <template>
-	<dl class="grid grid-cols-1 gap-5 sm:grid-cols-4">
-		<div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-			<dt class="truncate text-sm font-medium text-gray-500">Best Glide Speed (Feathered)</dt>
-			<dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{bestGlideSpeedFeathered}} KIAS</dd>
-		</div>
-		<div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-			<dt class="truncate text-sm font-medium text-gray-500">Glide Range (Feathered)</dt>
-			<dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{bestGlideRangeFeathered}} NM</dd>
-		</div>
-		<div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-			<dt class="truncate text-sm font-medium text-gray-500">Best Glide Speed (Unfeathered)</dt>
-			<dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{bestGlideSpeedUnfeathered}} KIAS</dd>
-		</div>
-		<div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-			<dt class="truncate text-sm font-medium text-gray-500">Glide Range (Unfeathered)</dt>
-			<dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{bestGlideRangeUnfeathered}} NM</dd>
-		</div>
-	</dl>
-	<p class="text-center mt-4 font-semibold text-lg">{{aircraftWeight.toLocaleString()}} lbs // Drag Index: {{dragIndex}} // {{altitude.toLocaleString()}} ft</p>
+	<div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+		<dl v-for="(substats, title) in stats" :class="['grid divide-y divide-x divide-gray-200 rounded-lg bg-white shadow', `grid-cols-${substats?.length}`]">
+			<p :class="['text-center font-bold text-gray-600 py-2', `col-span-${substats?.length}`]">
+				{{ title }}
+			</p>
+			<div v-for="stat in substats" :key="stat.name" class="px-4 py-4 flex justify-center items-center first:border-t-[1px] max-xl:odd:!border-l-0">
+				<div :class="[stat.color, 'w-2 h-full mr-3 rounded-xl']"></div>
+				<div>
+					<dt>
+						<p class="text-base leading-4 mb-2 font-medium text-gray-600">{{ stat.name }}</p>
+					</dt>
+					<dd class="flex items-center">
+						<p class="text-2xl font-semibold text-gray-900 leading-5">
+							{{ stat.stat ?? "--" }}
+							<span class="text-xl font-normal">{{ stat.unit }}</span>
+						</p>
+					</dd>
+				</div>
+			</div>
+		</dl>
+	</div>
+
+	<p class="text-center mt-4 font-semibold text-lg">{{aircraftWeight.toLocaleString()}} lbs // Drag Index: {{dragIndex}} // DA: {{ densityAltitude.toLocaleString() }} ft // HAT: {{heightAboveTerrain.toLocaleString()}} ft</p>
 	<p class="text-center mb-4 font-semibold text-sm">Engine Out Drag Index: {{(dragIndex + (performance?.Propeller.feathered ?? 0)).toLocaleString()}} ({{(dragIndex + (performance?.Propeller.unfeathered ?? 0)).toLocaleString()}} unfeathered)</p>
 
 	<div class="bg-white px-4 py-5 shadow sm:rounded-lg sm:p-6">
@@ -31,7 +35,7 @@
 				</p>
 			</div>
 			<div class="mt-5 space-y-6 md:col-span-3 md:mt-0">
-				<div class="grid grid-cols-3 gap-6">
+				<div class="grid grid-cols-4 gap-6">
 					<div class="col-span-3 sm:col-span-1">
 						<label for="weight" class="block text-sm font-medium text-gray-700">Aircraft Weight</label>
 						<div class="mt-1 flex rounded-md shadow-sm">
@@ -40,6 +44,16 @@
 							<span class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 z-0">lbs</span>
 						</div>
 						<p class="mt-2 text-sm text-gray-500">Use Total AV Weight on VIT 99</p>
+					</div>
+					<div class="col-span-3 sm:col-span-1">
+						<label for="density-altitude" class="block text-sm font-medium text-gray-700">Density Altitude</label>
+						<div class="mt-1 flex rounded-md shadow-sm">
+							<input type="number" id="density-altitude" v-model="densityAltitude" min="5000" max="45000" step="500"
+								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 sm:text-sm z-10" />
+							<span
+								class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 z-0">ft</span>
+						</div>
+						<p class="mt-2 text-sm text-gray-500">Pressure altitude corrected for temperature</p>
 					</div>
 					<div class="col-span-3 sm:col-span-1">
 						<label for="fuel-flow" class="block text-sm font-medium text-gray-700">Fuel Flow</label>
@@ -52,14 +66,14 @@
 						<p class="mt-2 text-sm text-gray-500">Used to automatically update weight. Set to 0 to disable.</p>
 					</div>
 					<div class="col-span-3 sm:col-span-1">
-						<label for="altitude" class="block text-sm font-medium text-gray-700">Altitude</label>
+						<label for="height-above-terrain" class="block text-sm font-medium text-gray-700">Height Above Terrain</label>
 						<div class="mt-1 flex rounded-md shadow-sm">
-							<input type="number" id="altitude" v-model="altitude" min="5000" max="45000" step="1000"
+							<input type="number" id="height-above-terrain" v-model="heightAboveTerrain" min="5000" max="45000" step="1000"
 								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 sm:text-sm z-10" />
 							<span
 								class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 z-0">ft</span>
 						</div>
-						<p class="mt-2 text-sm text-gray-500">Height above terrain</p>
+						<p class="mt-2 text-sm text-gray-500">Affects glide distance</p>
 					</div>
 				</div>
 			</div>
@@ -95,11 +109,11 @@ import { ref, type Ref, inject, computed, watchEffect, onMounted, onUnmounted } 
 
 import toml from "toml";
 
-import * as GlidePerformance from "@/performance/glide";
+import { bestGlideSpeed, bestGlideRange } from "@/performance/glide";
+import { bestRange } from "@/performance/range";
 
 import type { Performance } from "@/models/configuration";
 const performance: Ref<Performance | null> = ref(null);
-
 
 const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
 
@@ -132,14 +146,49 @@ function updateDragItemSelections(event: Event, index: number) {
 	dragItemSelections.value[index] = value;
 }
 
-const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "5000"));
+const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "11700"));
+const densityAltitude = ref(parseInt(localStorage.getItem("densityAltitude") ?? "25000"));
 const fuelFlow = ref(parseInt(localStorage.getItem("fuelFlow") ?? "200"));
-const altitude = ref(parseInt(localStorage.getItem("altitude") ?? "20000"));
+const heightAboveTerrain = ref(parseInt(localStorage.getItem("heightAboveTerrain") ?? "20000"));
 
-const bestGlideSpeedFeathered = computed(() => performance.value ? GlidePerformance.bestGlideSpeed(performance.value, dragIndex.value, true, aircraftWeight.value)?.toFixed(0) ?? "--" : "--");
-const bestGlideSpeedUnfeathered = computed(() => performance.value ? GlidePerformance.bestGlideSpeed(performance.value, dragIndex.value, false, aircraftWeight.value)?.toFixed(0) ?? "--" : "--");
-const bestGlideRangeFeathered = computed(() => performance.value ? GlidePerformance.bestGlideRange(performance.value, dragIndex.value, true, altitude.value)?.toFixed(1) ?? "--" : "--");
-const bestGlideRangeUnfeathered = computed(() => performance.value ? GlidePerformance.bestGlideRange(performance.value, dragIndex.value, false, altitude.value)?.toFixed(1) ?? "--" : "--");
+const stats = computed(() => {
+	if (!performance.value) return {};
+
+	const bestGlideSpeedFeathered = bestGlideSpeed(performance.value, dragIndex.value, true, aircraftWeight.value)?.toFixed(0);
+	const bestGlideSpeedUnfeathered = bestGlideSpeed(performance.value, dragIndex.value, false, aircraftWeight.value)?.toFixed(0);
+	const bestGlideRangeFeathered = bestGlideRange(performance.value, dragIndex.value, true, heightAboveTerrain.value)?.toFixed(1);
+	const bestGlideRangeUnfeathered = bestGlideRange(performance.value, dragIndex.value, false, heightAboveTerrain.value)?.toFixed(1);
+
+	const bestRangeValues = bestRange(aircraftWeight.value, densityAltitude.value, dragIndex.value);
+
+	function round(input: number | null): string {
+		if (input && !isNaN(input)) {
+			return Math.round(input).toString();
+		}
+		return "--";
+	}
+
+	return {
+		"Best Glide - Feathered": [
+			{ name: "Glide Speed", color: "bg-red-500", stat: bestGlideSpeedFeathered, unit: "KIAS" },
+			{ name: "Glide Range", color: "bg-amber-500", stat: bestGlideRangeFeathered, unit: "NM" },
+		],
+		"Best Glide - Unfeathered": [
+			{ name: "Glide Speed", color: "bg-red-500", stat: bestGlideSpeedUnfeathered, unit: "KIAS" },
+			{ name: "Glide Range", color: "bg-amber-500", stat: bestGlideRangeUnfeathered, unit: "NM" },
+		],
+		"Best Range - 100% Engine Speed": [
+			{ name: "Best Range Speed", color: "bg-green-500", stat: round(bestRangeValues.max.kias), unit: "KIAS" },
+			{ name: "Best Range Speed", color: "bg-green-700", stat: round(bestRangeValues.max.ktas), unit: "KTAS" },
+			{ name: "Fuel Flow", color: "bg-blue-500", stat: round(bestRangeValues.max.ff), unit: "lbs/hr" },
+		],
+		"Best Range - Min Engine Speed": [
+			{ name: "Best Range Speed", color: "bg-green-500", stat: round(bestRangeValues.min.kias), unit: "KIAS" },
+			{ name: "Best Range Speed", color: "bg-green-700", stat: round(bestRangeValues.min.ktas), unit: "KTAS" },
+			{ name: "Fuel Flow", color: "bg-blue-500", stat: round(bestRangeValues.min.ff), unit: "lbs/hr" },
+		],
+	};
+});
 
 function weightUpdater(secondsElapsed: number = 60) {
 	aircraftWeight.value -= Math.round(fuelFlow.value / 60 * secondsElapsed / 60); // Fuel flow per minute * minutes elapsed
@@ -156,8 +205,9 @@ watchEffect(() => {
 	weightUpdateInterval = window.setInterval(weightUpdater, 60 * 1000); // Runs every minute
 
 	localStorage.setItem("aircraftWeight", aircraftWeight.value.toString());
+	localStorage.setItem("densityAltitude", densityAltitude.value.toString());
 	localStorage.setItem("fuelFlow", fuelFlow.value.toString());
-	localStorage.setItem("altitude", altitude.value.toString());
+	localStorage.setItem("heightAboveTerrain", heightAboveTerrain.value.toString());
 	localStorage.setItem("dragItemSelections", JSON.stringify(dragItemSelections.value));
 });
 
