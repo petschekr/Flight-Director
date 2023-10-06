@@ -1,6 +1,25 @@
 import { interpolateTable } from "@/performance/ATLC"
 
-const bestRangeDI0 = {
+interface TableEntry {
+    max: {
+        kias: number | null;
+        ktas: number | null;
+        ff: number | null;
+    };
+    min: {
+        kias: number | null;
+        ktas: number | null;
+        ff: number | null;
+    };
+}
+interface WeightValue<T> {
+    [weight: string]: T;
+}
+interface AltitudeValues {
+    [altitude: string]: WeightValue<TableEntry>;
+}
+
+const bestRangeDI0: AltitudeValues = {
     "0": {
         "5000":  { max: { kias: 162, ktas: 162, ff: 313 }, min: { kias: 135, ktas: 135, ff: 239 } },
         "6000":  { max: { kias: 165, ktas: 165, ff: 322 }, min: { kias: 136, ktas: 136, ff: 246 } },
@@ -102,8 +121,7 @@ const bestRangeDI0 = {
         "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
     },
 };
-
-const bestRangeDI50 = {
+const bestRangeDI50: AltitudeValues = {
     "0": {
         "5000":  { max: { kias: 155, ktas: 155, ff: 317 }, min: { kias: 127, ktas: 127, ff: 239 } },
         "6000":  { max: { kias: 155, ktas: 155, ff: 320 }, min: { kias: 127, ktas: 127, ff: 243 } },
@@ -195,8 +213,7 @@ const bestRangeDI50 = {
         "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
     },
 };
-
-const bestRangeDI100 = {
+const bestRangeDI100: AltitudeValues = {
     "0": {
         "5000":  { max: { kias: 145, ktas: 145, ff: 312 }, min: { kias: 123, ktas: 123, ff: 243 } },
         "6000":  { max: { kias: 147, ktas: 147, ff: 320 }, min: { kias: 124, ktas: 124, ff: 250 } },
@@ -288,45 +305,120 @@ const bestRangeDI100 = {
         "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
     },
 };
+const bestRangeDI200: AltitudeValues = {
+    "0": {
+        "5000":  { max: { kias: 137, ktas: 137, ff: 322 }, min: { kias: 111, ktas: 111, ff: 240 } },
+        "6000":  { max: { kias: 136, ktas: 136, ff: 323 }, min: { kias: 113, ktas: 113, ff: 250 } },
+        "7000":  { max: { kias: 135, ktas: 135, ff: 324 }, min: { kias: 118, ktas: 118, ff: 267 } },
+        "8000":  { max: { kias: 139, ktas: 139, ff: 339 }, min: { kias: 123, ktas: 123, ff: 285 } },
+        "9000":  { max: { kias: 140, ktas: 140, ff: 346 }, min: { kias: 135, ktas: 135, ff: 319 } },
+        "10000": { max: { kias: 141, ktas: 141, ff: 355 }, min: { kias: 135, ktas: 135, ff: 326 } },
+        "10500": { max: { kias: 144, ktas: 144, ff: 365 }, min: { kias: 139, ktas: 139, ff: 340 } },
+        "11700": { max: { kias: 146, ktas: 146, ff: 378 }, min: { kias: 136, ktas: 136, ff: 341 } },
+    },
+    "5000": {
+        "5000":  { max: { kias: 127, ktas: 137, ff: 282 }, min: { kias: 107, ktas: 115, ff: 220 } },
+        "6000":  { max: { kias: 127, ktas: 137, ff: 286 }, min: { kias: 119, ktas: 128, ff: 250 } },
+        "7000":  { max: { kias: 129, ktas: 139, ff: 295 }, min: { kias: 119, ktas: 128, ff: 256 } },
+        "8000":  { max: { kias: 131, ktas: 141, ff: 305 }, min: { kias: 122, ktas: 131, ff: 269 } },
+        "9000":  { max: { kias: 133, ktas: 143, ff: 316 }, min: { kias: 122, ktas: 131, ff: 277 } },
+        "10000": { max: { kias: 135, ktas: 145, ff: 327 }, min: { kias: 128, ktas: 138, ff: 298 } },
+        "10500": { max: { kias: 137, ktas: 148, ff: 336 }, min: { kias: 129, ktas: 139, ff: 304 } },
+        "11700": { max: { kias: 137, ktas: 148, ff: 345 }, min: { kias: 132, ktas: 142, ff: 322 } },
+    },
+    "10000": {
+        "5000":  { max: { kias: 120, ktas: 140, ff: 250 }, min: { kias: 109, ktas: 127, ff: 209 } },
+        "6000":  { max: { kias: 122, ktas: 142, ff: 259 }, min: { kias: 111, ktas: 129, ff: 219 } },
+        "7000":  { max: { kias: 120, ktas: 140, ff: 260 }, min: { kias: 114, ktas: 133, ff: 233 } },
+        "8000":  { max: { kias: 124, ktas: 144, ff: 275 }, min: { kias: 112, ktas: 130, ff: 235 } },
+        "9000":  { max: { kias: 124, ktas: 144, ff: 282 }, min: { kias: 116, ktas: 135, ff: 252 } },
+        "10000": { max: { kias: 126, ktas: 147, ff: 295 }, min: { kias: 124, ktas: 144, ff: 278 } },
+        "10500": { max: { kias: 129, ktas: 150, ff: 306 }, min: { kias: 125, ktas: 145, ff: 286 } },
+        "11700": { max: { kias: 131, ktas: 152, ff: 323 }, min: { kias: 123, ktas: 143, ff: 294 } },
+    },
+    "15000": {
+        "5000":  { max: { kias: 112, ktas: 141, ff: 219 }, min: { kias: 100, ktas: 126, ff: 179 } },
+        "6000":  { max: { kias: 117, ktas: 147, ff: 235 }, min: { kias: 103, ktas: 130, ff: 191 } },
+        "7000":  { max: { kias: 117, ktas: 147, ff: 241 }, min: { kias: 108, ktas: 136, ff: 208 } },
+        "8000":  { max: { kias: 117, ktas: 147, ff: 248 }, min: { kias: 110, ktas: 139, ff: 222 } },
+        "9000":  { max: { kias: 120, ktas: 151, ff: 263 }, min: { kias: 112, ktas: 141, ff: 235 } },
+        "10000": { max: { kias: 119, ktas: 150, ff: 270 }, min: { kias: 115, ktas: 145, ff: 252 } },
+        "10500": { max: { kias: 121, ktas: 153, ff: 280 }, min: { kias: 118, ktas: 149, ff: 263 } },
+        "11700": { max: { kias: 125, ktas: 158, ff: 303 }, min: { kias: 119, ktas: 150, ff: 281 } },
+    },
+    "20000": {
+        "5000":  { max: { kias: 101, ktas: 138, ff: 185 }, min: { kias: 94, ktas: 129, ff: 157 } },
+        "6000":  { max: { kias: 102, ktas: 140, ff: 193 }, min: { kias: 97, ktas: 133, ff: 170 } },
+        "7000":  { max: { kias: 109, ktas: 149, ff: 214 }, min: { kias: 101, ktas: 138, ff: 186 } },
+        "8000":  { max: { kias: 108, ktas: 148, ff: 220 }, min: { kias: 102, ktas: 140, ff: 198 } },
+        "9000":  { max: { kias: 111, ktas: 152, ff: 236 }, min: { kias: 111, ktas: 152, ff: 227 } },
+        "10000": { max: { kias: 115, ktas: 157, ff: 256 }, min: { kias: 111, ktas: 152, ff: 241 } },
+        "10500": { max: { kias: 114, ktas: 156, ff: 261 }, min: { kias: 112, ktas: 153, ff: 249 } },
+        "11700": { max: { kias: 117, ktas: 160, ff: 284 }, min: { kias: 114, ktas: 156, ff: 274 } },
+    },
+    "25000": {
+        "5000":  { max: { kias: 98, ktas: 146, ff: 168 }, min: { kias: 89, ktas: 133, ff: 140 } },
+        "6000":  { max: { kias: 100, ktas: 149, ff: 179 }, min: { kias: 90, ktas: 134, ff: 151 } },
+        "7000":  { max: { kias: 101, ktas: 151, ff: 190 }, min: { kias: 96, ktas: 143, ff: 171 } },
+        "8000":  { max: { kias: 106, ktas: 158, ff: 210 }, min: { kias: 103, ktas: 154, ff: 196 } },
+        "9000":  { max: { kias: 106, ktas: 158, ff: 222 }, min: { kias: 105, ktas: 157, ff: 214 } },
+        "10000": { max: { kias: 108, ktas: 161, ff: 241 }, min: { kias: 103, ktas: 154, ff: 228 } },
+        "10500": { max: { kias: 112, ktas: 167, ff: 257 }, min: { kias: 107, ktas: 160, ff: 245 } },
+        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+    },
+    "30000": {
+        "5000":  { max: { kias: 89, ktas: 145, ff: 144 }, min: { kias: 81, ktas: 132, ff: 121 } },
+        "6000":  { max: { kias: 94, ktas: 154, ff: 161 }, min: { kias: 88, ktas: 144, ff: 143 } },
+        "7000":  { max: { kias: 98, ktas: 160, ff: 179 }, min: { kias: 94, ktas: 154, ff: 166 } },
+        "8000":  { max: { kias: 99, ktas: 162, ff: 194 }, min: { kias: 95, ktas: 155, ff: 182 } },
+        "9000":  { max: { kias: 102, ktas: 167, ff: 215 }, min: { kias: 95, ktas: 155, ff: 199 } },
+        "10000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10500": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+    },
+    "35000": {
+        "5000":  { max: { kias: 84, ktas: 151, ff: 130 }, min: { kias: 79, ktas: 142, ff: 114 } },
+        "6000":  { max: { kias: 89, ktas: 160, ff: 148 }, min: { kias: 85, ktas: 153, ff: 136 } },
+        "7000":  { max: { kias: 91, ktas: 163, ff: 165 }, min: { kias: 88, ktas: 158, ff: 157 } },
+        "8000":  { max: { kias: 94, ktas: 169, ff: 187 }, min: { kias: 94, ktas: 169, ff: 187 } },
+        "9000":  { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10500": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+    },
+    "40000": {
+        "5000":  { max: { kias: 79, ktas: 159, ff: 120 }, min: { kias: 78, ktas: 157, ff: 115 } },
+        "6000":  { max: { kias: 82, ktas: 165, ff: 138 }, min: { kias: 82, ktas: 165, ff: 138 } },
+        "7000":  { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "8000":  { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "9000":  { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10500": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+    },
+};
 
-export function bestRange(weight: number, densityAltitude: number, dragIndex: number) {
+export function bestRange(weight: number, densityAltitude: number, dragIndex: number): TableEntry {
+    function getDITableEntry(table: AltitudeValues): TableEntry {
+        return {
+            max: {
+                kias: interpolateTable(table, densityAltitude, weight, values => values.max.kias),
+                ktas: interpolateTable(table, densityAltitude, weight, values => values.max.ktas),
+                ff: interpolateTable(table, densityAltitude, weight, values => values.max.ff),
+            },
+            min: {
+                kias: interpolateTable(table, densityAltitude, weight, values => values.min.kias),
+                ktas: interpolateTable(table, densityAltitude, weight, values => values.min.ktas),
+                ff: interpolateTable(table, densityAltitude, weight, values => values.min.ff),
+            },
+        }
+    }
+
     let rangeTable = {
-        "0": {
-            max: {
-                kias: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.max.kias),
-                ktas: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.max.ktas),
-                ff: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.max.ff),
-            },
-            min: {
-                kias: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.min.kias),
-                ktas: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.min.ktas),
-                ff: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.min.ff),
-            },
-        },
-        "50": {
-            max: {
-                kias: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.max.kias),
-                ktas: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.max.ktas),
-                ff: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.max.ff),
-            },
-            min: {
-                kias: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.min.kias),
-                ktas: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.min.ktas),
-                ff: interpolateTable(bestRangeDI50, densityAltitude, weight, values => values.min.ff),
-            },
-        },
-        "100": {
-            max: {
-                kias: interpolateTable(bestRangeDI100, densityAltitude, weight, values => values.max.kias),
-                ktas: interpolateTable(bestRangeDI100, densityAltitude, weight, values => values.max.ktas),
-                ff: interpolateTable(bestRangeDI100, densityAltitude, weight, values => values.max.ff),
-            },
-            min: {
-                kias: interpolateTable(bestRangeDI100, densityAltitude, weight, values => values.min.kias),
-                ktas: interpolateTable(bestRangeDI100, densityAltitude, weight, values => values.min.ktas),
-                ff: interpolateTable(bestRangeDI100, densityAltitude, weight, values => values.min.ff),
-            },
-        },
+        "0": getDITableEntry(bestRangeDI0),
+        "50": getDITableEntry(bestRangeDI50),
+        "100": getDITableEntry(bestRangeDI100),
+        "200": getDITableEntry(bestRangeDI200),
     };
 
     return {
