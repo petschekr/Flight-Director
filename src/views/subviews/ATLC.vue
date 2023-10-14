@@ -717,12 +717,14 @@ function drawAirfieldDiagram() {
 	if (!selectedAirfield.value || !selectedRunway.value || !map.value) return;
 
 	let { width, height } = map.value.getBoundingClientRect();
-	width = Math.floor(width);
-	height = Math.floor(height);
+	let deviceScale = window.devicePixelRatio;
+	width = Math.floor(width * deviceScale);
+	height = Math.floor(height * deviceScale);
 	if (width === 0 || height === 0) return;
 	map.value.width = width;
 	map.value.height = height;
 	const ctx = map.value.getContext("2d")!;
+	ctx.scale(deviceScale, deviceScale);
 	ctx.clearRect(0, 0, width, height);
 
 	let runwayCoordinates = selectedAirfieldRunways.value.flatMap(runway => [
@@ -757,7 +759,7 @@ function drawAirfieldDiagram() {
 
 		// Map origin point from lower left (maps) to upper left (canvas context)
 		y = -y + height;
-		return [x, y];
+		return [x / deviceScale, y / deviceScale];
 	}
 
 	// Draw runways
