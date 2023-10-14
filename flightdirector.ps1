@@ -5,6 +5,7 @@
 $hostLocation = "http://localhost:5050/"
 
 Add-Type -AssemblyName System.Security
+Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName Microsoft.VisualBasic
 
 $http = [System.Net.HttpListener]::New()
@@ -221,6 +222,43 @@ try {
 				catch {
 					Write-Host ($_.Exception.Response | Format-List | Out-String)
 					$res.StatusCode = 502
+				}
+			}
+			elseif ($path.StartsWith("/api/weather")) {
+				$station = [System.Web.HttpUtility]::ParseQueryString($req.Url.Query).Get("station");
+
+				$ValidCerts = [System.Security.Cryptography.X509Certificates.X509Certificate2[]](dir Cert:\CurrentUser\My | where { $_.NotAfter -gt (Get-Date) })
+
+				if ($null -eq $Cert) {
+					$Cert = [System.Security.Cryptography.X509Certificates.X509Certificate2UI]::SelectFromCollection(
+						$ValidCerts,
+						'Choose a certificate',
+						'Choose a certificate',
+						'SingleSelection'
+					) | Select-Object -First 1
+				}
+
+				if ($Cert) {
+					$ProxyParams = @{
+						Uri         = "https://gisweather.afwa.af.mil/services/MISC?SERVICE=MISC&REQUEST=script%2Fstation_data&TYPE=metars%2Csynoptic%2Ctafs%2Csummary&HOURS=24&LOC=$station"
+						Method      = "GET"
+						Headers     = @{
+							# Accept = "application/json;odata=verbose"
+						}
+						Certificate = $Cert
+					}
+					try {
+						$Response = Invoke-WebRequest @ProxyParams -UseBasicParsing
+						$content = [System.Text.Encoding]::UTF8.GetBytes($Response.Content);
+						$res.ContentType = "application/json"
+					}
+					catch {
+						Write-Host ($_.Exception.Response | Format-List | Out-String)
+						$res.StatusCode = 502
+					}
+				}
+				else {
+					$res.StatusCode = 401;
 				}
 			}
 			else {

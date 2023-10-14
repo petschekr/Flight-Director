@@ -288,7 +288,56 @@
 		</section>
 	</div>
 
-	<div class="bg-white px-4 py-5 mt-6 shadow sm:rounded-lg sm:p-6">
+	<div class="flex space-x-4 justify-center mt-4">
+		<div class="w-48">
+			<h2 class="block text-sm font-medium leading-6 whitespace-nowrap truncate text-gray-900">Weather Source</h2>
+			<RadioGroup class="mt-1" v-model="wxType">
+				<div class="flex space-x-2">
+					<RadioGroupOption as="template" value="METAR" v-slot="{ active, checked }">
+						<div :class="[active ? 'ring-2 ring-sky-600 ring-offset-2' : '', checked ? 'bg-sky-600 text-white hover:bg-sky-500' : 'ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50', 'flex items-center justify-center rounded-md py-2 px-3 text-sm font-semibold uppercase sm:flex-1 cursor-pointer focus:outline-none']">
+							<RadioGroupLabel as="span">METAR</RadioGroupLabel>
+						</div>
+					</RadioGroupOption>
+					<RadioGroupOption as="template" value="TAF" v-slot="{ active, checked }">
+						<div :class="[active ? 'ring-2 ring-sky-600 ring-offset-2' : '', checked ? 'bg-sky-600 text-white hover:bg-sky-500' : 'ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50', 'flex items-center justify-center rounded-md py-2 px-3 text-sm font-semibold uppercase sm:flex-1 cursor-pointer focus:outline-none']">
+							<RadioGroupLabel as="span">TAF</RadioGroupLabel>
+						</div>
+					</RadioGroupOption>
+				</div>
+			</RadioGroup>
+		</div>
+		<div class="w-20">
+			<label for="weather-station" class="block text-sm font-medium leading-6 whitespace-nowrap truncate text-gray-900">Station</label>
+			<div class="mt-1">
+				<input type="text" name="weather-station" id="weather-station" v-model="weatherStation" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 uppercase placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6" placeholder="KSSC" maxlength="4" autocomplete="off" />
+			</div>
+		</div>
+		<div>
+			<label for="forecast-time" class="block text-sm font-medium leading-6 whitespace-nowrap truncate text-gray-900">Take off / Land Time</label>
+			<div class="mt-1 flex rounded-md">
+				<input type="datetime-local" name="forecast-time" id="forecast-time" v-model="forecastTime" :disabled="wxType === 'METAR'" class="block w-full flex-1 rounded-md border-0 py-1.5 pr-1 text-center sm:text-lg text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 uppercase placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:leading-6" />
+			</div>
+		</div>
+		<div class="flex">
+			<button @click="pullWeatherData" :disabled="wxLoading"
+				class="self-end inline-flex rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 transition ease-in-out duration-150 disabled:cursor-not-allowed disabled:opacity-70">
+				<svg v-if="wxLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+				</svg>
+				<template v-if="!wxLoading">
+					Pull Weather
+				</template>
+				<template v-else>
+					Pulling Weather...
+				</template>
+			</button>
+		</div>
+	</div>
+	<p class="text-center mt-2 text-base whitespace-pre">{{ wxStatusText }}</p>
+	<p class="text-center mt-0.5 text-xs">{{ wxUpdateText }}</p>
+
+	<div class="bg-white px-4 py-5 mt-4 shadow sm:rounded-lg sm:p-6">
 		<div class="md:grid md:grid-cols-4 md:gap-6">
 			<div class="md:col-span-1">
 				<h3 class="text-lg font-medium leading-6 text-gray-900">Drag Index</h3>
@@ -319,7 +368,7 @@
 
 <script setup lang="ts">
 import { ref, type Ref, computed, inject, watchEffect, onMounted, watch } from "vue";
-import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue";
+import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions, RadioGroup, RadioGroupLabel, RadioGroupOption } from "@headlessui/vue";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/vue/20/solid";
 import { AdjustmentsHorizontalIcon, ChevronDoubleRightIcon, RadioIcon, XCircleIcon } from "@heroicons/vue/20/solid";
 import {
@@ -652,6 +701,154 @@ watchEffect(() => {
 });
 
 ///////////////////////////////////////////
+// Weather data
+const wxType = ref<"METAR" | "TAF">("METAR");
+const weatherStation = ref<string>("");
+const forecastTime = ref<string>("");
+const wxLoading = ref(false);
+const wxStatusText = ref<string>("");
+const wxUpdateText = ref<string>("");
+
+interface METAR {
+	raw: string;
+	altimeter: number;
+	dewpoint: number;
+	issue_time: number;
+	remarks: string;
+	temperature: number;
+	valid_time: number;
+	wind: {
+		direction: number;
+		speed: number;
+		gust?: number;
+		unit: number;
+		variable: boolean;
+	}
+}
+interface TAF {
+	raw: string;
+	issued: number;
+	valid_from: number;
+	valid_to: number;
+	groups: {
+		altimeter?: number;
+		raw: string;
+		type: string;
+		valid_time: number;
+		valid_range: {
+			from: number;
+			to: number;
+		};
+		visibility: number;
+		wind?: {
+			direction: number;
+			speed: number;
+			gust?: number;
+			unit: number;
+			variable: boolean;
+		};
+	}[];
+}
+interface WeatherResponse {
+	metars: METAR[];
+	tafs: TAF[];
+}
+
+async function pullWeatherData() {
+	if (!openAlert) return;
+	if (wxType.value === "TAF" && !forecastTime.value) {
+		await openAlert("Forecast time required", "Please choose a takeoff or land time.");
+		return;
+	}
+
+	let response: WeatherResponse;
+	try {
+		wxLoading.value = true;
+		let request = await fetch(`/api/weather?station=${encodeURIComponent(weatherStation.value)}`);
+		response = (await request.json())[0];
+	}
+	finally {
+		wxLoading.value = false;
+	}
+
+	if (wxType.value === "METAR") {
+		let latestMETAR = response.metars.sort((a, b) => b.valid_time - a.valid_time)[0];
+		if (!latestMETAR) {
+			wxStatusText.value = `No METARs generated in the last 24 hours at ${weatherStation.value}`;
+			wxUpdateText.value = "";
+			return;
+		}
+		wxStatusText.value = latestMETAR.raw;
+
+		let secondsSinceUpdate = (Date.now() / 1000) - latestMETAR.valid_time;
+		let minutesSinceUpdate = Math.round(secondsSinceUpdate / 60);
+		let hoursSinceUpdate = Math.round(secondsSinceUpdate / 60 / 60);
+
+		let lastUpdateText = `${minutesSinceUpdate} minute${minutesSinceUpdate === 1 ? "" : "s"}`;
+		if (secondsSinceUpdate > 60 * 60) {
+			lastUpdateText = `${hoursSinceUpdate} hour${hoursSinceUpdate === 1 ? "" : "s"}`;
+		}
+		wxUpdateText.value = `Last updated ${lastUpdateText} ago`;
+
+		windDirection.value = latestMETAR.wind.direction ?? 0;
+		windSpeed.value = latestMETAR.wind.speed ?? 0;
+		windGust.value = latestMETAR.wind.gust ?? 0;
+		temperature.value = latestMETAR.temperature ?? 15;
+		altimeter.value = latestMETAR.altimeter ?? 29.92;
+
+		selectBestWindRunway();
+	}
+	else if (wxType.value === "TAF") {
+		let desiredTime = new Date(forecastTime.value + "Z");
+		let latestTAF = response.tafs.sort((a, b) => b.issued - a.issued)[0];
+		if (!latestTAF) {
+			wxStatusText.value = `No TAFs issued in the last 24 hours at ${weatherStation.value}`;
+			wxUpdateText.value = "";
+			return;
+		}
+		wxStatusText.value = latestTAF.raw;
+
+		let secondsSinceUpdate = (Date.now() / 1000) - latestTAF.issued;
+		let minutesSinceUpdate = Math.round(secondsSinceUpdate / 60);
+		let hoursSinceUpdate = Math.round(secondsSinceUpdate / 60 / 60);
+
+		let lastUpdateText = `${minutesSinceUpdate} minute${minutesSinceUpdate === 1 ? "" : "s"}`;
+		if (secondsSinceUpdate > 60 * 60) {
+			lastUpdateText = `${hoursSinceUpdate} hour${hoursSinceUpdate === 1 ? "" : "s"}`;
+		}
+		wxUpdateText.value = `Last updated ${lastUpdateText} ago`;
+
+		if (desiredTime.valueOf() < latestTAF.valid_from * 1000) {
+			await openAlert("Invalid forecast time", "The takeoff / land time specified is before the most recent TAF is valid.");
+			return;
+		}
+		if (desiredTime.valueOf() > latestTAF.valid_to * 1000) {
+			await openAlert("Invalid forecast time", "The takeoff / land time specified is after the most recent TAF's forecast period.");
+			return;
+		}
+
+		for (let tafLine of latestTAF.groups) {
+			if (desiredTime.valueOf() >= tafLine.valid_time * 1000) {
+				if (tafLine.type !== "TEMPO" || tafLine.valid_range.to * 1000 > desiredTime.valueOf()) {
+					if (tafLine.wind) {
+						windDirection.value = tafLine.wind.direction ?? 0;
+						windSpeed.value = tafLine.wind.speed ?? 0;
+						windGust.value = tafLine.wind.gust ?? 0;
+					}
+					if (tafLine.altimeter) {
+						altimeter.value = tafLine.altimeter;
+					}
+				}
+			}
+		}
+		// Temperature not included on TAFs so use the METAR temp
+		temperature.value = response.metars[0].temperature ?? 15;
+
+		selectBestWindRunway();
+	}
+}
+
+///////////////////////////////////////////
 
 const performance: Ref<Performance | null> = ref(null);
 
@@ -858,22 +1055,7 @@ const resizeObserver = new ResizeObserver(entries => {
 onMounted(() => resizeObserver.observe(map.value!));
 watch([windDirection, windSpeed, windGust, selectedRunway, selectedRunwayEnd], () => drawAirfieldDiagram());
 
-async function updateAirfield() {
-	if (!openAlert || !performance.value || !icao.value) return;
-
-	let airport: DAFIF.Airport | null = selectedAirfield.value;
-	selectedAirfield.value = null; // Shows loading text
-	try {
-		airport = await DAFIF.getAirportInfo(performance.value.DAFIFLocation, icao.value);
-	}
-	catch (err) {
-		await openAlert("Airport not found", `The identifier ${icao.value.toUpperCase()} could not be found in the DAFIF database. Make sure it's a valid ICAO or FAA location identifier.`);
-		selectedAirfield.value = airport;
-		return;
-	}
-	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(performance.value.DAFIFLocation, airport.ARPT_IDENT);
-	selectedAirfield.value = airport;
-
+function selectBestWindRunway() {
 	let bestWindIndex = NaN;
 	runwaysDropdown.value = selectedAirfieldRunways.value
 		.flatMap(runway => [
@@ -889,6 +1071,43 @@ async function updateAirfield() {
 			return { name: runway.name, notes: `${length.toLocaleString()} ft` }
 		});
 	selectedDropdown.value = runwaysDropdown.value[bestWindIndex];
+}
+
+async function updateAirfield() {
+	if (!openAlert || !performance.value || !icao.value) return;
+
+	// These airfields have different weather station identifiers run by the DoD
+	switch (icao.value.toUpperCase()) {
+		case "OMAM":
+			weatherStation.value = "KQGX";
+			break;
+		case "OKAS":
+			weatherStation.value = "KQGV";
+			break;
+		case "OTBH":
+			weatherStation.value = "KQIR";
+			break;
+		case "LICZ":
+			weatherStation.value = "KQNS";
+			break;
+		default:
+			weatherStation.value = icao.value;
+	}
+
+	let airport: DAFIF.Airport | null = selectedAirfield.value;
+	selectedAirfield.value = null; // Shows loading text
+	try {
+		airport = await DAFIF.getAirportInfo(performance.value.DAFIFLocation, icao.value);
+	}
+	catch (err) {
+		await openAlert("Airport not found", `The identifier ${icao.value.toUpperCase()} could not be found in the DAFIF database. Make sure it's a valid ICAO or FAA location identifier.`);
+		selectedAirfield.value = airport;
+		return;
+	}
+	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(performance.value.DAFIFLocation, airport.ARPT_IDENT);
+	selectedAirfield.value = airport;
+
+	selectBestWindRunway();
 
 	selectedAirfieldComms.value = (await DAFIF.getCommInfo(performance.value.DAFIFLocation, airport.ARPT_IDENT))
 		.filter(freq => freq.FREQ_1)
