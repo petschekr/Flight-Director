@@ -10,6 +10,8 @@
 
 		<ATLC v-if="currentSidebarTab?.component === 'ATLC'" />
 
+		<Cavok v-if="currentSidebarTab?.component === 'Cavok'" />
+
 		<Settings v-if="currentSidebarTab?.component === 'Settings'" />
 
 		<SearchPalette :open="searchOpen" @closed="searchOpen = false" @set-callsign="(callsign) => selectedCallsign = callsign" />
@@ -36,6 +38,7 @@ import Nav from "@/components/Nav.vue";
 import FileTab from "@/views/subviews/FileTab.vue";
 import Performance from "@/views/subviews/Performance.vue";
 import ATLC from "@/views/subviews/ATLC.vue";
+import Cavok from "@/views/subviews/Cavok.vue";
 import Settings from "./subviews/Settings.vue";
 import type { Configuration } from "@/models/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
