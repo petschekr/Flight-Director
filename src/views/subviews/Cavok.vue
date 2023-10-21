@@ -20,7 +20,7 @@
 				<div class="relative mt-2">
 					<ListboxButton class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-600 sm:text-sm sm:leading-6">
 						<span class="flex items-center">
-							<span class="inline-block h-2 w-2 flex-shrink-0 rounded-full" :style="`background-color: rgb(${selected?.color.red}, ${selected?.color.green}, ${selected?.color.blue})`" />
+							<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: rgb(${selected?.color.red}, ${selected?.color.green}, ${selected?.color.blue})`" />
 							<span class="ml-3 block truncate">{{ selected?.callsign ?? "No cockpits available" }}</span>
 						</span>
 						<span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -33,7 +33,7 @@
 							<ListboxOption as="template" v-for="aircraft in selectableAircraft" :value="aircraft" v-slot="{ active, selected }">
 								<li :class="[active ? 'bg-sky-600 text-white' : 'text-gray-900', 'relative cursor-default select-none py-2 pl-3 pr-9']">
 									<div class="flex items-center">
-										<span class="inline-block h-2 w-2 flex-shrink-0 rounded-full" :style="`background-color: rgb(${aircraft.color.red}, ${aircraft.color.green}, ${aircraft.color.blue})`" />
+										<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: rgb(${aircraft.color.red}, ${aircraft.color.green}, ${aircraft.color.blue})`" />
 										<span :class="[selected ? 'font-semibold' : 'font-normal', 'ml-3 block truncate']">
 											{{ aircraft.callsign }}
 										</span>
