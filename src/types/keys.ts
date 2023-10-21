@@ -1,5 +1,6 @@
 import type { InjectionKey, Ref } from "vue";
 import type { Configuration } from "@/types/configuration";
+import type { CavokManager } from "@/integrations/cavok";
 
 export const CONFIGURATION = Symbol() as InjectionKey<Ref<Configuration | null>>;
 export const EDIT_MODE = Symbol() as InjectionKey<Ref<boolean>>;
@@ -15,3 +16,5 @@ export const GENERATE_SHORT_CALLSIGN = Symbol() as InjectionKey<GenerateShortCal
 
 export type ProcessPathReplacements = (path: string, callsign?: string) => string;
 export const PROCESS_PATH_REPLACEMENTS = Symbol() as InjectionKey<ProcessPathReplacements>;
+
+export const CAVOK_MANAGER = Symbol() as InjectionKey<CavokManager>;

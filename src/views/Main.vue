@@ -44,7 +44,10 @@ import type { Configuration } from "@/types/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
 import Feedback from "../components/Feedback.vue";
 import Alert from "@/components/Alert.vue";
-import { CONFIGURATION, EDIT_MODE, OPEN_ALERT, OPEN_CONFIRM } from "@/types/keys";
+
+import { CavokManager } from "@/integrations/cavok";
+
+import { CAVOK_MANAGER, CONFIGURATION, EDIT_MODE, OPEN_ALERT, OPEN_CONFIRM } from "@/types/keys";
 type SidebarTab = Configuration["sidebarTab"][0];
 
 const router = useRouter();
@@ -100,6 +103,9 @@ function openConfirm(title: string, message: string, confirmText = "OK", cancelT
 	});
 }
 provide(OPEN_CONFIRM, openConfirm);
+
+const cavokManager = new CavokManager("vlsb-cav-01.acc.accroot.ds.af.smil.mil", "50th ATKS"); // TODO: source from a configuration file
+provide(CAVOK_MANAGER, cavokManager);
 
 const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
 watchEffect(() => {
