@@ -108,7 +108,9 @@
 <script setup lang="ts">
 import { ref, inject } from "vue";
 
-const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
+import { OPEN_ALERT } from "@/types/keys";
+
+const openAlert = inject(OPEN_ALERT);
 
 const connecting = ref(false);
 

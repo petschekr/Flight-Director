@@ -40,10 +40,11 @@ import Performance from "@/views/subviews/Performance.vue";
 import ATLC from "@/views/subviews/ATLC.vue";
 import Cavok from "@/views/subviews/Cavok.vue";
 import Settings from "./subviews/Settings.vue";
-import type { Configuration } from "@/models/configuration";
+import type { Configuration } from "@/types/configuration";
 import SearchPalette from "../components/SearchPalette.vue";
 import Feedback from "../components/Feedback.vue";
 import Alert from "@/components/Alert.vue";
+import { CONFIGURATION, EDIT_MODE, OPEN_ALERT, OPEN_CONFIRM } from "@/types/keys";
 type SidebarTab = Configuration["sidebarTab"][0];
 
 const router = useRouter();
@@ -52,10 +53,10 @@ const searchOpen = ref(false);
 const feedbackOpen = ref(false);
 
 const configuration: Ref<Configuration | null> = ref(null);
-provide("configuration", configuration);
+provide(CONFIGURATION, configuration);
 
 const editMode: Ref<boolean> = ref(false);
-provide("editMode", editMode);
+provide(EDIT_MODE, editMode);
 
 const alert: Ref<{
 	type: "alert" | "confirm";
@@ -84,7 +85,7 @@ function openAlert(title: string, message: string, cancelText = "OK"): Promise<v
 		}, 0);
 	});
 }
-provide("openAlert", openAlert);
+provide(OPEN_ALERT, openAlert);
 function openConfirm(title: string, message: string, confirmText = "OK", cancelText = "Cancel"): Promise<boolean> {
 	return new Promise((resolve, reject) => {
 		// The setTimeout() prevents dialog from dismissing without being seen if triggered by an enter key event
@@ -98,7 +99,7 @@ function openConfirm(title: string, message: string, confirmText = "OK", cancelT
 		}, 0);
 	});
 }
-provide("openConfirm", openConfirm);
+provide(OPEN_CONFIRM, openConfirm);
 
 const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
 watchEffect(() => {

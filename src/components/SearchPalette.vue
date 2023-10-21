@@ -111,7 +111,8 @@ import {
 	TransitionRoot,
 } from "@headlessui/vue";
 
-import type { Card as ConfigFileEntry, Configuration } from "@/models/configuration";
+import type { Card as ConfigFileEntry, Configuration } from "@/types/configuration";
+import { CONFIGURATION } from "@/types/keys"
 
 const props = defineProps<{
 	open: boolean;
@@ -121,7 +122,7 @@ const emit = defineEmits<{
 	(e: "setCallsign", callsign: string): void;
 }>();
 
-const configuration = inject<Ref<Configuration | null>>("configuration");
+const configuration = inject(CONFIGURATION);
 
 const router = useRouter();
 

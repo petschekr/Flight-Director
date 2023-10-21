@@ -97,7 +97,7 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, type Ref } from "vue";
 import { useRoute } from "vue-router";
-import type { FileDisplay, DirectoryDisplay, DirectoryRender, FileFromAPI, DirectoryFromAPI } from "@/models/file-explorer";
+import type { FileDisplay, DirectoryDisplay, DirectoryRender, FileFromAPI, DirectoryFromAPI } from "@/types/file-explorer";
 
 import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 import { ChevronRightIcon, ArrowUturnUpIcon } from '@heroicons/vue/20/solid';

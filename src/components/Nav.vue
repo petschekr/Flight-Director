@@ -215,7 +215,9 @@
 		SparklesIcon,
 		BoltIcon,
 	} from '@heroicons/vue/20/solid';
-	import type { Configuration, IconName } from "@/models/configuration";
+
+	import type { Configuration, IconName } from "@/types/configuration";
+	import { CONFIGURATION, EDIT_MODE } from "@/types/keys";
 
 	import EditTab from "@/components/EditTab.vue";
 
@@ -233,8 +235,8 @@
 	const sidebarOpen = ref(false);
 	const selectedIndex = ref(0);
 
-	const configuration = inject<Ref<Configuration | null>>("configuration");
-	const editMode = inject<Ref<boolean>>("editMode");
+	const configuration = inject(CONFIGURATION);
+	const editMode = inject(EDIT_MODE);
 
 	const editTabPanelOpen = ref(false);
 	const editTabPanelTabIndex: Ref<number | null> = ref(0);

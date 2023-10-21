@@ -41,7 +41,8 @@ import { ref, type Ref, inject, watchEffect, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 
-import type { Configuration, Card } from "@/models/configuration";
+import type { Configuration, Card } from "@/types/configuration";
+import { CONFIGURATION, EDIT_MODE } from "@/types/keys";
 
 import { marked } from "marked";
 
@@ -58,8 +59,8 @@ const props = defineProps<{
 	card: Card | null;
 }>();
 
-const configuration = inject<Ref<Configuration | null>>("configuration");
-const profileEditMode = inject<Ref<boolean>>("editMode");
+const configuration = inject(CONFIGURATION);
+const profileEditMode = inject(EDIT_MODE);
 
 const route = useRoute();
 

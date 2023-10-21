@@ -47,14 +47,15 @@ import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/so
 import { RocketLaunchIcon as RocketLaunchIconOutline } from "@heroicons/vue/24/outline";
 import dayjs from "dayjs";
 
-import type { Configuration } from "@/models/configuration";
-import type { FileRender } from "@/models/file-explorer";
+import type { Configuration } from "@/types/configuration";
+import type { FileRender } from "@/types/file-explorer";
+import { CONFIGURATION } from "@/types/keys";
 
 const props = defineProps<{
 	file: FileRender | null;
 }>();
 
-const configuration = inject<Ref<Configuration | null>>("configuration");
+const configuration = inject(CONFIGURATION);
 
 const router = useRouter();
 const route = useRoute();

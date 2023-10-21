@@ -33,8 +33,8 @@
 
 <script setup lang="ts">
 import { ref, type Ref, watch, computed, inject } from "vue";
-
 import { ChevronDownIcon, ChevronUpIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { GENERATE_SHORT_CALLSIGN, PROCESS_PATH_REPLACEMENTS } from "@/types/keys";
 
 const props = defineProps<{
 	initialCallsign: string;
@@ -45,8 +45,8 @@ defineEmits<{
 	(e: "move", callsign: string, direction: "up" | "down"): void;
 }>();
 
-const generateShortCallsign = inject<(callsign: string) => string>("generateShortCallsign");
-const processPathReplacements = inject<(file: string, callsign?: string) => string>("processPathReplacements");
+const generateShortCallsign = inject(GENERATE_SHORT_CALLSIGN);
+const processPathReplacements = inject(PROCESS_PATH_REPLACEMENTS);
 
 const callsign = ref(props.initialCallsign);
 watch(() => props.initialCallsign, () => callsign.value = props.initialCallsign);

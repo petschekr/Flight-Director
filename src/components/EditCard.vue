@@ -367,7 +367,8 @@ import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 import { useRouter, useRoute } from "vue-router";
 
-import type { Card, Configuration } from "@/models/configuration";
+import type { Card, Configuration } from "@/types/configuration";
+import { CONFIGURATION, OPEN_ALERT, OPEN_CONFIRM, PROCESS_PATH_REPLACEMENTS } from "@/types/keys";
 
 import { compileExpression } from "filtrex";
 
@@ -384,10 +385,10 @@ const emit = defineEmits<{
 const router = useRouter();
 const route = useRoute();
 
-const configuration = inject<Ref<Configuration | null>>("configuration");
-const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
-const openConfirm = inject<(title: string, message: string, confirmText?: string, cancelText?: string) => Promise<boolean>>("openConfirm");
-const processPathReplacements = inject<(file: string) => string>("processPathReplacements");
+const configuration = inject(CONFIGURATION);
+const openAlert = inject(OPEN_ALERT);
+const openConfirm = inject(OPEN_CONFIRM);
+const processPathReplacements = inject(PROCESS_PATH_REPLACEMENTS);
 const defaultColor = "bg-sky-500";
 
 const isOpen = ref(false);

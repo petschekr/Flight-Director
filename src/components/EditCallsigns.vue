@@ -71,7 +71,8 @@ import { XMarkIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
 
 import CallsignCard from "./CallsignCard.vue";
 
-import type { Configuration, IconName, Component } from "@/models/configuration";
+import type { Configuration, IconName, Component } from "@/types/configuration";
+import { CONFIGURATION, OPEN_ALERT, OPEN_CONFIRM } from "@/types/keys";
 
 const props = defineProps<{
 	open: boolean;
@@ -80,9 +81,9 @@ const emit = defineEmits<{
 	(e: "closed"): void;
 }>();
 
-const configuration = inject<Ref<Configuration | null>>("configuration");
-const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
-const openConfirm = inject<(title: string, message: string, confirmText?: string, cancelText?: string) => Promise<boolean>>("openConfirm");
+const configuration = inject(CONFIGURATION);
+const openAlert = inject(OPEN_ALERT);
+const openConfirm = inject(OPEN_CONFIRM);
 
 const isOpen = ref(false);
 watch(() => props.open, () => isOpen.value = props.open);

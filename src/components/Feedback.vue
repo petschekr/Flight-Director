@@ -162,7 +162,8 @@ import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { XMarkIcon as XMarkIconSmall } from '@heroicons/vue/20/solid'
 import { CheckCircleIcon } from '@heroicons/vue/24/outline'
 
-import type { Configuration } from "@/models/configuration";
+import type { Configuration } from "@/types/configuration";
+import { CONFIGURATION, OPEN_ALERT } from '@/types/keys'
 
 const props = defineProps<{
 	open: boolean;
@@ -171,8 +172,8 @@ const emit = defineEmits<{
 	(e: "closed"): void;
 }>();
 
-const configuration = inject<Ref<Configuration | null>>("configuration");
-const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
+const configuration = inject(CONFIGURATION);
+const openAlert = inject(OPEN_ALERT);
 
 const isOpen = ref(false);
 watch(() => props.open, () => isOpen.value = props.open);

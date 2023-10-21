@@ -112,10 +112,11 @@ import toml from "toml";
 import { bestGlideSpeed, bestGlideRange } from "@/performance/glide";
 import { bestRange } from "@/performance/range";
 
-import type { Performance } from "@/models/configuration";
+import type { Performance } from "@/types/configuration";
+import { OPEN_ALERT } from "@/types/keys";
 const performance: Ref<Performance | null> = ref(null);
 
-const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
+const openAlert = inject(OPEN_ALERT);
 
 const dragItems = computed(() => {
 	if (!performance.value) return [];

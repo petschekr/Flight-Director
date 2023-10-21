@@ -1,4 +1,4 @@
-import type { Performance } from "@/models/configuration";
+import type { Performance } from "@/types/configuration";
 
 // TODO: use common interpolateTable() code from ATLC.ts
 function interpolateFromData(performanceInfo: Performance, dragIndex: number, feathered: boolean, tableName: keyof Performance, rowKey: string, rowValue: string, compareValue: number): number | null {

@@ -74,8 +74,9 @@ import { useRouter, useRoute } from "vue-router";
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
 import { CloudArrowDownIcon, ArrowTopRightOnSquareIcon } from "@heroicons/vue/24/solid";
 
-import type { Configuration, Card } from "@/models/configuration";
-import type { FileRender, DirectoryRender, FileFromAPI, DirectoryFromAPI } from "@/models/file-explorer";
+import type { Configuration, Card } from "@/types/configuration";
+import type { FileRender, DirectoryRender, FileFromAPI, DirectoryFromAPI } from "@/types/file-explorer";
+import { CONFIGURATION, OPEN_ALERT, EDIT_MODE, GENERATE_SHORT_CALLSIGN, PROCESS_PATH_REPLACEMENTS } from "@/types/keys";
 
 import CardList from "@/components/CardList.vue";
 import File from "@/components/File.vue";
@@ -94,9 +95,9 @@ const emit = defineEmits<{
 	(e: "setCallsign", callsign: string): void;
 }>();
 
-const configuration = inject<Ref<Configuration | null>>("configuration");
-const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
-const editMode = inject<Ref<boolean>>("editMode");
+const configuration = inject(CONFIGURATION);
+const openAlert = inject(OPEN_ALERT);
+const editMode = inject(EDIT_MODE);
 const editCallsignsPanelOpen = ref(false);
 const loadingModalOpen = ref(false);
 const loadingState = ref("");
@@ -144,7 +145,7 @@ function generateShortCallsign(callsign: string): string {
 	}
 	return shortCallsign;
 }
-provide("generateShortCallsign", generateShortCallsign);
+provide(GENERATE_SHORT_CALLSIGN, generateShortCallsign);
 function processPathReplacements(path: string, callsign: string = props.selectedCallsign): string {
 	const date = dayjs(selectedDate.value);
 	path = path.replace(/<callsign-path>/gi, (configuration?.value?.callsigns ?? []).find(cs => cs.callsign === callsign)?.path ?? ""); // Can contain replacements itself so must go first
@@ -159,7 +160,7 @@ function processPathReplacements(path: string, callsign: string = props.selected
 	path = path.replace(/(\\|<.*?>)/g, substring => substring === "\\" ? "/" : substring);
 	return path;
 }
-provide("processPathReplacements", processPathReplacements);
+provide(PROCESS_PATH_REPLACEMENTS, processPathReplacements);
 function mapPathIdentifiers(card: Card): Card {
 	return {
 		...card,

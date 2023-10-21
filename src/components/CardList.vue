@@ -66,9 +66,10 @@
 import { inject, type Ref, ref } from "vue";
 import { useRoute } from "vue-router";
 
-import type { Card as CardConfig, Configuration } from "@/models/configuration";
-
 import { SquaresPlusIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/vue/24/outline";
+
+import type { Card as CardConfig, Configuration } from "@/types/configuration";
+import { CONFIGURATION, EDIT_MODE, OPEN_ALERT, OPEN_CONFIRM } from "@/types/keys";
 
 import Card from "@/components/Card.vue";
 import EditCard from "@/components/EditCard.vue";
@@ -82,11 +83,11 @@ const props = defineProps<{
 	tabName: string;
 }>();
 
-const configuration = inject<Ref<Configuration | null>>("configuration");
-const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
-const openConfirm = inject<(title: string, message: string, confirmText?: string, cancelText?: string) => Promise<boolean>>("openConfirm");
+const configuration = inject(CONFIGURATION);
+const openAlert = inject(OPEN_ALERT);
+const openConfirm = inject(OPEN_CONFIRM);
 
-const editMode = inject<Ref<boolean>>("editMode");
+const editMode = inject(EDIT_MODE);
 const editPanelOpen: Ref<boolean> = ref(false);
 const editPanelCard: Ref<CardConfig | null> = ref(null);
 const editPanelGroupName: Ref<string | null> = ref(null);

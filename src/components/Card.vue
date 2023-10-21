@@ -27,13 +27,14 @@ import { inject, type Ref } from "vue";
 import { ArrowTopRightOnSquareIcon, Bars3Icon } from "@heroicons/vue/20/solid";
 import { CloudIcon } from "@heroicons/vue/24/outline";
 
-import type { Card } from "@/models/configuration";
+import type { Card } from "@/types/configuration";
+import { EDIT_MODE } from "@/types/keys";
 
 defineProps<{
 	card: Card
 }>();
 
-const editMode = inject<Ref<boolean>>("editMode");
+const editMode = inject(EDIT_MODE);
 
 function isExternal(card: Card): boolean {
 	return card.path?.startsWith("http") ?? false;

@@ -387,13 +387,14 @@ import { ArrowUpCircleIcon } from "@heroicons/vue/24/solid";
 
 import toml from "toml";
 
-import type { Performance } from "@/models/configuration";
+import type { Performance } from "@/types/configuration";
+import { OPEN_ALERT } from "@/types/keys"
 
 import * as ATLCPerformance from "@/performance/ATLC";
 import * as GlidePerformance from "@/performance/glide";
 import * as DAFIF from "@/performance/DAFIF";
 
-const openAlert = inject<(title: string, message: string, okText?: string) => Promise<void>>("openAlert");
+const openAlert = inject(OPEN_ALERT);
 
 const icao = ref(localStorage.getItem("icao") ?? "");
 const windDirection = ref(parseInt(localStorage.getItem("windDirection") ?? "0"));
