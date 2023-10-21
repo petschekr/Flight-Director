@@ -10,8 +10,32 @@ export class CavokManager {
 	public aircraft: Map<string, AircraftData> = new Map();
 
 	public selectedCallsign: string | null = null;
-	public emptyWeight: number = 0;
-	public storesWeight: number = 0;
+
+	private _emptyWeight: number | null = null;
+	public get emptyWeight(): number {
+		let savedEmptyWeight = parseInt(localStorage.getItem("aircraftEmptyWeight") ?? "");
+		if (!isNaN(savedEmptyWeight) && this._emptyWeight === null) {
+			this._emptyWeight = savedEmptyWeight;
+		}
+		return this._emptyWeight ?? 0;
+	}
+	public set emptyWeight(weight: number) {
+		localStorage.setItem("aircraftEmptyWeight", weight.toString());
+		this._emptyWeight = weight;
+	}
+
+	private _storesWeight: number | null = null;
+	public get storesWeight(): number {
+		let savedStoresWeight = parseInt(localStorage.getItem("aircraftStoresWeight") ?? "");
+		if (!isNaN(savedStoresWeight) && this._storesWeight === null) {
+			this._storesWeight = savedStoresWeight;
+		}
+		return this._storesWeight ?? 0;
+	}
+	public set storesWeight(weight: number) {
+		localStorage.setItem("aircraftStoresWeight", weight.toString());
+		this._storesWeight = weight;
+	}
 
 	private listeners: ((aircraft: Map<string, AircraftData>) => void)[] = [];
 
