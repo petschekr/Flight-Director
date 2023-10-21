@@ -269,7 +269,7 @@
 				</dl>
 			</div>
 			<div>
-				<dl class="mt-4 grid grid-cols-1 xl:grid-cols-3 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
+				<dl class="mt-4 grid grid-cols-2 xl:grid-cols-4 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
 					<div v-for="item in airborneStats" :key="item.name" class="px-4 py-5 flex items-center first:border-t-[1px] max-xl:odd:!border-l-0">
 						<div :class="[item.color, 'rounded-md p-2 mr-3']">
 							<component :is="item.icon" class="h-5 w-5 text-white" aria-hidden="true" />
@@ -393,6 +393,7 @@ import { OPEN_ALERT } from "@/types/keys"
 import * as ATLCPerformance from "@/performance/ATLC";
 import * as GlidePerformance from "@/performance/glide";
 import * as DAFIF from "@/performance/DAFIF";
+import { bestClimb } from "@/performance/climb";
 
 const openAlert = inject(OPEN_ALERT);
 
@@ -512,6 +513,21 @@ const bestGlideSpeed = computed(() => {
 	return Math.round(result);
 });
 const approachSpeed = computed(() => ATLCPerformance.approachSpeed(aircraftWeight.value));
+const bestRateOfClimb = computed(() => {
+	if (!selectedAirfield.value) return null;
+	let elevation = parseInt(selectedAirfield.value.ELEV);
+
+	let result = bestClimb(
+		aircraftWeight.value,
+		ATLCPerformance.densityAltitude(elevation, altimeter.value, temperature.value),
+		dragIndex.value
+	);
+	if (result === null) return null;
+	return {
+		vy: Math.round(result.vy),
+		rateOfClimb: Math.round(result.rateOfClimb),
+	};
+});
 const fieldElevation = computed(() => {
 	if (!selectedAirfield.value) return "--";
 	return parseInt(selectedAirfield.value.ELEV).toLocaleString();
@@ -616,7 +632,8 @@ const distanceStats = computed(() => {
 
 const airborneStats = computed(() => {
 	return [
-		{ name: "Best Rate of Climb", icon: ArrowUpRightIcon, color: "bg-teal-500", stat: "--", unit: "KIAS" },
+		{ name: "Best Rate of Climb", icon: ArrowUpRightIcon, color: "bg-teal-500", stat: bestRateOfClimb.value?.vy ?? "--", unit: "KIAS" },
+		{ name: "Best Rate of Climb", icon: ArrowUpRightIcon, color: "bg-teal-600", stat: bestRateOfClimb.value?.rateOfClimb ?? "--", unit: "ft/min" },
 		{ name: "Best Glide", icon: ExclamationTriangleIcon, color: "bg-amber-500", stat: bestGlideSpeed.value, unit: "KIAS" },
 		{ name: "Approach", icon: ArrowDownRightIcon, color: "bg-purple-500", stat: approachSpeed.value, unit: "KIAS" },
 	];

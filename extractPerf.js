@@ -1,26 +1,54 @@
 const input = `
-85 83 90 86 92 92
-171 167 181 173 185 185
-115 110 135 128 153 153
+Sea Level 84 2150 3010 86 1690 2430 87 1380 2000 89 1120 1670 93 900 1400 98 720 1180 101 640 1070 106 480 860
+2,500 84 2020 2930 85 1600 2360 87 1290 1940 88 1060 1610 93 840 1350 98 660 1120 101 580 1020 106 440 810
+5,000 82 1870 2750 84 1460 2200 85 1180 1800 88 940 1480 93 730 1230 98 570 1010 101 500 910 106 360 700
+7,500 80 1720 2570 82 1340 2050 83 1070 1660 88 820 1360 93 630 1100 98 480 890 101 420 790 106 290 580
+10,000 78 1580 2390 80 1220 1890 82 960 1520 88 720 1230 93 540 980 98 400 770 101 340 670 106 220 470
+12,500 77 1430 2220 78 1110 1740 82 840 1390 88 610 1100 93 450 850 98 320 650 101 270 550 106 160 350
+15,000 75 1300 2050 77 980 1590 82 720 1250 88 520 960 93 370 730 98 250 520 101 200 420 106 100 230
+17,500 73 1170 1880 76 870 1440 82 610 1110 88 430 830 93 290 600 98 180 400 101 130 300 106 40 110
+20,000 71 1060 1710 76 740 1290 82 510 970 88 340 690 93 220 470 98 120 270 101 70 170
+22,500 69 940 1550 76 630 1140 82 420 820 88 260 550 93 150 330 98 60 140 101 10 40
+25,000 69 800 1380 76 520 990 82 330 670 88 180 410 93 80 190 98 0 0
+27,500 70 660 1210 76 420 830 82 240 520 88 110 260 93 20 50
+30,000 70 540 1040 76 320 670 82 160 370 88 40 110
+32,500 70 430 870 76 230 510 82 90 210
+35,000 70 330 690 76 150 340 82 20 50
+37,500 70 230 500 76 60 160
+40,000 70 130 300
+42,500 70 40 100
+45,000
 `;
 
-let lines = input.trim().split("\n").map(line => line.trim());
+let lines = input.trim().split("\n").map(line => line.trim().replace("Sea Level", "SeaLevel"));
 
-let maxKIAS = lines[0].split(" ").filter((val, index) => index % 2 === 0);
-let minKIAS = lines[0].split(" ").filter((val, index) => index % 2 === 1);
-let maxKTAS = lines[1].split(" ").filter((val, index) => index % 2 === 0);
-let minKTAS = lines[1].split(" ").filter((val, index) => index % 2 === 1);
-let maxFF = lines[2].split(" ").filter((val, index) => index % 2 === 0);
-let minFF = lines[2].split(" ").filter((val, index) => index % 2 === 1);
+lines = lines.map(line => {
+	let vy = line.split(" ").filter((val, index) => {
+		if (index === 0) return false;
+		return (index - 1) % 3 === 0;
+	});
+	let rateOfClimb = line.split(" ").filter((val, index) => {
+		if (index === 0) return false;
+		return (index - 1) % 3 === 2;
+	});
+	return { vy, rateOfClimb };
+});
 
+// console.log(JSON.stringify(lines));
 
-console.log(`{
-	"5000":  { max: { kias: ${maxKIAS[0]}, ktas: ${maxKTAS[0]}, ff: ${maxFF[0]} }, min: { kias: ${minKIAS[0]}, ktas: ${minKTAS[0]}, ff: ${minFF[0]} } },
-	"6000":  { max: { kias: ${maxKIAS[1]}, ktas: ${maxKTAS[1]}, ff: ${maxFF[1]} }, min: { kias: ${minKIAS[1]}, ktas: ${minKTAS[1]}, ff: ${minFF[1]} } },
-	"7000":  { max: { kias: ${maxKIAS[2]}, ktas: ${maxKTAS[2]}, ff: ${maxFF[2]} }, min: { kias: ${minKIAS[2]}, ktas: ${minKTAS[2]}, ff: ${minFF[2]} } },
-	"8000":  { max: { kias: ${maxKIAS[3]}, ktas: ${maxKTAS[3]}, ff: ${maxFF[3]} }, min: { kias: ${minKIAS[3]}, ktas: ${minKTAS[3]}, ff: ${minFF[3]} } },
-	"9000":  { max: { kias: ${maxKIAS[4]}, ktas: ${maxKTAS[4]}, ff: ${maxFF[4]} }, min: { kias: ${minKIAS[4]}, ktas: ${minKTAS[4]}, ff: ${minFF[4]} } },
-	"10000": { max: { kias: ${maxKIAS[5]}, ktas: ${maxKTAS[5]}, ff: ${maxFF[5]} }, min: { kias: ${minKIAS[5]}, ktas: ${minKTAS[5]}, ff: ${minFF[5]} } },
-	"10500": { max: { kias: ${maxKIAS[6]}, ktas: ${maxKTAS[6]}, ff: ${maxFF[6]} }, min: { kias: ${minKIAS[6]}, ktas: ${minKTAS[6]}, ff: ${minFF[6]} } },
-	"11700": { max: { kias: ${maxKIAS[7]}, ktas: ${maxKTAS[7]}, ff: ${maxFF[7]} }, min: { kias: ${minKIAS[7]}, ktas: ${minKTAS[7]}, ff: ${minFF[7]} } },
-}`);
+const altitudes = [0, 2_500, 5_000, 7_500, 10_000, 12_500, 15_000, 17_500, 20_000, 22_500, 25_000, 27_500, 30_000, 32_500, 35_000, 37_500, 40_000, 42_500, 45_000];
+const weights = [5000, 6000, 7000, 8000, 9000, 10_000, 10_500, 11_700];
+
+const output = {};
+
+for (let i = 0; i < altitudes.length; i++) {
+	let altitudeOutput = {};
+	for (let j = 0; j < weights.length; j++) {
+		altitudeOutput[weights[j].toString()] = {
+			vy: lines[i].vy[j] ? parseInt(lines[i].vy[j]) : null,
+			rateOfClimb: lines[i].rateOfClimb[j] ? parseInt(lines[i].rateOfClimb[j]) : null };
+	}
+	output[altitudes[i].toString()] = altitudeOutput;
+}
+
+console.log(output);
