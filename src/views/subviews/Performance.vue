@@ -29,9 +29,14 @@
 			<div class="md:col-span-1">
 				<h3 class="text-lg font-medium leading-6 text-gray-900">Aircraft Information</h3>
 				<p class="mt-1 text-sm text-gray-500">
-					Garbage in, garbage out.
-					<br />
-					Set an average fuel flow to automatically update the aircaft weight.
+					<template v-if="!cavokManager?.selectedCallsign">
+						Garbage in, garbage out.
+						<br />
+						Set an average fuel flow to automatically update the aircaft weight.
+					</template>
+					<template v-else>
+						Connected to: <strong>{{ cavokManager?.selectedCallsign }}</strong>
+					</template>
 				</p>
 			</div>
 			<div class="mt-5 space-y-6 md:col-span-3 md:mt-0">
@@ -39,8 +44,8 @@
 					<div class="col-span-3 sm:col-span-1">
 						<label for="weight" class="block text-sm font-medium text-gray-700">Aircraft Weight</label>
 						<div class="mt-1 flex rounded-md shadow-sm">
-							<input type="number" id="weight" v-model="aircraftWeight" min="5000" max="11700" step="100"
-								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 sm:text-sm z-10" />
+							<input type="number" id="weight" v-model="aircraftWeight" min="5000" max="11700" step="100" :disabled="!!cavokManager?.selectedCallsign"
+								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:text-sm z-10" />
 							<span class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 z-0">lbs</span>
 						</div>
 						<p class="mt-2 text-sm text-gray-500">Use Total AV Weight on VIT 99</p>
@@ -48,8 +53,8 @@
 					<div class="col-span-3 sm:col-span-1">
 						<label for="density-altitude" class="block text-sm font-medium text-gray-700">Density Altitude</label>
 						<div class="mt-1 flex rounded-md shadow-sm">
-							<input type="number" id="density-altitude" v-model="densityAltitude" min="5000" max="45000" step="500"
-								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 sm:text-sm z-10" />
+							<input type="number" id="density-altitude" v-model="densityAltitude" min="0" max="45000" step="500" :disabled="!!cavokManager?.selectedCallsign"
+								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:text-sm z-10" />
 							<span
 								class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 z-0">ft</span>
 						</div>
@@ -58,8 +63,8 @@
 					<div class="col-span-3 sm:col-span-1">
 						<label for="fuel-flow" class="block text-sm font-medium text-gray-700">Fuel Flow</label>
 						<div class="mt-1 flex rounded-md shadow-sm">
-							<input type="number" id="fuel-flow" v-model="fuelFlow" min="0" max="300" step="10"
-								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 sm:text-sm z-10" />
+							<input type="number" id="fuel-flow" v-model="fuelFlow" min="0" max="300" step="10" :disabled="!!cavokManager?.selectedCallsign"
+								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:text-sm z-10" />
 							<span
 								class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 z-0">lbs/hour</span>
 						</div>
@@ -68,8 +73,8 @@
 					<div class="col-span-3 sm:col-span-1">
 						<label for="height-above-terrain" class="block text-sm font-medium text-gray-700">Height Above Terrain</label>
 						<div class="mt-1 flex rounded-md shadow-sm">
-							<input type="number" id="height-above-terrain" v-model="heightAboveTerrain" min="5000" max="45000" step="1000"
-								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 sm:text-sm z-10" />
+							<input type="number" id="height-above-terrain" v-model="heightAboveTerrain" min="0" max="45000" step="1000" :disabled="!!cavokManager?.selectedCallsign"
+								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:text-sm z-10" />
 							<span
 								class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 z-0">ft</span>
 						</div>
@@ -111,12 +116,15 @@ import toml from "toml";
 
 import { bestGlideSpeed, bestGlideRange } from "@/performance/glide";
 import { bestRange } from "@/performance/range";
+import { metersToFeet } from "@/performance/units";
 
 import type { Performance } from "@/types/configuration";
-import { OPEN_ALERT } from "@/types/keys";
+import { CAVOK_MANAGER, OPEN_ALERT } from "@/types/keys";
+
 const performance: Ref<Performance | null> = ref(null);
 
 const openAlert = inject(OPEN_ALERT);
+const cavokManager = inject(CAVOK_MANAGER);
 
 const dragItems = computed(() => {
 	if (!performance.value) return [];
@@ -151,6 +159,17 @@ const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "1
 const densityAltitude = ref(parseInt(localStorage.getItem("densityAltitude") ?? "25000"));
 const fuelFlow = ref(parseInt(localStorage.getItem("fuelFlow") ?? "200"));
 const heightAboveTerrain = ref(parseInt(localStorage.getItem("heightAboveTerrain") ?? "20000"));
+
+watchEffect(() => {
+	if (!cavokManager || !cavokManager.selectedCallsign) return;
+
+	let aircraftData = cavokManager.aircraft.get(cavokManager.selectedCallsign);
+	if (!aircraftData) return;
+
+	aircraftWeight.value = Math.round(cavokManager.emptyWeight + cavokManager.storesWeight + aircraftData.ESDComponent?.fuelRemaining ?? 0);
+	densityAltitude.value = Math.round(metersToFeet(aircraftData.ESDComponent.densityAltitude));
+	heightAboveTerrain.value = Math.round(metersToFeet(aircraftData.ESDComponent.verticalHeightAboveTarget));
+});
 
 const stats = computed(() => {
 	if (!performance.value) return {};
@@ -192,6 +211,8 @@ const stats = computed(() => {
 });
 
 function weightUpdater(secondsElapsed: number = 60) {
+	if (cavokManager?.connected) return;
+
 	aircraftWeight.value -= Math.round(fuelFlow.value / 60 * secondsElapsed / 60); // Fuel flow per minute * minutes elapsed
 	if (aircraftWeight.value < 5000) {
 		aircraftWeight.value = 5000;

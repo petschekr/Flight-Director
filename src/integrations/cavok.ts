@@ -6,7 +6,12 @@ export class CavokManager {
 	private socket: WebSocket | null = null;
 	private socketKeepAliveInterval: NodeJS.Timer | null = null;
 
+	public connected: boolean = false;
 	public aircraft: Map<string, AircraftData> = new Map();
+
+	public selectedCallsign: string | null = null;
+	public emptyWeight: number = 0;
+	public storesWeight: number = 0;
 
 	private listeners: ((aircraft: Map<string, AircraftData>) => void)[] = [];
 
@@ -60,13 +65,16 @@ export class CavokManager {
 			this.socketKeepAliveInterval = setInterval(() => {
 				this.socket?.send("");
 			}, 10000);
+			this.connected = true;
 		});
 		this.socket.addEventListener("close", () => {
 			if (this.socketKeepAliveInterval !== null) {
 				clearInterval(this.socketKeepAliveInterval);
 			}
+			this.selectedCallsign = null;
+			this.connected = false;
 		});
-		this.socket.addEventListener("message", this.processMessage);
+		this.socket.addEventListener("message", this.processMessage.bind(this));
 	}
 
 	private processMessage(message: MessageEvent<string>) {
