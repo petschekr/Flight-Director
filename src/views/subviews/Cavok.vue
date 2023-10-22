@@ -20,8 +20,8 @@
 				<div class="relative mt-2">
 					<ListboxButton class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-600 sm:text-sm sm:leading-6">
 						<span class="flex items-center">
-							<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: rgb(${selected?.color.red}, ${selected?.color.green}, ${selected?.color.blue})`"></span>
-							<span class="ml-3 block truncate">{{ selected?.callsign ?? "No cockpits available" }}</span>
+							<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: ${getAircraftColor(selected)}`"></span>
+							<span class="ml-3 block truncate">{{ selected?.CallsignComponent.callsign ?? "No cockpits available" }}</span>
 						</span>
 						<span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
 							<ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -33,9 +33,9 @@
 							<ListboxOption as="template" v-for="aircraft in selectableAircraft" :value="aircraft" v-slot="{ active, selected }">
 								<li :class="[active ? 'bg-sky-600 text-white' : 'text-gray-900', 'relative cursor-default select-none py-2 pl-3 pr-9']">
 									<div class="flex items-center">
-										<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: rgb(${aircraft.color.red}, ${aircraft.color.green}, ${aircraft.color.blue})`"></span>
+										<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: ${getAircraftColor(aircraft)}`"></span>
 										<span :class="[selected ? 'font-semibold' : 'font-normal', 'ml-3 block truncate']">
-											{{ aircraft.callsign }}
+											{{ aircraft.CallsignComponent.callsign }}
 										</span>
 									</div>
 
@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject, watch, watchEffect } from "vue";
+import { ref, inject, watch } from "vue";
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/vue/20/solid";
 
@@ -101,21 +101,12 @@ async function connect() {
 	}
 }
 
-interface SelectableAircraft {
-	callsign: string;
-	color: {
-		red: number;
-		green: number;
-		blue: number;
-	};
-}
-
-const selectableAircraft= ref<SelectableAircraft[]>([]);
-const selected = ref<typeof selectableAircraft.value[0] | undefined>(selectableAircraft.value[0]);
+const selectableAircraft= ref<AircraftData[]>([...(cavokManager?.aircraft.values() ?? [])]);
+const selected = ref<AircraftData | undefined>(cavokManager?.selectedCallsign ? cavokManager?.aircraft.get(cavokManager.selectedCallsign) : undefined);
 
 watch(selected, () => {
 	if (!cavokManager) return;
-	cavokManager.selectedCallsign = selected.value?.callsign ?? null;
+	cavokManager.selectedCallsign = selected.value?.CallsignComponent.callsign ?? null;
 });
 
 const aircraftEmptyWeight = ref(cavokManager?.emptyWeight ?? 0);
@@ -128,16 +119,20 @@ watch([aircraftEmptyWeight, aircraftStoresWeight], () => {
 
 function updateSelectableAircraft(allAircraft: Map<string, AircraftData>) {
 	selectableAircraft.value = [...allAircraft.values()]
-		.map(aircraft => ({
-			callsign: aircraft.CallsignComponent.callsign,
-			color: aircraft.GCSComponent.color,
-		}))
-		.sort((a, b) => a.callsign.localeCompare(b.callsign));
-	if (!selected.value || !selectableAircraft.value.find(aircraft => aircraft.callsign === selected.value?.callsign)) {
+		.sort((a, b) => a.CallsignComponent.callsign.localeCompare(b.CallsignComponent.callsign));
+
+	if (!selected.value || !selectableAircraft.value.find(aircraft => aircraft.CallsignComponent.callsign === selected.value?.CallsignComponent.callsign)) {
 		selected.value = selectableAircraft.value[0];
 	}
 }
 cavokManager?.addChangeListener(updateSelectableAircraft);
+
+function getAircraftColor(aircraft?: AircraftData): string {
+	if (!aircraft) {
+		return "rgb(0, 0, 0)";
+	}
+	return `rgb(${aircraft.GCSComponent.color.red}, ${aircraft.GCSComponent.color.green}, ${aircraft.GCSComponent.color.blue})`;
+}
 
 ///////////////////////////////////////////////////
 

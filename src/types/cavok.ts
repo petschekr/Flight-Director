@@ -65,8 +65,8 @@ export interface AircraftData {
 		horizontalFieldOfView: number;
 		verticalFieldOfView: number;
 		platformTailNumberString: string;
-		groundRange: string;
-		laserPRF: string;
+		groundRange: number;
+		laserPRF: number;
 		sensorFieldOfViewName: number;
 		magneticHeading: number;
 		verticalHeightAboveTarget: number;
