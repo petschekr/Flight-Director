@@ -1,6 +1,6 @@
 <template>
 	<div class="bg-white px-4 py-5 shadow sm:rounded-lg sm:p-6">
-		<button @click="connect" :disabled="connecting" v-if="!connected"
+		<button @click="connect" :disabled="connecting" v-if="!cavokManager?.connected"
 			class="self-end inline-flex rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 transition ease-in-out duration-150 disabled:cursor-not-allowed disabled:opacity-70">
 			<svg v-if="connecting" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
 				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -14,13 +14,13 @@
 			</template>
 		</button>
 
-		<div v-if="connected" class="grid grid-cols-4 gap-6">
-			<Listbox as="div" v-model="selected" v-if="connected">
+		<div v-if="cavokManager?.connected" class="grid grid-cols-4 gap-6">
+			<Listbox as="div" v-model="selected">
 				<ListboxLabel class="block font-medium leading-6 text-gray-900">Cockpit</ListboxLabel>
 				<div class="relative mt-2">
 					<ListboxButton class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-600 sm:text-sm sm:leading-6">
 						<span class="flex items-center">
-							<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: rgb(${selected?.color.red}, ${selected?.color.green}, ${selected?.color.blue})`" />
+							<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: rgb(${selected?.color.red}, ${selected?.color.green}, ${selected?.color.blue})`"></span>
 							<span class="ml-3 block truncate">{{ selected?.callsign ?? "No cockpits available" }}</span>
 						</span>
 						<span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -33,7 +33,7 @@
 							<ListboxOption as="template" v-for="aircraft in selectableAircraft" :value="aircraft" v-slot="{ active, selected }">
 								<li :class="[active ? 'bg-sky-600 text-white' : 'text-gray-900', 'relative cursor-default select-none py-2 pl-3 pr-9']">
 									<div class="flex items-center">
-										<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: rgb(${aircraft.color.red}, ${aircraft.color.green}, ${aircraft.color.blue})`" />
+										<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full" :style="`background-color: rgb(${aircraft.color.red}, ${aircraft.color.green}, ${aircraft.color.blue})`"></span>
 										<span :class="[selected ? 'font-semibold' : 'font-normal', 'ml-3 block truncate']">
 											{{ aircraft.callsign }}
 										</span>
@@ -88,10 +88,6 @@ const cavokManager = inject(CAVOK_MANAGER);
 const openAlert = inject(OPEN_ALERT);
 
 const connecting = ref(false);
-const connected = ref(false);
-watchEffect(() => {
-	connected.value = cavokManager?.connected ?? false;
-});
 
 async function connect() {
 	if (!cavokManager || !openAlert) return;

@@ -399,6 +399,10 @@ const bestRangeDI200: AltitudeValues = {
 };
 
 export function bestRange(weight: number, densityAltitude: number, dragIndex: number): TableEntry {
+    if (densityAltitude < 0) {
+        densityAltitude = 0;
+    }
+
     function getDITableEntry(table: AltitudeValues): TableEntry {
         return {
             max: {

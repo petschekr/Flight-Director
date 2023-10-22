@@ -963,6 +963,10 @@ const bestClimbDI400: BestClimbValues = {
 };
 
 export function bestClimb(weight: number, densityAltitude: number, dragIndex: number): TableEntry | null {
+	if (densityAltitude < 0) {
+		densityAltitude = 0;
+	}
+
 	function getDITableEntry(table: BestClimbValues): TableEntry | null {
 		let entry = {
 			vy: interpolateTable(table, densityAltitude, weight, values => values?.vy ?? null),
