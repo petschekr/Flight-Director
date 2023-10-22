@@ -43,6 +43,20 @@ export class CavokManager {
 		this.username = `flightdirector-${Math.floor(Math.random() * 100000)}`;
 	}
 
+	public async disconnect() {
+		this.connected = false;
+		this.socket?.close();
+
+		await fetch(`https://${this.CAVOK_DOMAIN}/auth/session/end`, {
+			method: "POST",
+			body: null,
+			headers: {
+				Authorization: `Bearer ${this.token}`,
+			},
+		});
+		this.token = null;
+	}
+
 	public async connect() {
 		let sessionCheckRequest = await fetch(`https://${this.CAVOK_DOMAIN}/auth/session/check/${this.username}`);
 		let sessionCheckResponse: { result: string } = await sessionCheckRequest.json();
@@ -96,6 +110,15 @@ export class CavokManager {
 				clearInterval(this.socketKeepAliveInterval);
 			}
 			this.selectedCallsign = null;
+			this.aircraft = new Map();
+
+			if (this.connected) {
+				// If we were previously connected, attempt reconnection
+				// disconnect() sets this.connected = false to prevent reconnection
+				// Note: reconnection errors will be ignored
+				this.connect();
+			}
+
 			this.connected = false;
 		});
 		this.socket.addEventListener("message", this.processMessage.bind(this));

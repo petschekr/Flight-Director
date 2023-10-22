@@ -15,8 +15,8 @@
 		</button>
 
 		<div v-if="cavokManager?.connected">
-			<div class="grid grid-cols-2 gap-6">
-				<Listbox as="div" v-model="selected" class="z-20">
+			<div class="grid grid-cols-5 gap-6">
+				<Listbox as="div" v-model="selected" class="z-20 col-span-2">
 					<ListboxLabel class="block text-sm font-medium leading-6 text-gray-900">Cockpit</ListboxLabel>
 					<div class="relative mt-2">
 						<ListboxButton class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-600 sm:text-sm sm:leading-6">
@@ -50,11 +50,17 @@
 					</div>
 				</Listbox>
 
-				<div>
+				<div class="col-span-2">
 					<p>Airspeed: {{ selectedAircraftData ? Math.round(metersPerSecondToKnots(selectedAircraftData.ESDComponent.indicatedAirSpeed)) : 0 }} KIAS</p>
 					<p>Altitude MSL: {{ selectedAircraftData ? Math.round(metersToFeet(selectedAircraftData.PositionComponent.position.altitude)).toLocaleString() : 0 }} ft</p>
 					<p>Density Altitude: {{ selectedAircraftData ? Math.round(metersToFeet(selectedAircraftData.ESDComponent.densityAltitude)).toLocaleString() : 0 }} ft</p>
 					<p>Height Above Terrain: {{ selectedAircraftData ? Math.round(metersToFeet(selectedAircraftData.ESDComponent.verticalHeightAboveTarget)).toLocaleString() : 0 }} ft</p>
+				</div>
+
+				<div class="col-span-1 self-center">
+					<button @click="disconnect" class="self-end inline-flex rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 transition ease-in-out duration-150 disabled:cursor-not-allowed disabled:opacity-70">
+						Disconnect
+					</button>
 				</div>
 			</div>
 
@@ -137,6 +143,10 @@ async function connect() {
 		return;
 	}
 }
+async function disconnect() {
+	if (!cavokManager) return;
+	await cavokManager.disconnect();
+}
 
 const selectableAircraft= ref<AircraftData[]>([...(cavokManager?.aircraft.values() ?? [])]);
 const selected = ref<AircraftData | undefined>(cavokManager?.selectedCallsign ? cavokManager?.aircraft.get(cavokManager.selectedCallsign) : undefined);
@@ -154,6 +164,7 @@ watch([aircraftEmptyWeight, aircraftStoresWeight], () => {
 	cavokManager.storesWeight = aircraftStoresWeight.value;
 });
 const selectedAircraftData = computed(() => {
+	if (!cavokManager?.connected) return null;
 	if (!cavokManager?.selectedCallsign) return null;
 	let aircraftData = cavokManager.aircraft.get(cavokManager.selectedCallsign);
 	if (!aircraftData) return null;
