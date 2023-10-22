@@ -53,7 +53,7 @@
 				<div>
 					<p>Airspeed: {{ selectedAircraftData ? Math.round(metersPerSecondToKnots(selectedAircraftData.ESDComponent.indicatedAirSpeed)) : 0 }} KIAS</p>
 					<p>Altitude MSL: {{ selectedAircraftData ? Math.round(metersToFeet(selectedAircraftData.PositionComponent.position.altitude)).toLocaleString() : 0 }} ft</p>
-					<p>Density Alt: {{ selectedAircraftData ? Math.round(metersToFeet(selectedAircraftData.ESDComponent.densityAltitude)).toLocaleString() : 0 }} ft</p>
+					<p>Density Altitude: {{ selectedAircraftData ? Math.round(metersToFeet(selectedAircraftData.ESDComponent.densityAltitude)).toLocaleString() : 0 }} ft</p>
 					<p>Height Above Terrain: {{ selectedAircraftData ? Math.round(metersToFeet(selectedAircraftData.ESDComponent.verticalHeightAboveTarget)).toLocaleString() : 0 }} ft</p>
 				</div>
 			</div>

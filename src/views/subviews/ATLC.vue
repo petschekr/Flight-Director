@@ -203,7 +203,7 @@
 					<div class="grow">
 						<label for="weight" class="block text-sm font-medium leading-6 whitespace-nowrap truncate text-gray-900">Aircraft Weight</label>
 						<div class="mt-1 flex rounded-md">
-							<input type="number" id="weight" min="5000" max="11700" step="100" v-model="aircraftWeight" class="block w-full flex-1 rounded-none rounded-l-md border-0 py-1.5 pr-1 text-center sm:text-lg text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 uppercase placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:leading-6" />
+							<input type="number" id="weight" min="5000" max="11700" step="100" v-model="aircraftWeight" :disabled="!!cavokManager?.selectedCallsign" class="block w-full flex-1 rounded-none rounded-l-md border-0 py-1.5 pr-1 text-center sm:text-lg text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 uppercase placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:leading-6" />
 							<span class="inline-flex items-center rounded-r-md border border-l-0 shadow-sm border-gray-300 bg-gray-50 px-1 text-sm text-gray-500 z-0">lbs</span>
 						</div>
 					</div>
@@ -285,6 +285,10 @@
 					</div>
 				</dl>
 			</div>
+
+			<p v-if="cavokManager?.selectedCallsign" class="mt-2 text-center">
+				Connected to: <strong>{{ cavokManager?.selectedCallsign }}</strong> <span v-if="isAirborne">(airborne)</span>
+			</p>
 		</section>
 	</div>
 
@@ -388,14 +392,16 @@ import { ArrowUpCircleIcon } from "@heroicons/vue/24/solid";
 import toml from "toml";
 
 import type { Performance } from "@/types/configuration";
-import { OPEN_ALERT } from "@/types/keys"
+import { CAVOK_MANAGER, OPEN_ALERT } from "@/types/keys"
 
 import * as ATLCPerformance from "@/performance/ATLC";
 import * as GlidePerformance from "@/performance/glide";
 import * as DAFIF from "@/performance/DAFIF";
 import { bestClimb } from "@/performance/climb";
+import { metersPerSecondToKnots, metersToFeet } from "@/performance/units";
 
 const openAlert = inject(OPEN_ALERT);
+const cavokManager = inject(CAVOK_MANAGER);
 
 const icao = ref(localStorage.getItem("icao") ?? "");
 const windDirection = ref(parseInt(localStorage.getItem("windDirection") ?? "0"));
@@ -405,6 +411,18 @@ const temperature = ref(parseInt(localStorage.getItem("temperature") ?? "15"));
 // TODO: click for unit change
 const altimeter = ref(parseFloat(localStorage.getItem("altimeter") ?? "29.92"));
 const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "11000"));
+
+const isAirborne = ref(false);
+watchEffect(() => {
+	if (!cavokManager || !cavokManager.selectedCallsign) return;
+
+	let aircraftData = cavokManager.aircraft.get(cavokManager.selectedCallsign);
+	if (!aircraftData) return;
+
+	aircraftWeight.value = Math.round(cavokManager.emptyWeight + cavokManager.storesWeight + aircraftData.ESDComponent?.fuelRemaining ?? 0);
+
+	isAirborne.value = metersPerSecondToKnots(aircraftData.ESDComponent.indicatedAirSpeed) > 50;
+});
 
 const selectedAirfield: Ref<DAFIF.Airport | null> = ref(null);
 const selectedAirfieldRunways: Ref<DAFIF.Runway[]> = ref([]);
@@ -517,11 +535,16 @@ const bestRateOfClimb = computed(() => {
 	if (!selectedAirfield.value) return null;
 	let elevation = parseInt(selectedAirfield.value.ELEV);
 
-	let result = bestClimb(
-		aircraftWeight.value,
-		ATLCPerformance.densityAltitude(elevation, altimeter.value, temperature.value),
-		dragIndex.value
-	);
+	let densityAltitude = ATLCPerformance.densityAltitude(elevation, altimeter.value, temperature.value);
+	// If above 50 knots, aircraft is airborne so use the aircraft's density altitude instead of the airfield's
+	if (cavokManager?.selectedCallsign) {
+		let aircraftData = cavokManager.aircraft.get(cavokManager.selectedCallsign);
+		if (aircraftData && isAirborne.value) {
+			densityAltitude = metersToFeet(aircraftData.ESDComponent.densityAltitude);
+		}
+	}
+
+	let result = bestClimb(aircraftWeight.value, densityAltitude, dragIndex.value);
 	if (result === null) return null;
 	return {
 		vy: Math.round(result.vy),
