@@ -35,7 +35,11 @@
 						Set an average fuel flow to automatically update the aircaft weight.
 					</template>
 					<template v-else>
-						Connected to: <strong>{{ cavokManager?.selectedCallsign }}</strong>
+						<div class="flex items-center">
+							Connected to:
+							<span class="inline-block h-4 w-4 flex-shrink-0 rounded-full ml-2 mr-1" :style="`background-color: ${getSelectedAircraftColor()}`"></span>
+							<strong>{{ cavokManager?.selectedCallsign }}</strong>
+						</div>
 					</template>
 				</p>
 			</div>
@@ -66,7 +70,7 @@
 							<input type="number" id="fuel-flow" v-model="fuelFlow" min="0" max="300" step="10" :disabled="!!cavokManager?.selectedCallsign"
 								class="block w-full flex-1 rounded-none rounded-l-md border-gray-300 focus:border-sky-500 focus:ring-sky-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:text-sm z-10" />
 							<span
-								class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 z-0">lbs/hour</span>
+								class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 z-0">lbs/hr</span>
 						</div>
 						<p class="mt-2 text-sm text-gray-500">Used to automatically update weight. Set to 0 to disable.</p>
 					</div>
@@ -125,6 +129,17 @@ const performance: Ref<Performance | null> = ref(null);
 
 const openAlert = inject(OPEN_ALERT);
 const cavokManager = inject(CAVOK_MANAGER);
+
+function getSelectedAircraftColor(): string {
+	if (!cavokManager?.selectedCallsign) {
+		return "rgb(0, 0, 0)";
+	}
+	let aircraft = cavokManager.aircraft.get(cavokManager.selectedCallsign);
+	if (!aircraft) {
+		return "rgb(0, 0, 0)";
+	}
+	return `rgb(${aircraft.GCSComponent.color.red}, ${aircraft.GCSComponent.color.green}, ${aircraft.GCSComponent.color.blue})`;
+}
 
 const dragItems = computed(() => {
 	if (!performance.value) return [];
