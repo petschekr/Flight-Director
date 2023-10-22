@@ -125,4 +125,119 @@ export class CavokManager {
 	public addChangeListener(listener: (aircraft: Map<string, AircraftData>) => void) {
 		this.listeners.push(listener);
 	}
+
+	public async mockCavokConnection() {
+		this.connected = true;
+
+		setInterval(() => {
+			function getAircraftData(callsign: string, color: { red: number; green: number; blue: number }): AircraftData {
+				return {
+					SensorPointOfInterest: {
+						sensorRelativeAzimuth: 0,
+						sensorRelativeDepression: 0,
+						sensorRelativeRollAngle: 0,
+						sensorElevationAngle: 0,
+						sensorPointingAzimuth: 0,
+						slantRange: 0,
+						sensorRollAngle: 0,
+						sensorNameString: 0,
+						targetLatitude: 0,
+						targetLongitude: 0,
+						targetElevation: 0,
+						targetWidth: 0,
+						upperRightLatitude: 0,
+						upperRightLongitude: 0,
+						lowerRightLatitude: 0,
+						lowerRightLongitude: 0,
+						upperLeftLatitude: 0,
+						upperLeftLongitude: 0,
+						lowerLeftLatitude: 0,
+						lowerLeftLongitude: 0,
+						hasValidCorners: true,
+						inPositionMode: false,
+					},
+					SourcesComponent: {
+						sources: ["KLV"],
+					},
+					PositionComponent: {
+						position: {
+							positionType: "Geodetic3D",
+							coordinates: [0, 0],
+							altitude: 5484.239,
+						},
+					},
+					GCSComponent: {
+						gcsId: "abcd",
+						name: "5050",
+						callsign: null,
+						color: {
+							red: color.red,
+							green: color.green,
+							blue: color.blue,
+							alpha: 0,
+						},
+						sourceFeed: "KLV",
+					},
+					VelocityComponent: {
+						speed: 69,
+						course: 4.196,
+						verticalSpeed: null,
+					},
+					CallsignComponent: {
+						callsign,
+					},
+					ESDComponent: {
+						indicatedAirSpeed: 50,
+						temperature: 0,
+						classification: null,
+						icing: "NO",
+						missionNumber: "19",
+						staticPressure: 0,
+						densityAltitude: Math.random() * 6000,
+						sensorTrueAltitude: 0,
+						horizontalFieldOfView: 0,
+						verticalFieldOfView: 0,
+						platformTailNumberString: "AF0000",
+						groundRange: 0,
+						laserPRF: 1111,
+						sensorFieldOfViewName: 1,
+						magneticHeading: 4.194,
+						verticalHeightAboveTarget: Math.random() * 6000,
+						fuelRemaining: Math.random() * 3000, // in pounds
+						sensorPointingAzimuth: 0,
+						sensorElevationAngle: 0,
+						slantRange: 0,
+						trueAirspeed: 69,
+					},
+					AttitudeComponent: {
+						roll: 0,
+						pitch: 0,
+						yaw: 0,
+					},
+					WeatherComponent: {
+						windSpeed: 9.4117,
+						windDirection: 4.835,
+					},
+					ClassificationComponent: {
+						category: "AIR",
+						identity: "FRIEND",
+						platform: 20,
+						specificType: 0,
+						flightId: null,
+					},
+				};
+			}
+
+			let aircraft1 = getAircraftData("5050 / TEST", { red: 255, green: 40, blue: 20 });
+			let aircraft2 = getAircraftData("5051 / TEST", { red: 20, green: 40, blue: 255 });
+			let wrapper = {
+				eventName: "BatchTrackEvent",
+				target: [
+					{ components: aircraft1 },
+					{ components: aircraft2 },
+				],
+			};
+			this.processMessage({ data: JSON.stringify(wrapper) } as MessageEvent<string>);
+		}, 2000);
+	}
 }

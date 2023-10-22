@@ -93,7 +93,12 @@ async function connect() {
 	if (!cavokManager || !openAlert) return;
 
 	try {
-		await cavokManager.connect();
+		if (import.meta.env.DEV) {
+			await cavokManager.mockCavokConnection();
+		}
+		else {
+			await cavokManager.connect();
+		}
 	}
 	catch (err: any) {
 		await openAlert("Connection failure", err.message);
