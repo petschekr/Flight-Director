@@ -831,7 +831,7 @@ async function pullWeatherData() {
 		}
 		wxUpdateText.value = `Last updated ${lastUpdateText} ago`;
 
-		windDirection.value = latestMETAR.wind.direction ?? 0;
+		windDirection.value = (latestMETAR.wind.direction ?? 0) - Math.round(getMagVar()); // Convert true heading to magnetic
 		windSpeed.value = latestMETAR.wind.speed ?? 0;
 		windGust.value = latestMETAR.wind.gust ?? 0;
 		temperature.value = latestMETAR.temperature ?? 15;
@@ -872,7 +872,7 @@ async function pullWeatherData() {
 			if (desiredTime.valueOf() >= tafLine.valid_time * 1000) {
 				if (tafLine.type !== "TEMPO" || tafLine.valid_range.to * 1000 > desiredTime.valueOf()) {
 					if (tafLine.wind) {
-						windDirection.value = tafLine.wind.direction ?? 0;
+						windDirection.value = (tafLine.wind.direction ?? 0) - Math.round(getMagVar()); // Convert true heading to magnetic
 						windSpeed.value = tafLine.wind.speed ?? 0;
 						windGust.value = tafLine.wind.gust ?? 0;
 					}
