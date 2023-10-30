@@ -102,7 +102,7 @@ export class CavokManager {
 			// Keep the server connection alive by sending a blank message every so often
 			this.socketKeepAliveInterval = setInterval(() => {
 				this.socket?.send("");
-			}, 10000);
+			}, 2000);
 			this.connected = true;
 		});
 		this.socket.addEventListener("close", () => {
