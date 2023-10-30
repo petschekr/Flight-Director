@@ -1001,7 +1001,7 @@ function drawAirfieldDiagram() {
 	}
 
 	// Draw runways
-	for (let runway of selectedAirfieldRunways.value) {
+	for (let runway of selectedAirfieldRunways.value.sort(a => a.HIGH_IDENT === selectedRunway.value?.HIGH_IDENT && a.LOW_IDENT === selectedRunway.value.LOW_IDENT ? 1 : -1)) {
 		let isSelected = runway.HIGH_IDENT === selectedRunway.value.HIGH_IDENT && runway.LOW_IDENT === selectedRunway.value.LOW_IDENT;
 		let highEnd = mapCoordinateToFrame([parseFloat(runway.HE_WGS_DLONG), parseFloat(runway.HE_WGS_DLAT)], 0.8);
 		let lowEnd  = mapCoordinateToFrame([parseFloat(runway.LE_WGS_DLONG), parseFloat(runway.LE_WGS_DLAT)], 0.8);
