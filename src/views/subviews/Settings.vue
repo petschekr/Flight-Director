@@ -12,7 +12,7 @@
 			</Switch>
 		</SwitchGroup>
 		<div class="text-center text-lg mt-2">
-			<code>Flight Director v0.11.2 @ {{commitHash}}</code>
+			<code>Flight Director v0.11.3 @ {{commitHash}}</code>
 		</div>
 		<div class="mt-2">
 			<p><code>v0.11.0</code>: Cavok integration pulls live aircraft data for the performance calculators automatically, implement best rate of climb calculation</p>
