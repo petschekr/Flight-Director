@@ -112,14 +112,15 @@ export class CavokManager {
 			this.selectedCallsign = null;
 			this.aircraft = new Map();
 
-			if (this.connected) {
+			let shouldReconnect = this.connected;
+			this.connected = false;
+
+			if (shouldReconnect) {
 				// If we were previously connected, attempt reconnection
 				// disconnect() sets this.connected = false to prevent reconnection
 				// Note: reconnection errors will be ignored
 				this.connect();
 			}
-
-			this.connected = false;
 		});
 		this.socket.addEventListener("message", this.processMessage.bind(this));
 	}
