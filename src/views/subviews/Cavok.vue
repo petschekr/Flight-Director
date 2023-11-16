@@ -50,7 +50,7 @@
 					</div>
 				</Listbox>
 
-				<div class="col-span-2">
+				<div class="col-span-2 select-none" @dblclick="showHUD = !showHUD">
 					<p>Airspeed: {{ selectedAircraftData ? Math.round(metersPerSecondToKnots(selectedAircraftData.ESDComponent.indicatedAirSpeed)) : 0 }} KIAS</p>
 					<p>Altitude MSL: {{ selectedAircraftData ? Math.round(metersToFeet(selectedAircraftData.PositionComponent.position.altitude)).toLocaleString() : 0 }} ft</p>
 					<p>Density Altitude: {{ selectedAircraftData ? Math.round(metersToFeet(selectedAircraftData.ESDComponent.densityAltitude)).toLocaleString() : 0 }} ft</p>
@@ -108,13 +108,13 @@
 		</div>
 	</div>
 
-	<div class="mt-4 bg-white px-4 py-5 shadow sm:rounded-lg sm:p-6" v-if="false">
+	<div class="mt-4 bg-white px-4 py-5 shadow sm:rounded-lg sm:p-6" v-if="showHUD" @dblclick="showHUD = false">
 		<canvas class="w-full" ref="hud"></canvas>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { ref, inject, watch, computed } from "vue";
+import { ref, inject, watch, computed, watchEffect } from "vue";
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/vue/20/solid";
 
@@ -198,5 +198,47 @@ function getAircraftColor(aircraft?: AircraftData): string {
 ///////////////////////////////////////////////////
 
 const hud = ref<HTMLCanvasElement | null>(null);
+const showHUD = ref(false);
+
+function drawHUD() {
+	if (!hud.value || !selectedAircraftData.value) return;
+
+	let { width, height } = hud.value.getBoundingClientRect();
+	let deviceScale = window.devicePixelRatio;
+	width = Math.floor(width * deviceScale);
+	height = Math.floor(height * deviceScale);
+	if (width === 0 || height === 0) return;
+	hud.value.width = width;
+	hud.value.height = height;
+	const ctx = hud.value.getContext("2d")!;
+	// ctx.scale(deviceScale, deviceScale);
+	ctx.clearRect(0, 0, width, height);
+
+	// Test
+	// selectedAircraftData.value.AttitudeComponent.roll = -10 * (Math.PI / 180);
+	// selectedAircraftData.value.AttitudeComponent.pitch = -15 * (Math.PI / 180);
+
+	const PITCH_FACTOR = height / (20 * 2 * (Math.PI / 180));
+
+	ctx.save();
+	ctx.translate(width / 2, height / 2);
+	let x1 = Math.cos(selectedAircraftData.value.AttitudeComponent.roll + Math.PI) * width;
+	let y1 = Math.sin(selectedAircraftData.value.AttitudeComponent.roll + Math.PI) * height + (selectedAircraftData.value.AttitudeComponent.pitch * PITCH_FACTOR);
+	let x2 = Math.cos(selectedAircraftData.value.AttitudeComponent.roll) * width;
+	let y2 = Math.sin(selectedAircraftData.value.AttitudeComponent.roll) * height + (selectedAircraftData.value.AttitudeComponent.pitch * PITCH_FACTOR);
+
+	ctx.lineWidth = 5;
+	ctx.strokeStyle = "#2ECC40";
+	ctx.beginPath();
+	ctx.moveTo(x1, y1);
+	ctx.lineTo(x2, y2);
+	ctx.stroke();
+	ctx.restore();
+
+	window.requestAnimationFrame(drawHUD);
+}
+watch([hud, selectedAircraftData], () => {
+	window.requestAnimationFrame(drawHUD);
+});
 
 </script>
