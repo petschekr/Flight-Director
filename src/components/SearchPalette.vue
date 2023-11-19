@@ -20,7 +20,7 @@
 									placeholder="Search..." autocomplete="off" @change="rawQuery = $event.target.value" />
 							</div>
 
-							<ComboboxOptions v-if="filteredCallsigns.length > 0 || filteredFiles.length > 0 || filteredDirectories.length > 0" static
+							<ComboboxOptions v-if="filteredCallsigns.length > 0 || filteredFiles.length > 0" static
 								class="max-h-80 scroll-py-10 scroll-pb-2 space-y-4 overflow-y-auto p-4 pb-2">
 								<li v-if="filteredCallsigns.length > 0">
 									<h2 class="text-xs font-semibold text-gray-900">Callsigns</h2>
@@ -47,17 +47,6 @@
 										</ComboboxOption>
 									</ul>
 								</li>
-								<!-- <li v-if="filteredDirectories.length > 0">
-									<h2 class="text-xs font-semibold text-gray-900">Folders</h2>
-									<ul class="-mx-4 mt-2 text-sm text-gray-700">
-										<ComboboxOption v-for="directory in filteredDirectories" :key="directory.name" :value="directory" as="template" v-slot="{ active }">
-											<li :class="['flex cursor-default select-none items-center px-4 py-2', active && 'bg-sky-600 text-white']">
-												<FolderIcon :class="['h-6 w-6 flex-none', active ? 'text-white' : 'text-gray-400']" />
-												<span class="ml-3 flex-auto truncate">{{ directory.name }}</span>
-											</li>
-										</ComboboxOption>
-									</ul>
-								</li> -->
 							</ComboboxOptions>
 
 							<div v-if="rawQuery === '?'" class="py-14 px-6 text-center text-sm sm:px-14">
@@ -66,7 +55,7 @@
 								<p class="mt-2 text-gray-500">Use this tool to quickly search all pre-configured callsigns, files, and folders. Full network drive search coming soon.</p>
 							</div>
 
-							<div v-if="query !== '' && rawQuery !== '?' && filteredCallsigns.length === 0 && filteredDirectories.length === 0 && filteredFiles.length === 0"
+							<div v-if="query !== '' && rawQuery !== '?' && filteredCallsigns.length === 0 && filteredFiles.length === 0"
 								class="py-14 px-6 text-center text-sm sm:px-14">
 								<ExclamationTriangleIcon class="mx-auto h-6 w-6 text-gray-400" />
 								<p class="mt-4 font-semibold text-gray-900">No results found</p>
@@ -110,6 +99,7 @@ import {
 	TransitionChild,
 	TransitionRoot,
 } from "@headlessui/vue";
+import Fuse from "fuse.js";
 
 import type { Card as ConfigFileEntry, Configuration } from "@/types/configuration";
 import { CONFIGURATION } from "@/types/keys"
@@ -149,12 +139,33 @@ const filteredCallsigns = computed(() => {
 	}
 	return [];
 });
-// 	rawQuery.value === '!'
-// 		? projects
-// 		: query.value === '' || rawQuery.value.startsWith('>')
-// 			? []
-// 			: projects.filter((project) => project.name.toLowerCase().includes(query.value))
-// );
+
+const fuseOptions = {
+	includeScore: true,
+	keys: [
+		{
+			name: "name",
+			weight: 2,
+		},
+		{
+			name: "description",
+			weight: 1,
+		},
+		{
+			name: "searchTerms",
+			weight: 1.5,
+		},
+	],
+};
+let fuse = new Fuse<ConfigFileEntry>([], fuseOptions);
+function updateSearchIndex() {
+	if (!configuration?.value) return;
+	console.log("Configuration changed, updating search index");
+	fuse.setCollection(Object.values(configuration.value.tabs).map(tab => Object.values(tab)).flat(2));
+}
+updateSearchIndex();
+watch(() => configuration, updateSearchIndex);
+
 const filteredFiles = computed((): ConfigFileEntry[] => {
 	if (!configuration?.value) return [];
 
@@ -162,25 +173,7 @@ const filteredFiles = computed((): ConfigFileEntry[] => {
 		return [];
 	}
 	let q = query.value.toLowerCase().trim();
-
-	let allFiles = Object.values(configuration.value.tabs).map(tab => Object.values(tab)).flat(2);
-	let files: ConfigFileEntry[] = allFiles
-		.filter(entry => {
-			return entry.name.toLowerCase().includes(q)
-				|| entry.description.toLowerCase().includes(q)
-				|| entry.searchTerms?.toLowerCase().includes(q)
-				|| entry.path?.toLowerCase().includes(q);
-		});
-		// .sort();
-	return files;
-});
-const filteredDirectories = computed((): ConfigFileEntry[] => {
-	if (!configuration?.value) return [];
-
-	if (query.value === "" || rawQuery.value.startsWith("!")) {
-		return [];
-	}
-	return [];
+	return fuse.search(q).map(result => result.item);
 });
 
 function onSelect(selection: string) {
