@@ -190,7 +190,10 @@ const bestRangeDI50: AltitudeValues = {
         "9000":  { max: { kias: 113, ktas: 185, ff: 197 }, min: { kias: 113, ktas: 185, ff: 193 } },
         "10000": { max: { kias: 115, ktas: 188, ff: 215 }, min: { kias: 111, ktas: 181, ff: 207 } },
         "10500": { max: { kias: 114, ktas: 186, ff: 221 }, min: { kias: 114, ktas: 186, ff: 221 } },
-        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        // Estimated addition (not in -1-1)
+        // The MQ-9 cannot reach 30,000 ft in this configuration. But this entry is used to interpolate
+        // for values slightly above 25,000 DA.
+        "11700": { max: { kias: 113, ktas: 185, ff: 240 }, min: { kias: 113, ktas: 185, ff: 240 } },
     },
     "35000": {
         "5000":  { max: { kias: 93, ktas: 167, ff: 122 }, min: { kias: 93, ktas: 167, ff: 113 } },
@@ -282,7 +285,10 @@ const bestRangeDI100: AltitudeValues = {
         "9000":  { max: { kias: 109, ktas: 178, ff: 204 }, min: { kias: 105, ktas: 172, ff: 193 } },
         "10000": { max: { kias: 113, ktas: 185, ff: 227 }, min: { kias: 113, ktas: 185, ff: 227 } },
         "10500": { max: { kias: 108, ktas: 176, ff: 226 }, min: { kias: 108, ktas: 176, ff: 226 } },
-        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        // Estimated addition (not in -1-1)
+        // The MQ-9 cannot reach 30,000 ft in this configuration. But this entry is used to interpolate
+        // for values slightly above 25,000 DA.
+        "11700": { max: { kias: 106, ktas: 173, ff: 230 }, min: { kias: 106, ktas: 173, ff: 230 } },
     },
     "35000": {
         "5000":  { max: { kias: 92, ktas: 165, ff: 128 }, min: { kias: 85, ktas: 153, ff: 110 } },
