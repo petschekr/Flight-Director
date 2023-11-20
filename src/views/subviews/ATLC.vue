@@ -457,7 +457,7 @@ const tora = computed(() => {
 	return distance.toLocaleString();
 });
 const lda = computed(() => {
-	if (!selectedAirfield.value || !selectedRunway.value) return "-- ft";
+	if (!selectedAirfield.value || !selectedRunway.value) return "--";
 	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HELAND_DIS : selectedRunway.value.LELAND_DIS);
 	if (isNaN(distance)) {
 		distance = parseInt(selectedRunway.value.LENGTH);
