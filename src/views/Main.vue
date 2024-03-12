@@ -110,6 +110,7 @@ provide(CAVOK_MANAGER, cavokManager);
 const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");
 watchEffect(() => {
 	if (!configuration?.value) return;
+	if (configuration.value.callsigns.length === 0) return;
 	// If selectedCallsign is invalid, set it to the first in the list
 	if (!configuration.value.callsigns.map(cs => cs.callsign).includes(selectedCallsign.value)) {
 		selectedCallsign.value = configuration.value.callsigns[0].callsign;
@@ -184,8 +185,52 @@ async function openConfiguration() {
 async function loadDefaultConfiguration() {
 	// Default configuration location is set in the PowerShell server
 	let response = await fetch("/api/config");
-	let configContents = await response.text();
-	await loadConfiguration(configContents, false); // Don't cache the default configuration so the most recent version is always loaded
+	if (response.status === 200) {
+		let configContents = await response.text();
+		await loadConfiguration(configContents, false); // Don't cache the default configuration so the most recent version is always loaded
+	}
+	else if (response.status === 404) {
+		// No default profile set in the PowerShell server
+		let emptyConfiguration: Configuration = {
+			name: "No default profile found",
+			feedbackLocation: "",
+			callsigns: [],
+			sidebarTab: [
+				{
+					component: "FileList",
+					name: "Getting Started",
+					description: "How to set up and use Flight Director",
+					href: "/getting-started",
+					icon: "HomeIcon",
+				},
+				{
+					component: "Settings",
+					name: "Settings",
+					href: "/settings",
+					icon: "Cog6ToothIcon",
+				}
+			],
+			tabs: {
+				"Getting Started": {
+					"Section 1": [
+						{
+							name: "Example Profile",
+							description: "Copy + paste this to get going quickly",
+							abbreviation: "1.",
+							color: "bg-blue-500",
+							type: "Markdown",
+							markdown: {
+								template: `
+Open Notepad and paste the code below into a new text document. Go to File > Save, then ensure \`All files (*.*)\` is selected from the drop down, and name the file \`ProfileName.json\`.
+								`,
+							},
+						}
+					],
+				}
+			},
+		};
+		await loadConfiguration(JSON.stringify(emptyConfiguration), false); // Don't cache the empty configuration
+	}
 }
 async function firstPageLoadConfiguration() {
 	let previousConfiguration = localStorage.getItem("configuration");
