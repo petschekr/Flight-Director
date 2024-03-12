@@ -1,4 +1,4 @@
-import { interpolateTable } from "@/performance/ATLC"
+import { interpolateTable } from "@/performance/ATLC";
 
 interface TableEntry {
     max: {

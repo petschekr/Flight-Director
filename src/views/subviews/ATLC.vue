@@ -355,9 +355,9 @@
 								<label :for="dragItem.name.replace(/ /g, '')" class="font-medium text-gray-700">{{dragItem.name}}</label>
 							</div>
 							<div class="ml-3 flex h-5 items-center">
-								<input v-if="dragItem.multiple" :id="dragItem.name.replace(/ /g, '')" @input="e => updateDragItemSelections(e, dragItem.index)" :value="dragItemSelections[dragItem.index] ?? 0"
+								<input v-if="dragItem.multiple" :id="dragItem.name.replace(/ /g, '')" @input="(e: Event) => updateDragItemSelections(e, dragItem.index)" :value="dragItemSelections[dragItem.index] ?? 0"
 									type="number" min="0" class="w-16 rounded border-gray-300 focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
-								<input v-else :id="dragItem.name.replace(/ /g, '')" @input="e => updateDragItemSelections(e, dragItem.index)" :checked="dragItemSelections[dragItem.index] ? true : false"
+								<input v-else :id="dragItem.name.replace(/ /g, '')" @input="(e: Event) => updateDragItemSelections(e, dragItem.index)" :checked="dragItemSelections[dragItem.index] ? true : false"
 									type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500" />
 							</div>
 						</div>
@@ -389,11 +389,9 @@ import {
 } from "@heroicons/vue/24/outline";
 import { ArrowUpCircleIcon } from "@heroicons/vue/24/solid";
 
-import toml from "toml";
-
-import type { Performance } from "@/types/configuration";
 import { CAVOK_MANAGER, OPEN_ALERT } from "@/types/keys"
 
+import * as drag from "@/performance/drag";
 import * as ATLCPerformance from "@/performance/ATLC";
 import * as GlidePerformance from "@/performance/glide";
 import * as DAFIF from "@/performance/DAFIF";
@@ -525,8 +523,7 @@ const landingRoll = computed(() => {
 	return (Math.ceil(result / ACCURACY) * ACCURACY).toLocaleString();
 });
 const bestGlideSpeed = computed(() => {
-	if (!performance.value) return "--";
-	let result = GlidePerformance.bestGlideSpeed(performance.value, dragIndex.value, true, aircraftWeight.value);
+	let result = GlidePerformance.bestGlideSpeed(dragIndex.value + drag.propDragFeathered, aircraftWeight.value);
 	if (result === null) return "--";
 	return Math.round(result);
 });
@@ -891,26 +888,18 @@ async function pullWeatherData() {
 
 ///////////////////////////////////////////
 
-const performance: Ref<Performance | null> = ref(null);
-
-const dragItems = computed(() => {
-	if (!performance.value) return [];
-	return performance.value["Drag Index"].map((item, index) => ({ ...item, index }));
-});
+const dragItems = computed(() => drag.dragItems.map((item, index) => ({ ...item, index })));
 const dragItemSelections: Ref<number[]> = ref(JSON.parse(localStorage.getItem("dragItemSelections") ?? "[]"));
 
 const dragIndex = computed(() => {
-	if (!performance.value) return 0;
 	let dragIndex = 0;
-	for (let [index, dragItem] of performance.value["Drag Index"].entries()) {
+	for (let [index, dragItem] of drag.dragItems.entries()) {
 		dragIndex += dragItem.drag * (dragItemSelections.value[index] ?? 0);
 	}
 	return dragIndex;
 });
 
 function updateDragItemSelections(event: Event, index: number) {
-	if (!performance.value) return [];
-
 	let target = event.target as HTMLInputElement;
 	let value = 0;
 	if (target.type === "checkbox") {
@@ -935,18 +924,6 @@ watchEffect(() => {
 	localStorage.setItem("altimeter", altimeter.value.toString());
 	localStorage.setItem("aircraftWeight", aircraftWeight.value.toString());
 });
-
-// Load configuration
-try {
-	let response = await fetch("/api/performance");
-	performance.value = toml.parse(await response.text());
-}
-catch (err) {
-	if (openAlert) {
-		await openAlert("Couldn't load configuration", "Error parsing performance configuration file: " + err);
-	}
-	window.location.assign("/");
-}
 
 ///////////////////////////////////////////
 const map: Ref<HTMLCanvasElement | null> = ref(null);
@@ -1115,7 +1092,9 @@ function selectBestWindRunway() {
 }
 
 async function updateAirfield() {
-	if (!openAlert || !performance.value || !icao.value) return;
+	if (!openAlert || !icao.value) return;
+	// TEMPORARY -- SHOULD BE STORED IN PROFILE
+	const DAFIF_LOCATION = "";
 
 	// These airfields have different weather station identifiers run by the DoD
 	switch (icao.value.toUpperCase()) {
@@ -1138,19 +1117,19 @@ async function updateAirfield() {
 	let airport: DAFIF.Airport | null = selectedAirfield.value;
 	selectedAirfield.value = null; // Shows loading text
 	try {
-		airport = await DAFIF.getAirportInfo(performance.value.DAFIFLocation, icao.value);
+		airport = await DAFIF.getAirportInfo(DAFIF_LOCATION, icao.value);
 	}
 	catch (err) {
 		await openAlert("Airport not found", `The identifier ${icao.value.toUpperCase()} could not be found in the DAFIF database. Make sure it's a valid ICAO or FAA location identifier.`);
 		selectedAirfield.value = airport;
 		return;
 	}
-	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(performance.value.DAFIFLocation, airport.ARPT_IDENT);
+	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(DAFIF_LOCATION, airport.ARPT_IDENT);
 	selectedAirfield.value = airport;
 
 	selectBestWindRunway();
 
-	selectedAirfieldComms.value = (await DAFIF.getCommInfo(performance.value.DAFIFLocation, airport.ARPT_IDENT))
+	selectedAirfieldComms.value = (await DAFIF.getCommInfo(DAFIF_LOCATION, airport.ARPT_IDENT))
 		.filter(freq => freq.FREQ_1)
 		.map(freq => {
 			freq.FREQ_1 = freq.FREQ_1.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_1;

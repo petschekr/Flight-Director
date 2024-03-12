@@ -1,63 +1,147 @@
-import type { Performance } from "@/types/configuration";
+import { interpolateTable } from "@/performance/ATLC";
 
-// TODO: use common interpolateTable() code from ATLC.ts
-function interpolateFromData(performanceInfo: Performance, dragIndex: number, feathered: boolean, tableName: keyof Performance, rowKey: string, rowValue: string, compareValue: number): number | null {
-	let dragIndexWithProp = dragIndex + (feathered ? performanceInfo.Propeller.feathered : performanceInfo.Propeller.unfeathered);
+export function bestGlideSpeed(dragIndex: number, weight: number): number | null {
+	type DI_Increments = "0" | "100" | "150" | "200" | "400" | "700";
+	type Weight_Increments = "5000" | "6000" | "7000" | "8000" | "9000" | "10500" | "11700";
+	const glideSpeedTable: {
+		[DI in DI_Increments]: {
+			[Weight in Weight_Increments]: number;
+		};
+	} = {
+		"0": {
+			"5000": 79,
+			"6000": 86,
+			"7000": 93,
+			"8000": 99,
+			"9000": 106,
+			"10500": 114,
+			"11700": 120,
+		},
+		"100": {
+			"5000": 73,
+			"6000": 80,
+			"7000": 86,
+			"8000": 92,
+			"9000": 97,
+			"10500": 105,
+			"11700": 111,
+		},
+		"150": {
+			"5000": 70,
+			"6000": 77,
+			"7000": 83,
+			"8000": 89,
+			"9000": 94,
+			"10500": 102,
+			"11700": 108,
+		},
+		"200": {
+			"5000": 69,
+			"6000": 76,
+			"7000": 82,
+			"8000": 88,
+			"9000": 93,
+			"10500": 100,
+			"11700": 106,
+		},
+		"400": {
+			"5000": 69,
+			"6000": 76,
+			"7000": 82,
+			"8000": 88,
+			"9000": 93,
+			"10500": 100,
+			"11700": 106,
+		},
+		"700": {
+			"5000": 69,
+			"6000": 76,
+			"7000": 82,
+			"8000": 88,
+			"9000": 93,
+			"10500": 100,
+			"11700": 106,
+		},
+	};
 
-	let dragIndices = Object.keys(performanceInfo[tableName]).map(key => parseInt(key));
-	let topIndex = dragIndices.findIndex(value => value >= dragIndexWithProp);
-	if (topIndex === -1) {
-		return null; // Value too big
-	}
-	let bottomIndex = topIndex - 1;
-	if (dragIndexWithProp === dragIndices[topIndex]) {
-		bottomIndex = topIndex;
-	}
-	if (bottomIndex < 0) {
-		return null; // Value too small
-	}
-
-	// TODO: returns NaN when should return 0 for n, inMin, and inMax being same
-	function scale(n: number, inMin: number, inMax: number, outMin: number = 0, outMax: number = 1): number {
-		return (n - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-	}
-
-	let bottomDragIndex = dragIndices[bottomIndex];
-	let topDragIndex = dragIndices[topIndex];
-	let dragIndexRatio = scale(dragIndexWithProp, bottomDragIndex, topDragIndex);
-
-	let bottomRow: any[] = Object.values(performanceInfo[tableName])[bottomIndex];
-	let topRow: any[] = Object.values(performanceInfo[tableName])[topIndex];
-	topIndex = topRow.findIndex(value => value[rowKey] >= compareValue);
-	if (topIndex === -1) {
-		return null; // Value too big
-	}
-	bottomIndex = topIndex - 1;
-	if (compareValue === topRow[topIndex][rowKey]) {
-		bottomIndex = topIndex;
-	}
-	if (bottomIndex < 0) {
-		return null; // Value too small
-	}
-
-	let weightRatio = scale(compareValue, bottomRow[bottomIndex][rowKey], bottomRow[topIndex][rowKey]);
-
-	let speed1 = bottomRow[bottomIndex][rowValue];
-	let speed2 = bottomRow[topIndex][rowValue];
-	let speed3 = topRow[bottomIndex][rowValue];
-	let speed4 = topRow[topIndex][rowValue];
-
-	let dragWeightedSpeed1 = isNaN(dragIndexRatio) ? speed1 : speed1 * (1 - dragIndexRatio) + speed3 * dragIndexRatio;
-	let dragWeightedSpeed2 = isNaN(dragIndexRatio) ? speed2 : speed2 * (1 - dragIndexRatio) + speed4 * dragIndexRatio;
-	let speed = isNaN(weightRatio) ? dragWeightedSpeed1 : dragWeightedSpeed1 * (1 - weightRatio) + dragWeightedSpeed2 * weightRatio;
-
-	return speed;
+	return interpolateTable(glideSpeedTable, dragIndex, weight, speed => speed);
 }
 
-export function bestGlideSpeed(performanceInfo: Performance, dragIndex: number, feathered: boolean, weight: number): number | null {
-	return interpolateFromData(performanceInfo, dragIndex, feathered, "Glide Speed", "weight", "speed", weight);
-}
+export function bestGlideRange(dragIndex: number, hat: number): number | null {
+	type DI_Increments = "0" | "100" | "150" | "200" | "400" | "700";
+	type HAT_Increments = "5000" | "10000" | "15000" | "20000" | "25000" | "30000" | "35000" | "40000" | "45000";
+	const glideRangeTable: {
+		[DI in DI_Increments]: {
+			[HAT in HAT_Increments]: number;
+		};
+	} = {
+		"0": {
+			"5000": 14,
+			"10000": 28,
+			"15000": 42,
+			"20000": 56,
+			"25000": 70,
+			"30000": 84,
+			"35000": 98,
+			"40000": 112,
+			"45000": 124,
+		},
+		"100": {
+			"5000": 12,
+			"10000": 24,
+			"15000": 36,
+			"20000": 48,
+			"25000": 60,
+			"30000": 72,
+			"35000": 84,
+			"40000": 96,
+			"45000": 108,
+		},
+		"150": {
+			"5000": 11,
+			"10000": 22,
+			"15000": 33,
+			"20000": 44,
+			"25000": 55,
+			"30000": 66,
+			"35000": 77,
+			"40000": 88,
+			"45000": 100,
+		},
+		"200": {
+			"5000": 11,
+			"10000": 22,
+			"15000": 32,
+			"20000": 43,
+			"25000": 54,
+			"30000": 65,
+			"35000": 75,
+			"40000": 86,
+			"45000": 97,
+		},
+		"400": {
+			"5000": 8,
+			"10000": 17,
+			"15000": 27,
+			"20000": 35,
+			"25000": 44,
+			"30000": 53,
+			"35000": 61,
+			"40000": 70,
+			"45000": 80,
+		},
+		"700": {
+			"5000": 7,
+			"10000": 14,
+			"15000": 21,
+			"20000": 28,
+			"25000": 36,
+			"30000": 43,
+			"35000": 50,
+			"40000": 57,
+			"45000": 64,
+		},
+	};
 
-export function bestGlideRange(performanceInfo: Performance, dragIndex: number, feathered: boolean, altitude: number): number | null {
-	return interpolateFromData(performanceInfo, dragIndex, feathered, "Glide Range", "altitude", "range", altitude);
+	return interpolateTable(glideRangeTable, dragIndex, hat, dist => dist);
 }

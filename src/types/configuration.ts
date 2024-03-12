@@ -53,30 +53,3 @@ export interface Configuration {
 
 	unsaved?: boolean;
 }
-
-export interface DragIndexEntry {
-	name: string;
-	multiple: boolean;
-	drag: number;
-}
-export interface Performance {
-	DAFIFLocation: string;
-
-	Propeller: {
-		feathered: number;
-		unfeathered: number;
-	};
-	"Drag Index": DragIndexEntry[];
-	"Glide Speed": {
-		[dragIndex: string]: {
-			weight: number;
-			speed: number;
-		}[];
-	};
-	"Glide Range": {
-		[dragIndex: string]: {
-			altitude: number;
-			range: number;
-		}[];
-	}
-}

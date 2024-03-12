@@ -22,7 +22,7 @@
 	</div>
 
 	<p class="text-center mt-4 font-semibold text-lg">{{aircraftWeight.toLocaleString()}} lbs // Drag Index: {{dragIndex}} // DA: {{ densityAltitude.toLocaleString() }} ft // HAT: {{heightAboveTerrain.toLocaleString()}} ft</p>
-	<p class="text-center mb-4 font-semibold text-sm">Engine Out Drag Index: {{(dragIndex + (performance?.Propeller.feathered ?? 0)).toLocaleString()}} ({{(dragIndex + (performance?.Propeller.unfeathered ?? 0)).toLocaleString()}} unfeathered)</p>
+	<p class="text-center mb-4 font-semibold text-sm">Engine Out Drag Index: {{(dragIndex + drag.propDragFeathered).toLocaleString()}} ({{(dragIndex + drag.propDragUnfeathered).toLocaleString()}} unfeathered)</p>
 
 	<div class="bg-white px-4 py-5 shadow sm:rounded-lg sm:p-6">
 		<div class="md:grid md:grid-cols-4 md:gap-6">
@@ -99,9 +99,9 @@
 								<label :for="dragItem.name.replace(/ /g, '')" class="font-medium text-gray-700">{{dragItem.name}}</label>
 							</div>
 							<div class="ml-3 flex h-5 items-center">
-								<input v-if="dragItem.multiple" :id="dragItem.name.replace(/ /g, '')" @input="e => updateDragItemSelections(e, dragItem.index)" :value="dragItemSelections[dragItem.index] ?? 0"
+								<input v-if="dragItem.multiple" :id="dragItem.name.replace(/ /g, '')" @input="(e: Event) => updateDragItemSelections(e, dragItem.index)" :value="dragItemSelections[dragItem.index] ?? 0"
 									type="number" min="0" class="w-16 rounded border-gray-300 focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
-								<input v-else :id="dragItem.name.replace(/ /g, '')" @input="e => updateDragItemSelections(e, dragItem.index)" :checked="dragItemSelections[dragItem.index] ? true : false"
+								<input v-else :id="dragItem.name.replace(/ /g, '')" @input="(e: Event) => updateDragItemSelections(e, dragItem.index)" :checked="dragItemSelections[dragItem.index] ? true : false"
 									type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500" />
 							</div>
 						</div>
@@ -116,16 +116,12 @@
 <script setup lang="ts">
 import { ref, type Ref, inject, computed, watchEffect, onMounted, onUnmounted } from "vue";
 
-import toml from "toml";
-
+import * as drag from "@/performance/drag";
 import { bestGlideSpeed, bestGlideRange } from "@/performance/glide";
 import { bestRange } from "@/performance/range";
 import { metersToFeet } from "@/performance/units";
 
-import type { Performance } from "@/types/configuration";
 import { CAVOK_MANAGER, OPEN_ALERT } from "@/types/keys";
-
-const performance: Ref<Performance | null> = ref(null);
 
 const openAlert = inject(OPEN_ALERT);
 const cavokManager = inject(CAVOK_MANAGER);
@@ -141,24 +137,18 @@ function getSelectedAircraftColor(): string {
 	return `rgb(${aircraft.GCSComponent.color.red}, ${aircraft.GCSComponent.color.green}, ${aircraft.GCSComponent.color.blue})`;
 }
 
-const dragItems = computed(() => {
-	if (!performance.value) return [];
-	return performance.value["Drag Index"].map((item, index) => ({ ...item, index }));
-});
+const dragItems = computed(() => drag.dragItems.map((item, index) => ({ ...item, index })));
 const dragItemSelections: Ref<number[]> = ref(JSON.parse(localStorage.getItem("dragItemSelections") ?? "[]"));
 
 const dragIndex = computed(() => {
-	if (!performance.value) return 0;
 	let dragIndex = 0;
-	for (let [index, dragItem] of performance.value["Drag Index"].entries()) {
+	for (let [index, dragItem] of drag.dragItems.entries()) {
 		dragIndex += dragItem.drag * (dragItemSelections.value[index] ?? 0);
 	}
 	return dragIndex;
 });
 
 function updateDragItemSelections(event: Event, index: number) {
-	if (!performance.value) return [];
-
 	let target = event.target as HTMLInputElement;
 	let value = 0;
 	if (target.type === "checkbox") {
@@ -187,12 +177,10 @@ watchEffect(() => {
 });
 
 const stats = computed(() => {
-	if (!performance.value) return {};
-
-	const bestGlideSpeedFeathered = bestGlideSpeed(performance.value, dragIndex.value, true, aircraftWeight.value)?.toFixed(0);
-	const bestGlideSpeedUnfeathered = bestGlideSpeed(performance.value, dragIndex.value, false, aircraftWeight.value)?.toFixed(0);
-	const bestGlideRangeFeathered = bestGlideRange(performance.value, dragIndex.value, true, heightAboveTerrain.value)?.toFixed(1);
-	const bestGlideRangeUnfeathered = bestGlideRange(performance.value, dragIndex.value, false, heightAboveTerrain.value)?.toFixed(1);
+	const bestGlideSpeedFeathered = bestGlideSpeed(dragIndex.value + drag.propDragFeathered, aircraftWeight.value)?.toFixed(0);
+	const bestGlideSpeedUnfeathered = bestGlideSpeed(dragIndex.value + drag.propDragUnfeathered, aircraftWeight.value)?.toFixed(0);
+	const bestGlideRangeFeathered = bestGlideRange(dragIndex.value + drag.propDragFeathered, heightAboveTerrain.value)?.toFixed(1);
+	const bestGlideRangeUnfeathered = bestGlideRange(dragIndex.value + drag.propDragUnfeathered, heightAboveTerrain.value)?.toFixed(1);
 
 	const bestRangeValues = bestRange(aircraftWeight.value, densityAltitude.value, dragIndex.value);
 
@@ -258,16 +246,4 @@ onMounted(() => {
 onUnmounted(() => {
 	localStorage.setItem("lastWeightUpdate", new Date().valueOf().toString());
 });
-
-// Load configuration
-try {
-	let response = await fetch("/api/performance");
-	performance.value = toml.parse(await response.text());
-}
-catch (err) {
-	if (openAlert) {
-		await openAlert("Couldn't load configuration", "Error parsing performance configuration file: " + err);
-	}
-	window.location.assign("/");
-}
 </script>
