@@ -28,4 +28,4 @@ coverage
 *.sw?
 
 # CUI information
-flightdirector.toml
+flightdirector.json

@@ -38,13 +38,7 @@ try {
 		try {
 			# Serve default config file
 			if ($path.StartsWith("/api/config")) {
-				$item = Get-Item -LiteralPath "FileServe:\flightdirector.toml" -Force -ErrorAction Stop
-				$res.ContentType = "text/plain"
-				$content = [System.IO.File]::ReadAllBytes($item)
-			}
-			# Serve default performance file
-			elseif ($path.StartsWith("/api/performance")) {
-				$item = Get-Item -LiteralPath "FileServe:\performance.toml" -Force -ErrorAction Stop
+				$item = Get-Item -LiteralPath "FileServe:\flightdirector.json" -Force -ErrorAction Stop
 				$res.ContentType = "text/plain"
 				$content = [System.IO.File]::ReadAllBytes($item)
 			}

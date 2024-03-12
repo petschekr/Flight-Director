@@ -29,9 +29,6 @@
 <script setup lang="ts">
 import { provide, ref, type Ref, reactive, onMounted, onUnmounted, watchEffect, watch } from "vue";
 import { useRouter } from "vue-router";
-
-import toml from "toml";
-
 import { ChatBubbleOvalLeftEllipsisIcon } from '@heroicons/vue/24/outline'
 
 import Nav from "@/components/Nav.vue";
@@ -146,7 +143,7 @@ async function loadConfiguration(configContents: string, shouldCache = true) {
 		}
 		else {
 			// Assume TOML
-			configuration.value = toml.parse(configContents);
+			throw new Error("Non-JSON formatted configuration profiles no longer supported");
 		}
 
 		if (shouldCache) {
