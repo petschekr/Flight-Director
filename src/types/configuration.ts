@@ -22,6 +22,7 @@ export namespace Sidebar {
 	}
 	export interface ATLC extends CommonTab {
 		component: "ATLC";
+		dafifLocation: string;
 	}
 	export interface Cavok extends CommonTab {
 		component: "Cavok";

@@ -8,7 +8,7 @@
 
 		<Performance v-if="currentSidebarTab?.component === 'Performance'" />
 
-		<ATLC v-if="currentSidebarTab?.component === 'ATLC'" />
+		<ATLC v-if="currentSidebarTab?.component === 'ATLC'" :dafifLocation="currentSidebarTab.dafifLocation" />
 
 		<Cavok v-if="currentSidebarTab?.component === 'Cavok'" :cavokDomain="currentSidebarTab.cavokDomain" :cavokChannel="currentSidebarTab.cavokChannel" />
 

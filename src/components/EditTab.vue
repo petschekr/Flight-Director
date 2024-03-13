@@ -138,6 +138,21 @@
 														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
 												</div>
 											</div>
+
+											<div v-if="component === 'ATLC'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
+													<label for="tab-dafif-location" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														DAFIF Location
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														The location on the share drive with an unzipped copy of the latest DAFIF available from NGA
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<input type="text" id="tab-dafif-location" v-model="dafifLocation"
+														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
+												</div>
+											</div>
 										</div>
 									</div>
 
@@ -205,6 +220,7 @@ const href = ref<string | undefined>(undefined);
 const description = ref<string | undefined>(undefined);
 const cavokDomain = ref<string | undefined>(undefined);
 const cavokChannel = ref<string | undefined>(undefined);
+const dafifLocation = ref<string | undefined>(undefined);
 
 function loadValues() {
 	if (props.tabIndex !== null) {
@@ -225,6 +241,9 @@ function loadValues() {
 			cavokDomain.value = tabConfig.cavokDomain;
 			cavokChannel.value = tabConfig.cavokChannel;
 		}
+		if (tabConfig.component === "ATLC") {
+			dafifLocation.value = tabConfig.dafifLocation;
+		}
 	}
 	else {
 		// Adding a new tab
@@ -235,6 +254,7 @@ function loadValues() {
 		description.value = "";
 		cavokDomain.value = "vlsb-cav-01.acc.accroot.ds.af.smil.mil";
 		cavokChannel.value = "50th ATKS";
+		dafifLocation.value = "";
 	}
 }
 
@@ -283,6 +303,12 @@ async function saveTab() {
 			return;
 		}
 	}
+	if (component.value === "ATLC") {
+		if (!dafifLocation.value) {
+			await openAlert("DAFIF location required", "Please provide the location of the latest unzipped DAFIF data file available from NGA");
+			return;
+		}
+	}
 	// Check if there is already a tab with this name or href
 	let existingNameIndex = configuration.value.sidebarTab.findIndex(tab => tab.component !== "Spacer" && tab.name === title.value);
 	if (existingNameIndex !== -1 && existingNameIndex !== props.tabIndex) {
@@ -323,8 +349,17 @@ async function saveTab() {
 			if (href.value) {
 				(configuration.value.sidebarTab[props.tabIndex] as Sidebar.Tab).href = href.value;
 			}
-			if (description.value && component.value === "FileList") {
+			if (component.value === "FileList" && description.value) {
 				(configuration.value.sidebarTab[props.tabIndex] as Sidebar.FileList).description = description.value;
+			}
+			if (component.value === "Cavok" && cavokDomain.value) {
+				(configuration.value.sidebarTab[props.tabIndex] as Sidebar.Cavok).cavokDomain = cavokDomain.value;
+			}
+			if (component.value === "Cavok" && cavokChannel.value) {
+				(configuration.value.sidebarTab[props.tabIndex] as Sidebar.Cavok).cavokChannel = cavokChannel.value;
+			}
+			if (component.value === "ATLC" && dafifLocation.value) {
+				(configuration.value.sidebarTab[props.tabIndex] as Sidebar.ATLC).dafifLocation = dafifLocation.value;
 			}
 		}
 	}
@@ -354,6 +389,12 @@ async function saveTab() {
 				...newTab,
 				cavokDomain: cavokDomain.value,
 				cavokChannel: cavokChannel.value,
+			};
+		}
+		if (newTab.component === "ATLC") {
+			newTab = {
+				...newTab,
+				dafifLocation: dafifLocation.value,
 			};
 		}
 		configuration.value.sidebarTab.push(newTab as Required<Sidebar.Entry>);

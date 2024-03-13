@@ -398,6 +398,12 @@ import * as DAFIF from "@/performance/DAFIF";
 import { bestClimb } from "@/performance/climb";
 import { metersPerSecondToKnots, metersToFeet } from "@/performance/units";
 
+import dayjs from "dayjs";
+
+const props = defineProps<{
+	dafifLocation: string;
+}>();
+
 const openAlert = inject(OPEN_ALERT);
 const cavokManager = inject(CAVOK_MANAGER);
 
@@ -1093,22 +1099,36 @@ function selectBestWindRunway() {
 
 async function updateAirfield() {
 	if (!openAlert || !icao.value) return;
-	// TEMPORARY -- SHOULD BE STORED IN PROFILE
-	const DAFIF_LOCATION = "";
+
+	// Do a simplified path replacement on this path (without the callsign logic and the date always set to today)
+	function simplePathReplacement(path: string): string {
+		const date = dayjs();
+		// Date replacement (matches anything surrounded by <> brackets without | before and after)
+		path = path.replace(/<(.*?)>/gi, (_, format) => format[0] !== "|" && format[format.length - 1] !== "|" ? date.format(format) : `<${format}>`);
+
+		// Replace Windows-style path slashes with normal slashes (but not inside <> brackets)
+		// \-style slashes are used in RegExes
+		path = path.replace(/(\\|<.*?>)/g, substring => substring === "\\" ? "/" : substring);
+		return path;
+	}
+	let dafifLocation = simplePathReplacement(props.dafifLocation);
 
 	// These airfields have different weather station identifiers run by the DoD
 	switch (icao.value.toUpperCase()) {
 		case "OMAM":
 			weatherStation.value = "KQGX";
 			break;
-		case "OKAS":
-			weatherStation.value = "KQGV";
+		case "OJMS":
+			weatherStation.value = "KQXH";
 			break;
 		case "OTBH":
 			weatherStation.value = "KQIR";
 			break;
 		case "LICZ":
 			weatherStation.value = "KQNS";
+			break;
+		case "HDCH":
+			weatherStation.value = "KQD3";
 			break;
 		default:
 			weatherStation.value = icao.value;
@@ -1117,19 +1137,19 @@ async function updateAirfield() {
 	let airport: DAFIF.Airport | null = selectedAirfield.value;
 	selectedAirfield.value = null; // Shows loading text
 	try {
-		airport = await DAFIF.getAirportInfo(DAFIF_LOCATION, icao.value);
+		airport = await DAFIF.getAirportInfo(dafifLocation, icao.value);
 	}
 	catch (err) {
 		await openAlert("Airport not found", `The identifier ${icao.value.toUpperCase()} could not be found in the DAFIF database. Make sure it's a valid ICAO or FAA location identifier.`);
 		selectedAirfield.value = airport;
 		return;
 	}
-	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(DAFIF_LOCATION, airport.ARPT_IDENT);
+	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(dafifLocation, airport.ARPT_IDENT);
 	selectedAirfield.value = airport;
 
 	selectBestWindRunway();
 
-	selectedAirfieldComms.value = (await DAFIF.getCommInfo(DAFIF_LOCATION, airport.ARPT_IDENT))
+	selectedAirfieldComms.value = (await DAFIF.getCommInfo(dafifLocation, airport.ARPT_IDENT))
 		.filter(freq => freq.FREQ_1)
 		.map(freq => {
 			freq.FREQ_1 = freq.FREQ_1.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_1;

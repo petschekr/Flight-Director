@@ -161,6 +161,7 @@ function processPathReplacements(path: string, callsign: string = props.selected
 	return path;
 }
 provide(PROCESS_PATH_REPLACEMENTS, processPathReplacements);
+
 function mapPathIdentifiers(card: Card): Card {
 	return {
 		...card,
