@@ -7,13 +7,16 @@ $hostLocation = "http://localhost:5050/"
 Add-Type -AssemblyName System.Security
 Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName Microsoft.VisualBasic
+Add-Type -AssemblyName System.Windows.Forms
 
 $http = [System.Net.HttpListener]::New()
 $http.Prefixes.Add($hostLocation)
 # $http.AuthenticationSchemes = [System.Net.AuthenticationSchemes]::IntegratedWindowsAuthentication
 $http.Start()
 
-New-PSDrive -Name FileServe -PSProvider FileSystem -Root "C:\Users\petsc\Pictures"
+$ROOT_DIRECTORY = "C:\Users\petsc\Pictures"
+
+New-PSDrive -Name FileServe -PSProvider FileSystem -Root $ROOT_DIRECTORY
 # [System.Diagnostics.Process]::Start("msedge", $hostLocation) # Or "chrome"
 Start-Process $hostLocation
 
@@ -110,6 +113,32 @@ try {
 				$streamReader = [System.IO.StreamReader]::new($req.InputStream)
 				$body = $streamReader.ReadToEnd()
 				New-Item -Path "FileServe:\$path" -ItemType File -Force -Value $body
+			}
+			# Opens the Windows file picker
+			elseif ($path.StartsWith("/api/pick")) {
+				Write-Host "pick1"
+				$dialog = New-Object System.Windows.Forms.OpenFileDialog
+				Write-Host "pick2"
+				$dialog.Title = "Choose a file"
+				$dialog.InitialDirectory = $ROOT_DIRECTORY
+				$success = $dialog.ShowDialog()
+				Write-Host "pick3a"
+
+				$info = @{ success = $success }
+				Write-Host "pick3b"
+				if ($success) {
+					$rootPath = [IO.Path]::GetFullPath($ROOT_DIRECTORY)
+					$subPath  = [IO.Path]::GetFullPath($dialog.FileName)
+					$info["valid"] = $subPath.StartsWith($rootPath, [StringComparison]::OrdinalIgnoreCase)
+					if ($info["valid"]) {
+						$info["fileName"] = $dialog.FileName
+					}
+				}
+				Write-Host "pick4"
+
+				$content = $info | ConvertTo-Json
+				$res.ContentType = "application/json"
+				$content = [System.Text.Encoding]::UTF8.GetBytes($content)
 			}
 			elseif ($path.StartsWith("/api/sharepoint/login")) {
 				# Bring the certificate prompt to foreground

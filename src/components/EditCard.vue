@@ -307,6 +307,7 @@
 												<div class="sm:col-span-2">
 													<textarea id="card-path" rows="4" v-model="path"
 														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"></textarea>
+													<button @click="selectWithFilePicker(ref(path))" type="button" class="mt-4 block w-full rounded-md bg-sky-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600">Select File</button>
 													<br />
 													<code class="[overflow-wrap:anywhere]">{{pathPreview}}</code>
 												</div>
@@ -472,6 +473,17 @@ const searchExpressionError = computed(() => {
 	return "";
 });
 
+async function selectWithFilePicker(ref: Ref<string>) {
+	let pickResponse = await fetch("/api/pick");
+	let pickInfo: {
+		success: boolean; // Whether the pick operation was executed or canceled
+		valid?: boolean; // Whether the user picked a file under the root folder
+		fileName?: string;
+	} = await pickResponse.json();
+	if (pickInfo.success && pickInfo.valid) {
+		ref.value = pickInfo.fileName ?? "";
+	}
+}
 async function editCard() {
 	await saveCard();
 	if (isOpen.value) return; // Return if saveCard() rejected for some reason
