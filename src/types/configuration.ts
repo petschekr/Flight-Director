@@ -11,26 +11,28 @@ export namespace Sidebar {
 		href: string;
 	}
 	export interface FileList extends CommonTab {
-		component: "FileList",
+		component: "FileList";
 		description: string;
 	}
 	export interface AllFiles extends CommonTab {
-		component: "AllFiles",
+		component: "AllFiles";
 	}
 	export interface Performance extends CommonTab {
-		component: "Performance",
+		component: "Performance";
 	}
 	export interface ATLC extends CommonTab {
-		component: "ATLC",
+		component: "ATLC";
 	}
 	export interface Cavok extends CommonTab {
-		component: "Cavok",
+		component: "Cavok";
+		cavokDomain: string;
+		cavokChannel: string;
 	}
 	export interface Settings extends CommonTab {
-		component: "Settings",
+		component: "Settings";
 	}
 	export interface Spacer {
-		component: "Spacer",
+		component: "Spacer";
 	}
 }
 

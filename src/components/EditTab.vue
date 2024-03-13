@@ -50,7 +50,7 @@
 												</div>
 											</div>
 
-											<div class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+											<div v-if="component !== 'Spacer'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="tab-icon" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
 														Icon
@@ -65,7 +65,7 @@
 												</div>
 											</div>
 
-											<div class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+											<div v-if="component !== 'Spacer'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="tab-title" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
 														Title
@@ -80,7 +80,7 @@
 												</div>
 											</div>
 
-											<div class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+											<div v-if="component !== 'Spacer'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="tab-href" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
 														URL
@@ -95,7 +95,7 @@
 												</div>
 											</div>
 
-											<div class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+											<div v-if="component === 'FileList'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
 												<div>
 													<label for="tab-description" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
 														Description
@@ -106,6 +106,35 @@
 												</div>
 												<div class="sm:col-span-2">
 													<textarea id="tab-description" rows="2" v-model="description"
+														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
+												</div>
+											</div>
+
+											<div v-if="component === 'Cavok'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
+													<label for="tab-cavok-domain" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Cavok Domain
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														The domain name of the Cavok server
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<input type="text" id="tab-cavok-domain" v-model="cavokDomain"
+														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
+												</div>
+											</div>
+											<div v-if="component === 'Cavok'" class="space-y-1 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
+												<div>
+													<label for="tab-cavok-channel" class="block text-sm font-medium text-gray-900 sm:mt-px sm:pt-2">
+														Cavok Channel
+													</label>
+													<p class="mt-1 text-sm text-gray-500">
+														The default Cavok channel to join
+													</p>
+												</div>
+												<div class="sm:col-span-2">
+													<input type="text" id="tab-cavok-channel" v-model="cavokChannel"
 														class="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm" />
 												</div>
 											</div>
@@ -174,6 +203,8 @@ const icon = ref<IconName | undefined>(undefined);
 const title = ref<string | undefined>(undefined);
 const href = ref<string | undefined>(undefined);
 const description = ref<string | undefined>(undefined);
+const cavokDomain = ref<string | undefined>(undefined);
+const cavokChannel = ref<string | undefined>(undefined);
 
 function loadValues() {
 	if (props.tabIndex !== null) {
@@ -190,6 +221,10 @@ function loadValues() {
 		if (tabConfig.component === "FileList") {
 			description.value = tabConfig.description;
 		}
+		if (tabConfig.component === "Cavok") {
+			cavokDomain.value = tabConfig.cavokDomain;
+			cavokChannel.value = tabConfig.cavokChannel;
+		}
 	}
 	else {
 		// Adding a new tab
@@ -198,6 +233,8 @@ function loadValues() {
 		title.value = "";
 		href.value = "";
 		description.value = "";
+		cavokDomain.value = "vlsb-cav-01.acc.accroot.ds.af.smil.mil";
+		cavokChannel.value = "50th ATKS";
 	}
 }
 
@@ -216,21 +253,35 @@ function close() {
 async function saveTab() {
 	if (!configuration?.value || !openAlert) return;
 
-	if (!icon.value && component.value !== "Spacer") {
-		await openAlert("Icon required", "Please provide a icon for the tab");
-		return;
+	if (component.value !== "Spacer") {
+		if (!icon.value) {
+			await openAlert("Icon required", "Please provide a icon for the tab");
+			return;
+		}
+		if (!title.value) {
+			await openAlert("Title required", "Please provide a title for the tab");
+			return;
+		}
+		if (!href.value) {
+			await openAlert("URL required", "Please provide a relative URL for the tab");
+			return;
+		}
 	}
-	if (!title.value && component.value !== "Spacer") {
-		await openAlert("Title required", "Please provide a title for the tab");
-		return;
+	if (component.value === "FileList") {
+		if (!description.value) {
+			await openAlert("Description required", "Please provide a brief description for this card list tab");
+			return;
+		}
 	}
-	if (!href.value && component.value !== "Spacer") {
-		await openAlert("URL required", "Please provide a relative URL for the tab");
-		return;
-	}
-	if (!description.value && component.value === "FileList") {
-		await openAlert("Description required", "Please provide a brief description for this card list tab");
-		return;
+	if (component.value === "Cavok") {
+		if (!cavokDomain.value) {
+			await openAlert("Cavok domain required", "Please provide the domain name of the Cavok server");
+			return;
+		}
+		if (!cavokChannel.value) {
+			await openAlert("Cavok channel required", "Please the default Cavok channel to join");
+			return;
+		}
 	}
 	// Check if there is already a tab with this name or href
 	let existingNameIndex = configuration.value.sidebarTab.findIndex(tab => tab.component !== "Spacer" && tab.name === title.value);
@@ -296,6 +347,13 @@ async function saveTab() {
 			newTab = {
 				...newTab,
 				description: description.value ?? "",
+			};
+		}
+		if (newTab.component === "Cavok") {
+			newTab = {
+				...newTab,
+				cavokDomain: cavokDomain.value,
+				cavokChannel: cavokChannel.value,
 			};
 		}
 		configuration.value.sidebarTab.push(newTab as Required<Sidebar.Entry>);

@@ -10,7 +10,7 @@
 
 		<ATLC v-if="currentSidebarTab?.component === 'ATLC'" />
 
-		<Cavok v-if="currentSidebarTab?.component === 'Cavok'" />
+		<Cavok v-if="currentSidebarTab?.component === 'Cavok'" :cavokDomain="currentSidebarTab.cavokDomain" :cavokChannel="currentSidebarTab.cavokChannel" />
 
 		<Settings v-if="currentSidebarTab?.component === 'Settings'" />
 
@@ -102,7 +102,7 @@ function openConfirm(title: string, message: string, confirmText = "OK", cancelT
 }
 provide(OPEN_CONFIRM, openConfirm);
 
-const cavokManager = reactive(new CavokManager("vlsb-cav-01.acc.accroot.ds.af.smil.mil", "50th ATKS")); // TODO: source from a configuration file
+const cavokManager = reactive(new CavokManager()); // TODO: source from a configuration file
 provide(CAVOK_MANAGER, cavokManager);
 
 const selectedCallsign = ref(localStorage.getItem("callsign") ?? "");

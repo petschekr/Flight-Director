@@ -122,6 +122,11 @@ import { CAVOK_MANAGER, OPEN_ALERT } from "@/types/keys";
 import type { AircraftData } from "@/types/cavok";
 import { metersPerSecondToKnots, metersToFeet } from "@/performance/units";
 
+const props = defineProps<{
+	cavokDomain: string;
+	cavokChannel: string;
+}>();
+
 const cavokManager = inject(CAVOK_MANAGER);
 const openAlert = inject(OPEN_ALERT);
 
@@ -135,7 +140,7 @@ async function connect() {
 			await cavokManager.mockCavokConnection();
 		}
 		else {
-			await cavokManager.connect();
+			await cavokManager.connect(props.cavokDomain, props.cavokChannel);
 		}
 	}
 	catch (err: any) {

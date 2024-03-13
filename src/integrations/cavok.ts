@@ -1,7 +1,8 @@
 import type { AircraftData, CavokEvent } from "@/types/cavok";
 
 export class CavokManager {
-	private username: string;
+	private cavokDomain: string | null = null;
+	private squadronChannel: string | null = null;
 	private token: string | null = null;
 	private socket: WebSocket | null = null;
 	private socketKeepAliveInterval: NodeJS.Timer | null = null;
@@ -39,15 +40,15 @@ export class CavokManager {
 
 	private listeners: ((aircraft: Map<string, AircraftData>) => void)[] = [];
 
-	constructor(private readonly CAVOK_DOMAIN: string, private readonly SQUADRON_CHANNEL: string) {
-		this.username = `flightdirector-${Math.floor(Math.random() * 100000)}`;
-	}
+	constructor() {}
 
 	public async disconnect() {
 		this.connected = false;
 		this.socket?.close();
 
-		await fetch(`https://${this.CAVOK_DOMAIN}/auth/session/end`, {
+		if (!this.cavokDomain) return;
+
+		await fetch(`https://${this.cavokDomain}/auth/session/end`, {
 			method: "POST",
 			body: null,
 			headers: {
@@ -57,16 +58,21 @@ export class CavokManager {
 		this.token = null;
 	}
 
-	public async connect() {
-		let sessionCheckRequest = await fetch(`https://${this.CAVOK_DOMAIN}/auth/session/check/${this.username}`);
+	public async connect(cavokDomain: string, squadronChannel: string) {
+		this.cavokDomain = cavokDomain;
+		this.squadronChannel = squadronChannel;
+		if (!this.cavokDomain || !this.squadronChannel) return;
+		const username = `flightdirector-${Math.floor(Math.random() * 100000)}`;
+
+		let sessionCheckRequest = await fetch(`https://${this.cavokDomain}/auth/session/check/${username}`);
 		let sessionCheckResponse: { result: string } = await sessionCheckRequest.json();
 		if (sessionCheckResponse.result !== "AVAILABLE") {
-			throw new Error(`Tried to claim username "${this.username}" but it was unavailable`);
+			throw new Error(`Tried to claim username "${username}" but it was unavailable`);
 		}
 
-		let sessionStartRequest = await fetch(`https://${this.CAVOK_DOMAIN}/auth/session/start/${this.username}`, {
+		let sessionStartRequest = await fetch(`https://${this.cavokDomain}/auth/session/start/${username}`, {
 			headers: {
-				clientID: this.username
+				clientID: username
 			}
 		});
 		let sessionStartResponse: { token?: string } = await sessionStartRequest.json();
@@ -75,18 +81,18 @@ export class CavokManager {
 			throw new Error("No token returned when starting session");
 		}
 
-		let channelListRequest = await fetch(`https://${this.CAVOK_DOMAIN}/channellauncher`, {
+		let channelListRequest = await fetch(`https://${this.cavokDomain}/channellauncher`, {
 			headers: {
 				Authorization: `Bearer ${this.token}`
 			}
 		});
 		let channelListResponse: { name: string; id: string; }[] = await channelListRequest.json();
-		let squadronChannelID = channelListResponse.find(channel => channel.name === this.SQUADRON_CHANNEL)?.id;
+		let squadronChannelID = channelListResponse.find(channel => channel.name === this.squadronChannel)?.id;
 		if (!squadronChannelID) {
-			throw new Error(`Could not find squadron channel named "${this.SQUADRON_CHANNEL}" to join`);
+			throw new Error(`Could not find squadron channel named "${this.squadronChannel}" to join`);
 		}
 
-		let channelJoinRequest = await fetch(`https://${this.CAVOK_DOMAIN}/channellauncher/join/${squadronChannelID}`, {
+		let channelJoinRequest = await fetch(`https://${this.cavokDomain}/channellauncher/join/${squadronChannelID}`, {
 			method: "POST",
 			body: null,
 			headers: {
@@ -97,7 +103,7 @@ export class CavokManager {
 			throw new Error(`Channel join request returned unexpected status code ${channelJoinRequest.status}`);
 		}
 
-		this.socket = new WebSocket(`wss://${this.CAVOK_DOMAIN}/events?token=${encodeURIComponent(this.token)}`);
+		this.socket = new WebSocket(`wss://${this.cavokDomain}/events?token=${encodeURIComponent(this.token)}`);
 		this.socket.addEventListener("open", () => {
 			// Keep the server connection alive by sending a blank message every so often
 			this.socketKeepAliveInterval = setInterval(() => {
@@ -119,7 +125,7 @@ export class CavokManager {
 				// If we were previously connected, attempt reconnection
 				// disconnect() sets this.connected = false to prevent reconnection
 				// Note: reconnection errors will be ignored
-				this.connect();
+				this.connect(cavokDomain, squadronChannel);
 			}
 		});
 		this.socket.addEventListener("message", this.processMessage.bind(this));
