@@ -190,42 +190,60 @@ async function loadDefaultConfiguration() {
 	else if (response.status === 404) {
 		// No default profile set in the PowerShell server
 		let emptyConfiguration: Configuration = {
-			name: "No default profile found",
-			feedbackLocation: "",
-			callsigns: [],
-			sidebarTab: [
+			"name": "No default profile found",
+			"feedbackLocation": "",
+			"callsigns": [],
+			"sidebarTab": [
 				{
-					component: "FileList",
-					name: "Getting Started",
-					description: "How to set up and use Flight Director",
-					href: "/getting-started",
-					icon: "HomeIcon",
+					"component": "FileList",
+					"name": "Getting Started",
+					"description": "How to set up and use Flight Director",
+					"href": "/getting-started",
+					"icon": "HomeIcon"
 				},
 				{
-					component: "Settings",
-					name: "Settings",
-					href: "/settings",
-					icon: "Cog6ToothIcon",
-				},
-			],
-			tabs: {
-				"Getting Started": {
-					"Section 1": [
-						{
-							name: "Example Profile",
-							description: "Copy + paste this to get going quickly",
-							abbreviation: "1.",
-							color: "bg-blue-500",
-							type: "Markdown",
-							markdown: {
-								template: `
-Open Notepad and paste the code below into a new text document. Go to File > Save, then ensure \`All files (*.*)\` is selected from the drop down, and name the file \`ProfileName.json\`.
-								`,
-							},
-						}
-					],
+					"component": "Settings",
+					"name": "Settings",
+					"href": "/settings",
+					"icon": "Cog6ToothIcon"
 				}
-			},
+			],
+			"tabs": {
+				"Getting Started": {
+					"Step-by-step": [
+						{
+							"name": "Server Configuration",
+							"description": "How to set up Flight Director's PowerShell server",
+							"color": "bg-blue-700",
+							"abbreviation": "1.",
+							"type": "Markdown",
+							"markdown": {
+								"template": "Flight Director is split into two major components: the web user interface that runs in your browser and the PowerShell server that interfaces with Windows on your behalf to interact with the filesystem and make web requests.\n\nMost of Flight Director's configuration can be done through the web user interface, but there are still a few key settings that must be set before you can get started.\n\n1. Right click `Flight Director Server.ps1` and click `Edit`.\n2. There are four settings you can tweak here. These are likely set-and-forget. See the comments within the file for an explanation of what they do.\n    1. Root directory location\n    2. Default profile location\n    3. Program file location\n    4. Port number that the server listens on\n3. Once you've made your tweaks, save the `.ps1` file.\n4. Test your changes by right clicking on the `.ps1` file and selecting `Run with PowerShell`\n5. The Flight Director server should start and the Flight Director GUI will open in your default browser.\n6. If the server fails to start, go back and double check your changes. The location settings should be strings with exactly one leading quote (`\"`) and exactly one ending quote."
+							}
+						},
+						{
+							"name": "Editing Profiles",
+							"description": "How to edit profiles containing Flight Director's content",
+							"color": "bg-emerald-600",
+							"abbreviation": "2.",
+							"type": "Markdown",
+							"markdown": {
+								"template": ""
+							}
+						},
+						{
+							"name": "Cavok Integration",
+							"description": "Integrate Cavok for live aircraft data",
+							"color": "bg-orange-400",
+							"abbreviation": "3.",
+							"type": "Markdown",
+							"markdown": {
+								"template": ""
+							}
+						}
+					]
+				}
+			}
 		};
 		await loadConfiguration(JSON.stringify(emptyConfiguration), false); // Don't cache the empty configuration
 	}
