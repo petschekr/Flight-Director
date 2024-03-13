@@ -101,7 +101,7 @@ import {
 } from "@headlessui/vue";
 import Fuse from "fuse.js";
 
-import type { Card as ConfigFileEntry, Configuration } from "@/types/configuration";
+import type { Card as ConfigFileEntry, Configuration, Sidebar } from "@/types/configuration";
 import { CONFIGURATION } from "@/types/keys"
 
 const props = defineProps<{
@@ -188,14 +188,14 @@ function onSelect(selection: string) {
 			for (let tabContents of Object.values(tabGroups)) {
 				let file = tabContents.find(entry => entry.name === selection);
 				if (file) {
-					let navItem = configuration.value.sidebarTab.find(item => item.name === tabName);
+					let navItem = configuration.value.sidebarTab.find(item => item.component !== "Spacer" && item.name === tabName);
 					if (navItem) {
 						if (file.path?.startsWith("http")) {
 							// External link
 							window.open(file.path, "_blank");
 						}
 						else {
-							router.push(navItem.href + "/" + encodeURIComponent(file.name));
+							router.push((navItem as Sidebar.Tab).href + "/" + encodeURIComponent(file.name));
 						}
 					}
 				}

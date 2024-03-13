@@ -19,7 +19,6 @@
 											<div class="flex items-start justify-between space-x-3">
 												<div class="space-y-1">
 													<DialogTitle class="text-lg font-medium text-gray-900">Edit Tab</DialogTitle>
-													<p class="text-sm text-gray-500 font-mono">{{tabIndex ? configuration?.sidebarTab[tabIndex]?.name : ''}}</p>
 												</div>
 												<div class="flex h-7 items-center">
 													<button type="button" @click="close()" class="text-gray-400 hover:text-gray-500">
@@ -140,16 +139,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref, computed, watch, inject } from "vue";
+import { ref, computed, watch, inject } from "vue";
 import { useRouter } from "vue-router";
 import {
 	Dialog, DialogPanel, DialogTitle,
 	TransitionChild, TransitionRoot,
-	Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions,
 } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 
-import type { Configuration, IconName, Component } from "@/types/configuration";
+import type { IconName, Sidebar } from "@/types/configuration";
 import { CONFIGURATION, OPEN_ALERT, OPEN_CONFIRM } from "@/types/keys";
 
 const props = defineProps<{
@@ -168,26 +166,35 @@ const openConfirm = inject(OPEN_CONFIRM);
 
 const isOpen = ref(false);
 
-const component: Ref<Component> = ref("FileList");
-const icon: Ref<IconName> = ref("Bars3BottomLeftIcon");
-const title = ref("");
-const href = ref("");
-const description = ref("");
+type SidebarEntryComponent = Pick<Sidebar.Entry, "component">["component"];
+const component = ref<SidebarEntryComponent>("FileList");
+
+const DEFAULT_ICON: IconName = "Bars3BottomLeftIcon";
+const icon = ref<IconName | undefined>(undefined);
+const title = ref<string | undefined>(undefined);
+const href = ref<string | undefined>(undefined);
+const description = ref<string | undefined>(undefined);
 
 function loadValues() {
 	if (props.tabIndex !== null) {
+		// Editing existing tab
 		let tabConfig = configuration?.value?.sidebarTab[props.tabIndex];
 		if (!tabConfig) return;
 
 		component.value = tabConfig.component ?? "Spacer";
-		icon.value = tabConfig.icon ?? "Bars3BottomLeftIcon";
-		title.value = tabConfig.name ?? "";
-		href.value = tabConfig.href ?? "";
-		description.value = tabConfig.description ?? "";
+		if (tabConfig.component !== "Spacer") {
+			icon.value = tabConfig.icon ?? DEFAULT_ICON;
+			title.value = tabConfig.name;
+			href.value = tabConfig.href;
+		}
+		if (tabConfig.component === "FileList") {
+			description.value = tabConfig.description;
+		}
 	}
 	else {
+		// Adding a new tab
 		component.value = "FileList";
-		icon.value = "Bars3BottomLeftIcon";
+		icon.value = DEFAULT_ICON;
 		title.value = "";
 		href.value = "";
 		description.value = "";
@@ -199,7 +206,7 @@ watch(() => props.tabIndex, loadValues);
 loadValues();
 
 function updateHref() {
-	href.value = "/" + title.value.toLowerCase().replace(/(\/| )/gi, "-");
+	href.value = "/" + title.value?.toLowerCase().replace(/(\/| )/gi, "-");
 }
 function close() {
 	isOpen.value = false;
@@ -226,45 +233,48 @@ async function saveTab() {
 		return;
 	}
 	// Check if there is already a tab with this name or href
-	let existingNameIndex = configuration.value.sidebarTab.findIndex(tab => tab.name === title.value);
-	if (component.value !== "Spacer" && existingNameIndex !== -1 && existingNameIndex !== props.tabIndex) {
+	let existingNameIndex = configuration.value.sidebarTab.findIndex(tab => tab.component !== "Spacer" && tab.name === title.value);
+	if (existingNameIndex !== -1 && existingNameIndex !== props.tabIndex) {
 		await openAlert("Invalid title", "A tab with that title already exists. Please choose a different title.");
 		return;
 	}
-	let existingHrefIndex = configuration.value.sidebarTab.findIndex(tab => tab.href === href.value);
-	if (component.value !== "Spacer" && existingHrefIndex !== -1 && existingHrefIndex !== props.tabIndex) {
+	let existingHrefIndex = configuration.value.sidebarTab.findIndex(tab => tab.component !== "Spacer" && tab.href === href.value);
+	if (existingHrefIndex !== -1 && existingHrefIndex !== props.tabIndex) {
 		await openAlert("Invalid URL", "A tab with that URL already exists. Please choose a different URL.");
 		return;
 	}
 
 	if (props.tabIndex !== null && configuration.value.sidebarTab[props.tabIndex]) {
 		// Edit existing tab
-		// Use Object.assign to rename the property key while preserving the order
-		let newTabs = {};
-		for (let [tabName, tabContents] of Object.entries(configuration.value.tabs)) {
-			if (configuration.value.sidebarTab[props.tabIndex].name === tabName && title.value) {
-				// Rename key to the new title
-				Object.assign(newTabs, { [title.value]: tabContents });
-			}
-			else {
-				// Keep as-is
-				Object.assign(newTabs, { [tabName]: tabContents });
-			}
-		}
-		configuration.value.tabs = newTabs;
-
 		configuration.value.sidebarTab[props.tabIndex].component = component.value;
-		if (icon.value) {
-			configuration.value.sidebarTab[props.tabIndex].icon = icon.value;
-		}
-		if (title.value) {
-			configuration.value.sidebarTab[props.tabIndex].name = title.value;
-		}
-		if (href.value) {
-			configuration.value.sidebarTab[props.tabIndex].href = href.value;
-		}
-		if (description.value) {
-			configuration.value.sidebarTab[props.tabIndex].description = description.value;
+
+		if (configuration.value.sidebarTab[props.tabIndex].component !== "Spacer") {
+			// Use Object.assign to rename the property key while preserving the order
+			let newTabs = {};
+			for (let [tabName, tabContents] of Object.entries(configuration.value.tabs)) {
+				if ((configuration.value.sidebarTab[props.tabIndex] as Sidebar.Tab).name === tabName && title.value) {
+					// Rename key to the new title
+					Object.assign(newTabs, { [title.value]: tabContents });
+				}
+				else {
+					// Keep as-is
+					Object.assign(newTabs, { [tabName]: tabContents });
+				}
+			}
+			configuration.value.tabs = newTabs;
+
+			if (icon.value) {
+				(configuration.value.sidebarTab[props.tabIndex] as Sidebar.Tab).icon = icon.value;
+			}
+			if (title.value) {
+				(configuration.value.sidebarTab[props.tabIndex] as Sidebar.Tab).name = title.value;
+			}
+			if (href.value) {
+				(configuration.value.sidebarTab[props.tabIndex] as Sidebar.Tab).href = href.value;
+			}
+			if (description.value && component.value === "FileList") {
+				(configuration.value.sidebarTab[props.tabIndex] as Sidebar.FileList).description = description.value;
+			}
 		}
 	}
 	else {
@@ -272,20 +282,23 @@ async function saveTab() {
 		if (title.value) {
 			configuration.value.tabs[title.value] = {};
 		}
-		let newTab: any = { component: component.value }; // TODO fix type annotation
-		if (icon.value) {
-			newTab.icon = icon.value;
+
+		let newTab: Partial<Sidebar.Entry> = { component: component.value };
+		if (component.value !== "Spacer") {
+			newTab = {
+				component: component.value,
+				icon: icon.value ?? DEFAULT_ICON,
+				name: title.value ?? "",
+				href: href.value ?? "",
+			};
 		}
-		if (title.value) {
-			newTab.name = title.value;
+		if (newTab.component === "FileList") {
+			newTab = {
+				...newTab,
+				description: description.value ?? "",
+			};
 		}
-		if (href.value) {
-			newTab.href = href.value;
-		}
-		if (description.value) {
-			newTab.description = description.value;
-		}
-		configuration.value.sidebarTab.push(newTab);
+		configuration.value.sidebarTab.push(newTab as Required<Sidebar.Entry>);
 	}
 
 	configuration.value.unsaved = true;
@@ -297,8 +310,9 @@ async function deleteTab() {
 
 	if (!await openConfirm("Delete tab?", "Are you sure you want to delete this tab?")) return;
 
-	if (configuration.value.sidebarTab[props.tabIndex]?.name) {
-		delete configuration.value.tabs[configuration.value.sidebarTab[props.tabIndex].name!];
+	let tab = configuration.value.sidebarTab[props.tabIndex];
+	if (tab?.component !== "Spacer" && tab?.name) {
+		delete configuration.value.tabs[tab.name];
 	}
 	configuration.value.sidebarTab.splice(props.tabIndex, 1);
 	router.replace("/");

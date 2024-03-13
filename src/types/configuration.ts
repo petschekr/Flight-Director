@@ -1,6 +1,38 @@
 import type * as HeroIcons from '@heroicons/vue/24/outline';
 export type IconName = keyof typeof HeroIcons;
-export type Component = "FileList" | "AllFiles" | "Performance" | "ATLC" | "Cavok" | "Settings" | "Spacer";
+
+export namespace Sidebar {
+	export type Tab = FileList | AllFiles | Performance | ATLC | Cavok | Settings;
+	export type Entry = Tab | Spacer;
+	interface CommonTab {
+		component: string;
+		icon: IconName;
+		name: string;
+		href: string;
+	}
+	export interface FileList extends CommonTab {
+		component: "FileList",
+		description: string;
+	}
+	export interface AllFiles extends CommonTab {
+		component: "AllFiles",
+	}
+	export interface Performance extends CommonTab {
+		component: "Performance",
+	}
+	export interface ATLC extends CommonTab {
+		component: "ATLC",
+	}
+	export interface Cavok extends CommonTab {
+		component: "Cavok",
+	}
+	export interface Settings extends CommonTab {
+		component: "Settings",
+	}
+	export interface Spacer {
+		component: "Spacer",
+	}
+}
 
 export interface Card {
 	name: string;
@@ -37,13 +69,7 @@ export interface Configuration {
 		path: string;
 	}[];
 
-	sidebarTab: {
-		component: Component;
-		icon?: IconName;
-		name?: string;
-		href?: string;
-		description?: string;
-	}[];
+	sidebarTab: Sidebar.Entry[];
 
 	tabs: {
 		[tabName: string]: {

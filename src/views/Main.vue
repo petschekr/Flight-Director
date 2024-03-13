@@ -31,21 +31,22 @@ import { provide, ref, type Ref, reactive, onMounted, onUnmounted, watchEffect, 
 import { useRouter } from "vue-router";
 import { ChatBubbleOvalLeftEllipsisIcon } from '@heroicons/vue/24/outline'
 
-import Nav from "@/components/Nav.vue";
+import type { Configuration, Sidebar } from "@/types/configuration";
+
 import FileTab from "@/views/subviews/FileTab.vue";
 import Performance from "@/views/subviews/Performance.vue";
 import ATLC from "@/views/subviews/ATLC.vue";
 import Cavok from "@/views/subviews/Cavok.vue";
-import Settings from "./subviews/Settings.vue";
-import type { Configuration } from "@/types/configuration";
-import SearchPalette from "../components/SearchPalette.vue";
-import Feedback from "../components/Feedback.vue";
+import Settings from "@/views/subviews/Settings.vue";
+
+import Nav from "@/components/Nav.vue";
+import SearchPalette from "@/components/SearchPalette.vue";
+import Feedback from "@/components/Feedback.vue";
 import Alert from "@/components/Alert.vue";
 
 import { CavokManager } from "@/integrations/cavok";
 
 import { CAVOK_MANAGER, CONFIGURATION, EDIT_MODE, OPEN_ALERT, OPEN_CONFIRM } from "@/types/keys";
-type SidebarTab = Configuration["sidebarTab"][0];
 
 const router = useRouter();
 
@@ -115,8 +116,8 @@ watchEffect(() => {
 	localStorage.setItem("callsign", selectedCallsign.value);
 });
 
-const currentSidebarTab: Ref<SidebarTab | null> = ref(null);
-function navigateTo(sidebarItem: SidebarTab) {
+const currentSidebarTab: Ref<Sidebar.Tab | null> = ref(null);
+function navigateTo(sidebarItem: Sidebar.Tab) {
 	currentSidebarTab.value = sidebarItem;
 }
 
@@ -156,7 +157,7 @@ async function loadConfiguration(configContents: string, shouldCache = true) {
 
 		// If loaded profile does not have current path, load root
 		// This happens when loading a profile that does not have the current selected tab
-		if (!configuration.value?.sidebarTab.find(tab => tab.href && router.currentRoute.value.path.indexOf(tab.href) === 0)) {
+		if (!configuration.value?.sidebarTab.find(tab => tab.component !== "Spacer" && router.currentRoute.value.path.indexOf(tab.href) === 0)) {
 			router.push("/");
 		}
 	}
@@ -205,7 +206,7 @@ async function loadDefaultConfiguration() {
 					name: "Settings",
 					href: "/settings",
 					icon: "Cog6ToothIcon",
-				}
+				},
 			],
 			tabs: {
 				"Getting Started": {

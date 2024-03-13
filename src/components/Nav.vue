@@ -31,7 +31,7 @@
 						<div class="mt-5 h-0 flex-1 overflow-y-auto">
 							<nav class="space-y-1 px-2">
 								<template v-for="item in navigation" :key="item.index">
-									<RouterLink v-if="item.name" :to="item.href ?? ''"
+									<RouterLink v-if="item.component !== 'Spacer'" :to="item.href ?? ''"
 										:class="[item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white', 'group flex items-center px-2 py-2 text-base font-medium rounded-md']">
 										<component :is="getIcon(item.icon)"
 											:class="[item.current ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300', 'mr-4 flex-shrink-0 h-6 w-6']"
@@ -121,7 +121,7 @@
 			<div class="flex flex-1 flex-col overflow-y-auto">
 				<nav class="flex-1 space-y-1 px-2 py-2">
 					<div v-for="item in navigation" :key="item.index">
-						<RouterLink v-if="item.name" :to="item.href ?? ''"
+						<RouterLink v-if="item.component !== 'Spacer'" :to="item.href ?? ''"
 							:class="[item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition']"
 							:draggable="editMode ? 'true' : 'false'" @dragstart="dragStart($event, item.index)" @dragend="dragEnd"
 							@dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave" @drop="drop($event, item.index)">
@@ -182,7 +182,7 @@
 		</main>
 
 		<button v-if="editMode" @click="editMode = false" type="button"
-			class="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center rounded-md border border-transparent bg-sky-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+			class="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center rounded-md border border-transparent bg-sky-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 z-10">
 			<BoltIcon class="-ml-1 mr-3 h-5 w-5" />
 			Finish editing
 		</button>
@@ -216,13 +216,13 @@
 		BoltIcon,
 	} from '@heroicons/vue/20/solid';
 
-	import type { Configuration, IconName } from "@/types/configuration";
+	import type { Configuration, IconName, Sidebar } from "@/types/configuration";
 	import { CONFIGURATION, EDIT_MODE } from "@/types/keys";
 
 	import EditTab from "@/components/EditTab.vue";
 
 	const emit = defineEmits<{
-		(e: "navigate", sidebarTab: Configuration["sidebarTab"][0]): void;
+		(e: "navigate", sidebarTab: Sidebar.Tab): void;
 		(e: "search"): void;
 		(e: "loadProfile"): void;
 		(e: "loadDefaultProfile"): void;
@@ -262,15 +262,17 @@
 	});
 
 	function updateSelectedTab() {
-		let newIndex = configuration?.value?.sidebarTab?.findIndex(navItem => navItem?.href?.substring(1) === route.params.path[0]);
+		if (!configuration?.value?.sidebarTab) return;
+
+		let newIndex = configuration.value.sidebarTab.findIndex(navItem => navItem.component !== "Spacer" && navItem.href.substring(1) === route.params.path[0]);
 		if (newIndex === undefined) return;
 		if (newIndex === -1 || !route.params.path) {
 			newIndex = 0;
-			router.push(configuration?.value?.sidebarTab?.[newIndex]!.href ?? "/");
+			router.push((configuration.value.sidebarTab[newIndex] as Sidebar.Tab).href ?? "/");
 		}
 		selectedIndex.value = newIndex;
 		sidebarOpen.value = false;
-		emit("navigate", configuration?.value?.sidebarTab?.[newIndex]!);
+		emit("navigate", configuration.value.sidebarTab[newIndex] as Sidebar.Tab);
 	}
 	updateSelectedTab();
 	watch(() => route.params, updateSelectedTab);
@@ -293,13 +295,15 @@
 	function dragStart(e: DragEvent, tabIndex: number) {
 		let target = e.currentTarget as HTMLElement;
 		if (!e.dataTransfer) return;
+		let entry = configuration?.value?.sidebarTab[tabIndex];
+		let entryName = (!entry || entry?.component === "Spacer") ? "" : entry.name;
 
 		currentDragItem = target;
 
 		target.classList.add(...dragSourceActiveStyles);
 
 		e.dataTransfer.effectAllowed = "move";
-		e.dataTransfer.setData("text/plain", configuration?.value?.sidebarTab[tabIndex].name ?? "");
+		e.dataTransfer.setData("text/plain", entryName);
 		e.dataTransfer.setData("flightdirector/tab", "");
 		e.dataTransfer.setData("tabIndex", tabIndex.toString());
 	}
@@ -339,6 +343,8 @@
 			configuration.value.sidebarTab.splice(sourceTabIndex, 1); // Delete from the source array
 			configuration.value.sidebarTab.splice(targetTabIndex, 0, tab); // Add to the target array in the target's position, pushing everything else backwards
 
+			updateSelectedTab();
+
 			// TODO: Reorder tab contents object to match
 
 			configuration.value.unsaved = true;
@@ -348,7 +354,8 @@
 			target.classList.remove(...dragTargetActiveStyles);
 
 			const oldTabName = e.dataTransfer.getData("tabName");
-			const newTabName = configuration.value.sidebarTab[targetTabIndex].name;
+			const newTab = configuration.value.sidebarTab[targetTabIndex];
+			const newTabName = newTab.component !== "Spacer" ? newTab.name : "";
 			if (oldTabName === newTabName || !oldTabName || !newTabName) return;
 			if (configuration.value.sidebarTab[targetTabIndex].component !== "FileList") {
 				// Card was dropped on a tab that is not a FileList

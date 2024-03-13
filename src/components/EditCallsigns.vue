@@ -71,7 +71,7 @@ import { XMarkIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
 
 import CallsignCard from "./CallsignCard.vue";
 
-import type { Configuration, IconName, Component } from "@/types/configuration";
+import type { Configuration } from "@/types/configuration";
 import { CONFIGURATION, OPEN_ALERT, OPEN_CONFIRM } from "@/types/keys";
 
 const props = defineProps<{
