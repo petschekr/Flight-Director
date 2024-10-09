@@ -403,6 +403,98 @@ const bestRangeDI200: AltitudeValues = {
         "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
     },
 };
+const bestRangeDI400: AltitudeValues = {
+    "0": {
+        "5000": { max: { kias: 119, ktas: 119, ff: 318 }, min: { kias: 102, ktas: 102, ff: 252 }  },
+        "6000": { max: { kias: 123, ktas: 123, ff: 333 }, min: { kias: 106, ktas: 106, ff: 268 }  },
+        "7000": { max: { kias: 124, ktas: 124, ff: 341 }, min: { kias: 110, ktas: 110, ff: 286 } },
+        "8000": { max: { kias: 127, ktas: 127, ff: 355 }, min: { kias: 117, ktas: 117, ff: 313 } },
+        "9000": { max: { kias: 127, ktas: 127, ff: 361 }, min: { kias: 117, ktas: 117, ff: 319 } },
+        "10000": { max: { kias: 131, ktas: 131, ff: 380 }, min: { kias: 120, ktas: 120, ff: 336 } },
+        "10500": { max: { kias: 127, ktas: 127, ff: 372 }, min: { kias: 121, ktas: 121, ff: 342 } },
+        "11700": { max: { kias: 134, ktas: 134, ff: 403 }, min: { kias: 124, ktas: 124, ff: 362 } },
+    },
+    "5000": {
+        "5000": { max: { kias: 112, ktas: 121, ff: 284 }, min: { kias: 95, ktas: 102, ff: 223 }   },
+        "6000": { max: { kias: 113, ktas: 122, ff: 291 }, min: { kias: 104, ktas: 112, ff: 252 }  },
+        "7000": { max: { kias: 115, ktas: 124, ff: 301 }, min: { kias: 108, ktas: 116, ff: 268 } },
+        "8000": { max: { kias: 115, ktas: 124, ff: 308 }, min: { kias: 110, ktas: 118, ff: 282 } },
+        "9000": { max: { kias: 118, ktas: 127, ff: 323 }, min: { kias: 114, ktas: 123, ff: 300 } },
+        "10000": { max: { kias: 121, ktas: 130, ff: 339 }, min: { kias: 117, ktas: 126, ff: 317 } },
+        "10500": { max: { kias: 121, ktas: 130, ff: 344 }, min: { kias: 116, ktas: 125, ff: 318 } },
+        "11700": { max: { kias: 127, ktas: 137, ff: 373 }, min: { kias: 120, ktas: 129, ff: 343 } },
+    },
+    "10000": {
+        "5000": { max: { kias: 105, ktas: 122, ff: 250 }, min: { kias: 95, ktas: 111, ff: 209 } },
+        "6000": { max: { kias: 106, ktas: 123, ff: 258 }, min: { kias: 95, ktas: 111, ff: 216 } },
+        "7000": { max: { kias: 108, ktas: 126, ff: 270 }, min: { kias: 100, ktas: 116, ff: 236 } },
+        "8000": { max: { kias: 110, ktas: 128, ff: 282 }, min: { kias: 105, ktas: 122, ff: 257 } },
+        "9000": { max: { kias: 113, ktas: 131, ff: 298 }, min: { kias: 110, ktas: 128, ff: 278 } },
+        "10000": { max: { kias: 115, ktas: 134, ff: 313 }, min: { kias: 110, ktas: 128, ff: 289 } },
+        "10500": { max: { kias: 116, ktas: 135, ff: 321 }, min: { kias: 111, ktas: 129, ff: 298 } },
+        "11700": { max: { kias: 119, ktas: 138, ff: 344 }, min: { kias: 112, ktas: 130, ff: 316 } },
+    },
+    "15000": {
+        "5000": { max: { kias: 98, ktas: 124, ff: 220 }, min: { kias: 93, ktas: 117, ff: 192 } },
+        "6000": { max: { kias: 100, ktas: 126, ff: 231 }, min: { kias: 93, ktas: 117, ff: 200 } },
+        "7000": { max: { kias: 101, ktas: 127, ff: 241 }, min: { kias: 93, ktas: 117, ff: 209 } },
+        "8000": { max: { kias: 104, ktas: 131, ff: 256 }, min: { kias: 101, ktas: 127, ff: 238 } },
+        "9000": { max: { kias: 106, ktas: 134, ff: 271 }, min: { kias: 106, ktas: 134, ff: 261 } },
+        "10000": { max: { kias: 110, ktas: 139, ff: 293 }, min: { kias: 103, ktas: 130, ff: 267 } },
+        "10500": { max: { kias: 109, ktas: 137, ff: 297 }, min: { kias: 104, ktas: 131, ff: 275 } },
+        "11700": { max: { kias: 111, ktas: 140, ff: 319 }, min: { kias: 109, ktas: 137, ff: 308 } },
+    },
+    "20000": {
+        "5000": { max: { kias: 94, ktas: 129, ff: 198 }, min: { kias: 81, ktas: 111, ff: 157 } },
+        "6000": { max: { kias: 93, ktas: 127, ff: 204 }, min: { kias: 91, ktas: 125, ff: 186 } },
+        "7000": { max: { kias: 97, ktas: 133, ff: 221 }, min: { kias: 92, ktas: 126, ff: 199 } },
+        "8000": { max: { kias: 99, ktas: 136, ff: 236 }, min: { kias: 95, ktas: 130, ff: 217 } },
+        "9000": { max: { kias: 101, ktas: 138, ff: 253 }, min: { kias: 98, ktas: 134, ff: 238 } },
+        "10000": { max: { kias: 103, ktas: 141, ff: 272 }, min: { kias: 100, ktas: 137, ff: 259 } },
+        "10500": { max: { kias: 104, ktas: 142, ff: 283 }, min: { kias: 101, ktas: 138, ff: 271 } },
+        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+    },
+    "25000": {
+        "5000": { max: { kias: 91, ktas: 136, ff: 181 }, min: { kias: 80, ktas: 119, ff: 147 } },
+        "6000": { max: { kias: 92, ktas: 137, ff: 192 }, min: { kias: 84, ktas: 125, ff: 165 } },
+        "7000": { max: { kias: 90, ktas: 134, ff: 199 }, min: { kias: 88, ktas: 131, ff: 186 } },
+        "8000": { max: { kias: 94, ktas: 140, ff: 220 }, min: { kias: 89, ktas: 133, ff: 202 } },
+        "9000": { max: { kias: 96, ktas: 143, ff: 240 }, min: { kias: 94, ktas: 140, ff: 232 } },
+        "10000": { max: { kias: 98, ktas: 146, ff: 263 }, min: { kias: 98, ktas: 146, ff: 263 } },
+        "10500": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+    },
+    "30000": {
+        "5000": { max: { kias: 78, ktas: 127, ff: 147 }, min: { kias: 76, ktas: 124, ff: 134 } },
+        "6000": { max: { kias: 85, ktas: 139, ff: 171 }, min: { kias: 81, ktas: 132, ff: 156 } },
+        "7000": { max: { kias: 85, ktas: 139, ff: 184 }, min: { kias: 85, ktas: 139, ff: 179 } },
+        "8000": { max: { kias: 89, ktas: 145, ff: 209 }, min: { kias: 88, ktas: 144, ff: 206 } },
+        "9000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10500": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+    },
+    "35000": {
+        "5000": { max: { kias: 74, ktas: 133, ff: 134 }, min: { kias: 72, ktas: 129, ff: 123 } },
+        "6000": { max: { kias: 83, ktas: 149, ff: 165 }, min: { kias: 77, ktas: 138, ff: 148 } },
+        "7000": { max: { kias: 83, ktas: 149, ff: 181 }, min: { kias: 83, ktas: 149, ff: 181 } },
+        "8000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "9000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10500": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+    },
+    "40000": {
+        "5000": { max: { kias: 71, ktas: 143, ff: 128 }, min: { kias: 71, ktas: 143, ff: 127 } },
+        "6000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "7000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "8000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "9000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10000": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "10500": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+        "11700": { max: { kias: null, ktas: null, ff: null }, min: { kias: null, ktas: null, ff: null } },
+    }
+};
 
 export function bestRange(weight: number, densityAltitude: number, dragIndex: number): TableEntry {
     if (densityAltitude < 0) {
@@ -429,6 +521,7 @@ export function bestRange(weight: number, densityAltitude: number, dragIndex: nu
         "50": getDITableEntry(bestRangeDI50),
         "100": getDITableEntry(bestRangeDI100),
         "200": getDITableEntry(bestRangeDI200),
+        "400": getDITableEntry(bestRangeDI400),
     };
 
     return {
