@@ -35,9 +35,9 @@ export const dragItems: DragItem[] = [
 		"drag": 16,
 	},
 	{
-		"name": "Empty M310 rack with saddle kit",
+		"name": "Empty M310 rack without saddle kit",
 		"multiple": true,
-		"drag": 16,
+		"drag": 13,
 	},
 	{
 		"name": "GBU-12/38/49/51/54",
