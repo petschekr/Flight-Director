@@ -115,7 +115,6 @@ export class CavokManager {
 			if (this.socketKeepAliveInterval !== null) {
 				clearInterval(this.socketKeepAliveInterval);
 			}
-			this.selectedCallsign = null;
 			this.aircraft = new Map();
 
 			let shouldReconnect = this.connected;
@@ -126,6 +125,10 @@ export class CavokManager {
 				// disconnect() sets this.connected = false to prevent reconnection
 				// Note: reconnection errors will be ignored
 				this.connect(cavokDomain, squadronChannel);
+			}
+			else {
+				// Deselect the chosen aircraft/callsign upon manual disconnect
+				this.selectedCallsign = null;
 			}
 		});
 		this.socket.addEventListener("message", this.processMessage.bind(this));
