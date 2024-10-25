@@ -684,6 +684,7 @@ const runwaysDropdown = ref([
 const selectedDropdown = ref(runwaysDropdown.value[0]);
 watchEffect(() => {
 	if (!selectedAirfieldRunways.value) return;
+	if (selectedDropdown.value.name === "Loading...") return;
 	for (let runway of selectedAirfieldRunways.value) {
 		if (runway.HIGH_IDENT === selectedDropdown.value.name) {
 			selectedRunway.value = runway;
@@ -694,6 +695,8 @@ watchEffect(() => {
 			selectedRunwayEnd.value = "LOW";
 		}
 	}
+
+	localStorage.setItem("runwayName", selectedDropdown.value.name);
 });
 
 // Input error detector
@@ -841,7 +844,7 @@ async function pullWeatherData() {
 		temperature.value = latestMETAR.temperature ?? 15;
 		altimeter.value = latestMETAR.altimeter ?? 29.92;
 
-		selectBestWindRunway();
+		selectBestWindRunway(false);
 	}
 	else if (wxType.value === "TAF") {
 		let desiredTime = new Date(forecastTime.value + "Z");
@@ -895,7 +898,7 @@ async function pullWeatherData() {
 		// Temperature not included on TAFs so use the METAR temp
 		temperature.value = response.metars[0].temperature ?? 15;
 
-		selectBestWindRunway();
+		selectBestWindRunway(false);
 	}
 }
 
@@ -1086,7 +1089,7 @@ const resizeObserver = new ResizeObserver(entries => {
 onMounted(() => resizeObserver.observe(map.value!));
 watch([windDirection, windSpeed, windGust, selectedRunway, selectedRunwayEnd], () => drawAirfieldDiagram());
 
-function selectBestWindRunway() {
+function selectBestWindRunway(useSaved: boolean = true) {
 	let bestWindIndex = NaN;
 	runwaysDropdown.value = selectedAirfieldRunways.value
 		.flatMap(runway => [
@@ -1101,7 +1104,14 @@ function selectBestWindRunway() {
 			}
 			return { name: runway.name, notes: `${length.toLocaleString()} ft` }
 		});
-	selectedDropdown.value = runwaysDropdown.value[bestWindIndex];
+
+	let savedRunway = runwaysDropdown.value.find(rwy => rwy.name === localStorage.getItem("runwayName"));
+	if (useSaved && selectedDropdown.value.name === "Loading..." && savedRunway) {
+		selectedDropdown.value = savedRunway;
+	}
+	else {
+		selectedDropdown.value = runwaysDropdown.value[bestWindIndex];
+	}
 }
 
 async function updateAirfield() {
