@@ -66,38 +66,6 @@
 				</div>
 			</div>
 
-			<div v-if="currentAirfieldTab === AirfieldTabs.Presets" class="mt-2 flow-root">
-				<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-					<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-					<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
-						<table class="min-w-full divide-y divide-gray-300">
-							<tbody class="divide-y divide-gray-200 bg-white">
-								<tr>
-									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Field Elevation</td>
-									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ fieldElevation }} ft</td>
-								</tr>
-								<tr>
-									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Mag Var</td>
-									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ magVar }}</td>
-								</tr>
-								<tr>
-									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">ILLA</td>
-									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ illa }} ft</td>
-								</tr>
-								<tr>
-									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">ILLH</td>
-									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ illh }}°</td>
-								</tr>
-								<tr>
-									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Pattern Altitude</td>
-									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ patternAltitude }} ft</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-					</div>
-				</div>
-			</div>
 			<div v-if="currentAirfieldTab === AirfieldTabs.Runways" class="mt-2 flow-root">
 				<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
 					<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
@@ -126,6 +94,38 @@
 											<span :class="['ml-1', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(parseFloat(runway.HIGH_HDG))[3] }} kts</span>
 										</p>
 									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					</div>
+				</div>
+			</div>
+			<div v-if="currentAirfieldTab === AirfieldTabs.Presets" class="mt-2 flow-root">
+				<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+					<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+					<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
+						<table class="min-w-full divide-y divide-gray-300">
+							<tbody class="divide-y divide-gray-200 bg-white">
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Field Elevation</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ fieldElevation }} ft</td>
+								</tr>
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Mag Var</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ magVar }}</td>
+								</tr>
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">ILLA</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ illa }} ft</td>
+								</tr>
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">ILLH</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ illh }}°</td>
+								</tr>
+								<tr>
+									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Pattern Altitude</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ patternAltitude }} ft</td>
 								</tr>
 							</tbody>
 						</table>
@@ -667,13 +667,13 @@ const airborneStats = computed(() => {
 
 enum AirfieldTabs { Presets, Runways, Frequencies };
 const tabs = ref([
-	{ name: "Presets", type: AirfieldTabs.Presets, icon: AdjustmentsHorizontalIcon },
 	{ name: "Runways", type: AirfieldTabs.Runways, icon: ChevronDoubleRightIcon },
+	{ name: "Presets", type: AirfieldTabs.Presets, icon: AdjustmentsHorizontalIcon },
 	{ name: "Frequencies", type: AirfieldTabs.Frequencies, icon: RadioIcon },
 ]);
-const currentAirfieldTab: Ref<AirfieldTabs> = ref(AirfieldTabs.Presets);
+const currentAirfieldTab: Ref<AirfieldTabs> = ref(AirfieldTabs.Runways);
 function tabSelect(name: string) {
-	currentAirfieldTab.value = tabs.value.find(tab => tab.name === name)?.type ?? AirfieldTabs.Presets;
+	currentAirfieldTab.value = tabs.value.find(tab => tab.name === name)?.type ?? AirfieldTabs.Runways;
 }
 
 const runwaysDropdown = ref([
