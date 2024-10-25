@@ -603,7 +603,7 @@ const illh = computed(() => {
 const patternAltitude = computed(() => {
 	if (!selectedAirfield.value) return "--";
 	let fieldElevation = parseInt(selectedAirfield.value.ELEV);
-	let patternAltitude = Math.ceil(fieldElevation / 100) * 100 + 1500;
+	let patternAltitude = Math.round(fieldElevation / 100) * 100 + 1500;
 	if (icao.value.toUpperCase() === "OMAM") {
 		patternAltitude = 1_500; // Defined by ADAB LRE standards
 	}
