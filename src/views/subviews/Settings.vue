@@ -12,7 +12,7 @@
 			</Switch>
 		</SwitchGroup>
 		<div class="text-center text-lg mt-2">
-			<code>Flight Director v0.12.1 @ {{commitHash}}</code>
+			<code>Flight Director v0.12.2 @ {{commitHash}}</code>
 		</div>
 		<div class="mt-2">
 			<p><code>v0.12.0</code>: Better first-time set-up experience (all settings now UI configurable), 400 DI best range numbers, fixes for Cavok auto-reconnect</p>
