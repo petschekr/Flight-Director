@@ -137,22 +137,24 @@
 			<div v-if="currentAirfieldTab === AirfieldTabs.Frequencies" class="mt-2 flow-root">
 				<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
 					<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-					<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
-						<table class="min-w-full divide-y divide-gray-300">
-							<tbody class="divide-y divide-gray-200 bg-white">
-								<tr v-for="freq in selectedAirfieldComms">
-									<td class="py-3 pl-4 pr-3 text-sm sm:pl-6">
-										<p class="font-medium text-gray-900">{{ freq.COMM_NAME }}</p>
-										<p>{{ freq.S_OPR_H }}</p>
-									</td>
-									<td class="px-3 py-3 text-sm text-gray-600 text-center">
-										{{ freq.FREQ_1 }}
-										{{ freq.FREQ_2 }}
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
+						<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
+							<table class="min-w-full divide-y divide-gray-300">
+								<tbody class="divide-y divide-gray-200 bg-white">
+									<tr v-for="freq in selectedAirfieldComms">
+										<td class="py-3 pl-4 pr-3 text-sm sm:pl-6">
+											<p class="font-medium text-gray-900">{{ freq.COMM_NAME }}</p>
+											<p>{{ freq.S_OPR_H }}</p>
+										</td>
+										<td class="px-3 py-3 text-sm text-gray-600 text-center">
+											{{ freq.FREQ_1 }}
+											<template v-if="freq.FREQ_2">
+												/ {{ freq.FREQ_2 }}
+											</template>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -229,11 +231,11 @@
 
 			<div>
 				<p class="text-center mt-4 text-lg">
-					PA: <span class="font-semibold">{{ pressureAltitude }} ft</span> //
-					DA: <span class="font-semibold">{{ densityAltitude }} ft</span> //
-					ISA <span class="font-semibold">{{ isa }} °F</span> //
-					TORA: <span class="font-semibold">{{ tora }} ft</span> //
-					LDA: <span class="font-semibold">{{ lda }} ft</span>
+					<abbr title="Pressure Altitude">PA</abbr>: <span class="font-semibold">{{ pressureAltitude }} ft</span> //
+					<abbr title="Density Altitude">DA</abbr>: <span class="font-semibold">{{ densityAltitude }} ft</span> //
+					&Delta;<abbr title="Difference from International Standard Altitude">ISA</abbr>: <span class="font-semibold">{{ isa }} °F</span> //
+					<abbr title="Takeoff Run Available">TORA</abbr>: <span class="font-semibold">{{ tora }} ft</span> //
+					<abbr title="Landing Distance Available">LDA</abbr>: <span class="font-semibold">{{ lda }} ft</span>
 				</p>
 				<dl class="mt-4 grid grid-cols-2 xl:grid-cols-4 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
 					<div v-for="item in takeOffStats" :key="item.name" class="px-4 py-5 flex items-center first:border-t-[1px] max-xl:odd:!border-l-0">
@@ -253,7 +255,7 @@
 			</div>
 
 			<div>
-				<dl class="mt-4 grid grid-cols-1 xl:grid-cols-3 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
+				<dl class="mt-4 grid grid-cols-1 xl:grid-cols-2 divide-y divide-x divide-gray-200 rounded-lg bg-white shadow">
 					<div v-for="item in distanceStats" :key="item.name" class="px-4 py-5 flex items-center first:border-t-[1px] max-xl:odd:!border-l-0">
 						<div :class="[item.color, 'rounded-md p-2 mr-3']">
 							<component :is="item.icon" class="h-5 w-5 text-white" aria-hidden="true" />
@@ -652,7 +654,8 @@ const takeOffStats = computed(() => {
 const distanceStats = computed(() => {
 	return [
 		{ name: "Takeoff Ground Rolll", icon: ChevronDoubleRightBigIcon, color: "bg-slate-500", stat: takeoffRoll.value, unit: "ft" },
-		{ name: "Distance to Clear 50ft Obstacle", icon: CubeTransparentIcon, color: "bg-slate-600", stat: "--", unit: "ft" },
+		// TODO: Fill in and compute this data
+		// { name: "Distance to Clear 50ft Obstacle", icon: CubeTransparentIcon, color: "bg-slate-600", stat: "--", unit: "ft" },
 		{ name: "Landing Roll", icon: ChevronDoubleLeftIcon, color: "bg-orange-900", stat: landingRoll.value, unit: "ft" },
 	];
 });
