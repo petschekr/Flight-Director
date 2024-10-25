@@ -43,7 +43,8 @@
 			</div>
 
 			<h1 v-if="selectedAirfield" class="mt-1 capitalize font-bold">{{ selectedAirfield?.NAME.toLowerCase().replace(/\bAB\b/ig, "AB").replace(/\bAFB\b/ig, "AFB") }}</h1>
-			<h1 v-else class="mt-1 capitalize italic">Loading...</h1>
+			<h1 v-else-if="icao.trim().length > 0" class="mt-1 capitalize italic">Loading...</h1>
+			<h1 v-else class="mt-1 capitalize italic">No airfield selected</h1>
 			<canvas ref="map" class="mt-1 mb-3 bg-white w-full h-60 rounded-md"></canvas>
 
 			<div>
@@ -876,6 +877,12 @@ async function pullWeatherData() {
 				if (tafLine.type !== "TEMPO" || tafLine.valid_range.to * 1000 > desiredTime.valueOf()) {
 					if (tafLine.wind) {
 						windDirection.value = (tafLine.wind.direction ?? 0) - Math.round(getMagVar()); // Convert true heading to magnetic
+						if (windDirection.value <= 0) {
+							windDirection.value += 360;
+						}
+						if (windDirection.value > 360) {
+							windDirection.value -= 360;
+						}
 						windSpeed.value = tafLine.wind.speed ?? 0;
 						windGust.value = tafLine.wind.gust ?? 0;
 					}
