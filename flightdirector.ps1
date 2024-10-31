@@ -13,7 +13,7 @@ $http.Prefixes.Add($hostLocation)
 # $http.AuthenticationSchemes = [System.Net.AuthenticationSchemes]::IntegratedWindowsAuthentication
 $http.Start()
 
-New-PSDrive -Name FileServe -PSProvider FileSystem -Root "C:\Users\petsc\Pictures"
+New-PSDrive -Name FileServe -PSProvider FileSystem -Root "C:\Users"
 # [System.Diagnostics.Process]::Start("msedge", $hostLocation) # Or "chrome"
 Start-Process $hostLocation
 

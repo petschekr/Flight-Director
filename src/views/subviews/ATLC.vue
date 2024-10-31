@@ -42,7 +42,7 @@
 				</Listbox>
 			</div>
 
-			<h1 v-if="selectedAirfield" class="mt-1 capitalize font-bold">{{ selectedAirfield?.NAME.toLowerCase().replace(/\bAB\b/ig, "AB").replace(/\bAFB\b/ig, "AFB") }}</h1>
+			<h1 v-if="airfieldData.airfield" class="mt-1 capitalize font-bold">{{ airfieldData.airfield.name.toLowerCase().replace(/\bAB\b/ig, "AB").replace(/\bAFB\b/ig, "AFB") }}</h1>
 			<h1 v-else-if="icao.trim().length > 0" class="mt-1 capitalize italic">Loading...</h1>
 			<h1 v-else class="mt-1 capitalize italic">No airfield selected</h1>
 			<canvas ref="map" class="mt-1 mb-3 bg-white w-full h-60 rounded-md"></canvas>
@@ -73,26 +73,26 @@
 					<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
 						<table class="min-w-full divide-y divide-gray-300">
 							<tbody class="divide-y divide-gray-200 bg-white">
-								<tr v-for="runway in selectedAirfieldRunways" class="divide-x">
+								<tr v-for="runway in airfieldData.runways" class="divide-x">
 									<td class="py-3 pl-4 pr-3 text-sm sm:pl-6 text-center w-32">
-										<p class="text-lg font-medium text-gray-900">{{ runway.LOW_IDENT }} - {{ runway.HIGH_IDENT }}</p>
-										<p class="font-medium">{{ parseInt(runway.LENGTH).toLocaleString() }}' x {{ parseInt(runway.RWY_WIDTH).toLocaleString() }}'</p>
-										<p>{{ runway.SURFACE }}</p>
+										<p class="text-lg font-medium text-gray-900">{{ runway.low.name }} - {{ runway.high.name }}</p>
+										<p class="font-medium">{{ runway.length.toLocaleString() }}' x {{ runway.width.toLocaleString() }}'</p>
+										<p>{{ runway.surface }}</p>
 									</td>
 									<td class="px-3 py-3 text-sm text-gray-600">
-										<p class="text-gray-900 font-medium">Rwy {{ runway.LOW_IDENT }} <span v-if="isBestWind(parseFloat(runway.LOW_HDG))" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
+										<p class="text-gray-900 font-medium">Rwy {{ runway.low.name }} <span v-if="isBestWind(runway.low.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
 										<p class="leading-8">
-											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(parseFloat(runway.LOW_HDG))[0] > 0 ? 'rotate-90' : '-rotate-90']" />
-											<span class="ml-1 text-gray-500">{{ windComponents(parseFloat(runway.LOW_HDG))[2] }} kts</span>
-											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
-											<span :class="['ml-1', windComponents(parseFloat(runway.LOW_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(parseFloat(runway.LOW_HDG))[3] }} kts</span>
+											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(runway.low.heading.mag)[0] > 0 ? 'rotate-90' : '-rotate-90']" />
+											<span class="ml-1 text-gray-500">{{ windComponents(runway.low.heading.mag)[2] }} kts</span>
+											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(runway.low.heading.mag)[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
+											<span :class="['ml-1', windComponents(runway.low.heading.mag)[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(runway.low.heading.mag)[3] }} kts</span>
 										</p>
-										<p class="text-gray-900 font-medium">Rwy {{ runway.HIGH_IDENT }} <span v-if="isBestWind(parseFloat(runway.HIGH_HDG))" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
+										<p class="text-gray-900 font-medium">Rwy {{ runway.high.name }} <span v-if="isBestWind(runway.high.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
 										<p class="leading-8">
-											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(parseFloat(runway.HIGH_HDG))[0] > 0 ? 'rotate-90' : '-rotate-90']" />
-											<span class="ml-1 text-gray-500">{{ windComponents(parseFloat(runway.HIGH_HDG))[2] }} kts</span>
-											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
-											<span :class="['ml-1', windComponents(parseFloat(runway.HIGH_HDG))[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(parseFloat(runway.HIGH_HDG))[3] }} kts</span>
+											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(runway.high.heading.mag)[0] > 0 ? 'rotate-90' : '-rotate-90']" />
+											<span class="ml-1 text-gray-500">{{ windComponents(runway.high.heading.mag)[2] }} kts</span>
+											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(runway.high.heading.mag)[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
+											<span :class="['ml-1', windComponents(runway.high.heading.mag)[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(runway.high.heading.mag)[3] }} kts</span>
 										</p>
 									</td>
 								</tr>
@@ -110,7 +110,7 @@
 							<tbody class="divide-y divide-gray-200 bg-white">
 								<tr>
 									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Field Elevation</td>
-									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ fieldElevation }} ft</td>
+									<td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600">{{ airfieldData.airfield?.elevation.toLocaleString() ?? 0 }} ft</td>
 								</tr>
 								<tr>
 									<td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Mag Var</td>
@@ -140,16 +140,15 @@
 						<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
 							<table class="min-w-full divide-y divide-gray-300">
 								<tbody class="divide-y divide-gray-200 bg-white">
-									<tr v-for="freq in selectedAirfieldComms">
+									<tr v-for="freq in airfieldData.comm">
 										<td class="py-3 pl-4 pr-3 text-sm sm:pl-6">
-											<p class="font-medium text-gray-900">{{ freq.COMM_NAME }}</p>
-											<p>{{ freq.S_OPR_H }}</p>
+											<p class="font-medium text-gray-900">{{ freq.name }}</p>
+											<p class="italic">{{ freq.sector }}</p>
+											<p>{{ freq.operatingHours }}</p>
+											<p class="font-light">{{ airfieldData.commRemarks?.find(remark => remark.type === freq.type)?.remark ?? "" }}</p>
 										</td>
 										<td class="px-3 py-3 text-sm text-gray-600 text-center">
-											{{ freq.FREQ_1 }}
-											<template v-if="freq.FREQ_2">
-												/ {{ freq.FREQ_2 }}
-											</template>
+											{{ freq.freqs.join(" / ") }}
 										</td>
 									</tr>
 								</tbody>
@@ -350,7 +349,7 @@
 				<h3 class="text-lg font-medium leading-6 text-gray-900">Drag Index</h3>
 				<p class="mt-1 text-sm text-gray-500">Check your aircraft's configuration to set these correctly. 4-blade prop drag is assumed and automatically added for best glide calculation.</p>
 			</div>
-			<div class="mt-5 space-y-6 md:col-span-3 md:mt-0">
+			<div class="mt-5 md:col-span-3 md:mt-0">
 				<fieldset class="border-t border-b border-gray-200">
 					<div class="divide-y divide-gray-200">
 						<div v-for="dragItem in dragItems" :key="dragItem.index" class="relative flex items-start py-4">
@@ -366,7 +365,35 @@
 						</div>
 					</div>
 				</fieldset>
-				<p class="text-center font-semibold">Drag Index: {{dragIndex}}</p>
+				<p class="text-center font-semibold m-3">Drag Index: {{dragIndex}}</p>
+			</div>
+		</div>
+		<div class="md:grid md:grid-cols-4 md:gap-6">
+			<div class="md:col-span-1">
+				<div class="flex justify-between">
+					<h3 class="text-lg font-medium leading-6 text-gray-900">DAFIF</h3>
+					<span class="inline-flex items-center gap-x-1.5 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
+						<svg class="h-1.5 w-1.5 fill-red-500" viewBox="0 0 6 6" aria-hidden="true">
+							<circle cx="3" cy="3" r="3" />
+						</svg>
+						Expireddd
+					</span>
+				</div>
+				<p class="mt-1 text-sm text-gray-500">Current DAFIF cycle information loaded in this browser</p>
+			</div>
+			<div class="mt-5 space-y-6 md:col-span-3 md:mt-0">
+				<dl class="mx-auto grid grid-cols-1 gap-px bg-gray-200 sm:grid-cols-3 lg:grid-cols-3">
+					<div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-4 sm:px-6 xl:px-8">
+						<dt class="text-sm/6 font-medium text-gray-500">Cycle</dt>
+						<!-- <dd class="text-rose-600 text-xs font-medium">Expires soon</dd> -->
+						<dd class="w-full flex-none text-3xl/10 font-medium tracking-tight text-gray-900">2412</dd>
+					</div>
+					<div class="flex flex-wrap items-baseline justify-between col-span-2 gap-x-4 gap-y-2 bg-white px-4 py-4 sm:px-6 xl:px-8">
+						<dt class="text-sm/6 font-medium text-gray-500">Valid</dt>
+						<!-- <dd class="text-rose-600 text-xs font-medium">Expires soon</dd> -->
+						<dd class="w-full flex-none text-3xl/10 font-medium tracking-tight text-gray-900">31 Oct 24 <span class="text-lg text-gray-500 font-normal mx-1">until</span> 15 Nov 24</dd>
+					</div>
+				</dl>
 			</div>
 		</div>
 	</div>
@@ -374,7 +401,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref, computed, inject, watchEffect, onMounted, watch } from "vue";
+import { ref, type Ref, computed, inject, watchEffect, onMounted, watch, reactive } from "vue";
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions, RadioGroup, RadioGroupLabel, RadioGroupOption } from "@headlessui/vue";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/vue/20/solid";
 import { AdjustmentsHorizontalIcon, ChevronDoubleRightIcon, RadioIcon, XCircleIcon } from "@heroicons/vue/20/solid";
@@ -397,11 +424,13 @@ import { CAVOK_MANAGER, OPEN_ALERT } from "@/types/keys"
 import * as drag from "@/performance/drag";
 import * as ATLCPerformance from "@/performance/ATLC";
 import * as GlidePerformance from "@/performance/glide";
-import * as DAFIF from "@/performance/DAFIF";
 import { bestClimb } from "@/performance/climb";
 import { metersPerSecondToKnots, metersToFeet } from "@/performance/units";
 
 import dayjs from "dayjs";
+import { getDAFIFVersion, importDAFIF } from "@/data/DAFIFDB";
+import { getDB } from "@/data/db";
+import type { DB } from "@/types/DAFIF";
 
 const props = defineProps<{
 	dafifLocation: string;
@@ -418,6 +447,7 @@ const temperature = ref(parseInt(localStorage.getItem("temperature") ?? "15"));
 // TODO: click for unit change
 const altimeter = ref(parseFloat(localStorage.getItem("altimeter") ?? "29.92"));
 const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "11000"));
+const dafifCycle = ref(localStorage.getItem("dafifCycle") ?? null);
 
 const isAirborne = ref(false);
 watchEffect(() => {
@@ -426,28 +456,31 @@ watchEffect(() => {
 	let aircraftData = cavokManager.aircraft.get(cavokManager.selectedCallsign);
 	if (!aircraftData) return;
 
-	aircraftWeight.value = Math.round(cavokManager.emptyWeight + cavokManager.storesWeight + aircraftData.ESDComponent?.fuelRemaining ?? 0);
+	aircraftWeight.value = Math.round(cavokManager.emptyWeight + cavokManager.storesWeight + (aircraftData.ESDComponent?.fuelRemaining ?? 0));
 
 	isAirborne.value = metersPerSecondToKnots(aircraftData.ESDComponent.indicatedAirSpeed) > 50;
 });
 
-const selectedAirfield: Ref<DAFIF.Airport | null> = ref(null);
-const selectedAirfieldRunways: Ref<DAFIF.Runway[]> = ref([]);
-const selectedRunway: Ref<DAFIF.Runway | null> = ref(null);
-const selectedRunwayEnd: Ref<"HIGH" | "LOW"> = ref("HIGH");
-const selectedAirfieldComms: Ref<DAFIF.AirportComms[] | null> = ref(null);
+const airfieldData = reactive<Partial<{
+	airfield: DB.Airport,
+	runways: DB.Runway[],
+	selectedRunway: DB.Runway,
+	selectedRunwayDirection: DB.RunwayDirection,
+	comm: DB.AirportComm[],
+	commRemarks: DB.AirportCommRemark[],
+}>>({});
 
-const pressureAltitude = computed(() => {
-	if (!selectedAirfield.value) return "--";
-	return ATLCPerformance.pressureAltitude(parseInt(selectedAirfield.value.ELEV), altimeter.value).toLocaleString();
+const pressureAltitude = computed((): string => {
+	if (airfieldData.airfield?.elevation === undefined) return "--";
+	return ATLCPerformance.pressureAltitude(airfieldData.airfield.elevation, altimeter.value).toLocaleString();
 });
-const densityAltitude = computed(() => {
-	if (!selectedAirfield.value) return "--";
-	return ATLCPerformance.densityAltitude(parseInt(selectedAirfield.value.ELEV), altimeter.value, temperature.value).toLocaleString();
+const densityAltitude = computed((): string => {
+	if (airfieldData.airfield?.elevation === undefined) return "--";
+	return ATLCPerformance.densityAltitude(airfieldData.airfield.elevation, altimeter.value, temperature.value).toLocaleString();
 });
-const isa = computed(() => {
-	if (!selectedAirfield.value) return "--";
-	let isa = Math.round(ATLCPerformance.deltaISA_F(parseInt(selectedAirfield.value.ELEV), temperature.value));
+const isa = computed((): string => {
+	if (airfieldData.airfield?.elevation === undefined) return "--";
+	let isa = Math.round(ATLCPerformance.deltaISA_F(airfieldData.airfield.elevation, temperature.value));
 	if (isa > 0) {
 		return `+${isa}`;
 	}
@@ -455,93 +488,77 @@ const isa = computed(() => {
 		return isa.toString();
 	}
 });
-const tora = computed(() => {
-	if (!selectedAirfield.value || !selectedRunway.value) return "--";
-	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HE_TORA : selectedRunway.value.LE_TORA);
-	if (isNaN(distance)) {
-		distance = parseInt(selectedRunway.value.LENGTH);
-	}
-	return distance.toLocaleString();
+const tora = computed((): string => {
+	return airfieldData.selectedRunwayDirection?.distances.tora?.toLocaleString()
+		?? airfieldData.selectedRunway?.length.toLocaleString()
+		?? "--";
 });
-const lda = computed(() => {
-	if (!selectedAirfield.value || !selectedRunway.value) return "--";
-	let distance = parseInt(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HELAND_DIS : selectedRunway.value.LELAND_DIS);
-	if (isNaN(distance)) {
-		distance = parseInt(selectedRunway.value.LENGTH);
-	}
-	return distance.toLocaleString();
+const lda = computed((): string => {
+	return airfieldData.selectedRunwayDirection?.distances.lda?.toLocaleString()
+		?? airfieldData.selectedRunway?.length.toLocaleString()
+		?? "--";
 });
-const accelCheckTime = computed(() => {
-	if (!selectedAirfield.value) return "--";
-	let elevation = parseInt(selectedAirfield.value.ELEV);
+const accelCheckTime = computed((): string => {
+	if (!airfieldData.airfield) return "--";
 	let result = ATLCPerformance.accelCheckTime(
 		aircraftWeight.value,
-		ATLCPerformance.pressureAltitude(elevation, altimeter.value),
-		ATLCPerformance.deltaISA_F(elevation, temperature.value)
+		ATLCPerformance.pressureAltitude(airfieldData.airfield.elevation, altimeter.value),
+		ATLCPerformance.deltaISA_F(airfieldData.airfield.elevation, temperature.value)
 	);
 	if (result === null) return "--";
-	return Math.ceil(result);
+	return Math.ceil(result).toLocaleString();
 });
-const refusalSpeed = computed(() => {
-	if (!selectedAirfield.value || !selectedRunway.value) return "--";
-	let elevation = parseInt(selectedAirfield.value.ELEV);
+const refusalSpeed = computed((): string => {
+	if (!airfieldData.airfield || !airfieldData.selectedRunway || !airfieldData.selectedRunwayDirection) return "--";
+	airfieldData.selectedRunwayDirection.distances.tora
 	let result = ATLCPerformance.refusalSpeed(
 		aircraftWeight.value,
-		ATLCPerformance.pressureAltitude(elevation, altimeter.value),
-		ATLCPerformance.deltaISA_F(elevation, temperature.value),
-		parseInt(selectedRunway.value.LENGTH), // TODO: takeoff distance can differ by runway direction
+		ATLCPerformance.pressureAltitude(airfieldData.airfield.elevation, altimeter.value),
+		ATLCPerformance.deltaISA_F(airfieldData.airfield.elevation, temperature.value),
+		airfieldData.selectedRunwayDirection.distances.asda ?? airfieldData.selectedRunway?.length,
 	);
 	if (result === null) return "--";
-	return Math.round(result);
+	return Math.round(result).toLocaleString();
 });
-const rotateSpeed = computed(() => ATLCPerformance.rotationSpeed(aircraftWeight.value));
-const liftoffSpeed = computed(() => ATLCPerformance.liftoffSpeed(aircraftWeight.value));
-const takeoffRoll = computed(() => {
-	if (!selectedAirfield.value || !selectedRunway.value) return "--";
-	let elevation = parseInt(selectedAirfield.value.ELEV);
-	let runwayHeading = parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HIGH_HDG : selectedRunway.value.LOW_HDG);
-	let runwaySlope = parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HE_SLOPE : selectedRunway.value.LE_SLOPE);
-	if (isNaN(runwaySlope)) runwaySlope = 0;
+const rotateSpeed = computed((): string => ATLCPerformance.rotationSpeed(aircraftWeight.value).toLocaleString());
+const liftoffSpeed = computed((): string => ATLCPerformance.liftoffSpeed(aircraftWeight.value).toLocaleString());
+const takeoffRoll = computed((): string => {
+	if (!airfieldData.airfield || !airfieldData.selectedRunwayDirection) return "--";
 
 	let result = ATLCPerformance.takeoffRoll(
 		aircraftWeight.value,
-		ATLCPerformance.pressureAltitude(elevation, altimeter.value),
-		ATLCPerformance.deltaISA_F(elevation, temperature.value),
-		windComponents(runwayHeading)[1],
-		runwaySlope,
+		ATLCPerformance.pressureAltitude(airfieldData.airfield.elevation, altimeter.value),
+		ATLCPerformance.deltaISA_F(airfieldData.airfield.elevation, temperature.value),
+		windComponents(airfieldData.selectedRunwayDirection.heading.mag)[1],
+		airfieldData.selectedRunwayDirection.slope ?? 0,
 	);
 	if (result === null) return "--";
-	const ACCURACY = 50;
+	const ACCURACY = 50; // Round to within 50 ft
 	return (Math.ceil(result / ACCURACY) * ACCURACY).toLocaleString();
 });
-const landingRoll = computed(() => {
-	if (!selectedAirfield.value || !selectedRunway.value) return "--";
-	let elevation = parseInt(selectedAirfield.value.ELEV);
-	let runwayHeading = parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HIGH_HDG : selectedRunway.value.LOW_HDG);
-	let runwaySlope = parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HE_SLOPE : selectedRunway.value.LE_SLOPE);
-	if (isNaN(runwaySlope)) runwaySlope = 0;
+const landingRoll = computed((): string => {
+	if (!airfieldData.airfield || !airfieldData.selectedRunwayDirection) return "--";
 
 	let result = ATLCPerformance.landingRoll(
 		aircraftWeight.value,
-		ATLCPerformance.densityAltitude(elevation, altimeter.value, temperature.value),
-		windComponents(runwayHeading)[1],
-		runwaySlope,
+		ATLCPerformance.densityAltitude(airfieldData.airfield.elevation, altimeter.value, temperature.value),
+		windComponents(airfieldData.selectedRunwayDirection.heading.mag)[1],
+		airfieldData.selectedRunwayDirection.slope ?? 0,
 	);
 	if (result === null) return "--";
-	const ACCURACY = 50;
+	const ACCURACY = 50; // Round to within 50 ft
 	return (Math.ceil(result / ACCURACY) * ACCURACY).toLocaleString();
 });
-const bestGlideSpeed = computed(() => {
+const bestGlideSpeed = computed((): string => {
 	let result = GlidePerformance.bestGlideSpeed(dragIndex.value + drag.propDragFeathered, aircraftWeight.value);
 	if (result === null) return "--";
-	return Math.round(result);
+	return Math.round(result).toLocaleString();
 });
-const approachSpeed = computed(() => ATLCPerformance.approachSpeed(aircraftWeight.value));
+const approachSpeed = computed((): string => ATLCPerformance.approachSpeed(aircraftWeight.value).toLocaleString());
 const bestRateOfClimb = computed(() => {
-	if (!selectedAirfield.value) return null;
-	let elevation = parseInt(selectedAirfield.value.ELEV);
+	if (!airfieldData.airfield) return null;
 
-	let densityAltitude = ATLCPerformance.densityAltitude(elevation, altimeter.value, temperature.value);
+	let densityAltitude = ATLCPerformance.densityAltitude(airfieldData.airfield.elevation, altimeter.value, temperature.value);
 	// If above 50 knots, aircraft is airborne so use the aircraft's density altitude instead of the airfield's
 	if (cavokManager?.selectedCallsign) {
 		let aircraftData = cavokManager.aircraft.get(cavokManager.selectedCallsign);
@@ -557,59 +574,19 @@ const bestRateOfClimb = computed(() => {
 		rateOfClimb: Math.round(result.rateOfClimb),
 	};
 });
-const fieldElevation = computed(() => {
-	if (!selectedAirfield.value) return "--";
-	return parseInt(selectedAirfield.value.ELEV).toLocaleString();
+const magVar = computed((): string => {
+	if (!airfieldData.airfield) return "--";
+	return `${Math.abs(airfieldData.airfield.magVar).toFixed(1)}° ${airfieldData.airfield.magVar < 0 ? "W" : "E"}`;
 });
-function getMagVar() {
-	if (!selectedAirfield.value) return 0;
-	let parsed = selectedAirfield.value.MAG_VAR.match(/^(E|W)(\d\d\d)(\d\d\d)/);
-	if (!parsed) return 0;
-
-	let variation = parseInt(parsed[2]);
-	variation += parseInt(parsed[3]) / 10 / 60;
-	if (parsed[1] === "W") {
-		variation *= -1;
-	}
-	return variation;
-}
-const magVar = computed(() => {
-	if (!selectedAirfield.value) return "--";
-	let variation = getMagVar();
-	return `${Math.abs(variation).toFixed(1)}° ${variation < 0 ? "W" : "E"}`;
-});
-const illa = computed(() => {
-	if (!selectedAirfield.value) return "--";
-	let fieldElevation = parseInt(selectedAirfield.value.ELEV);
-	let illa = Math.ceil(fieldElevation / 100) * 100 + 500;
-	if (icao.value.toUpperCase() === "OMAM") {
-		illa = 500; // Defined by ADAB LRE standards
-	}
+const illa = computed((): string => {
+	if (!airfieldData.airfield) return "--";
+	let illa = Math.ceil(airfieldData.airfield.elevation / 100) * 100 + 500;
 	return illa.toLocaleString();
 });
-const illh = computed(() => {
-	if (!selectedAirfield.value) return "--";
-	if (!selectedRunway.value) return "--";
-	if (selectedRunwayEnd.value === "HIGH") {
-		if (icao.value.toUpperCase() === "OMAM") {
-			return "306.0"; // Defined by ADAB LRE standards
-		}
-		return selectedRunway.value.HIGH_HDG;
-	}
-	else {
-		if (icao.value.toUpperCase() === "OMAM") {
-			return "126.0"; // Defined by ADAB LRE standards
-		}
-		return selectedRunway.value.LOW_HDG;
-	}
-});
-const patternAltitude = computed(() => {
-	if (!selectedAirfield.value) return "--";
-	let fieldElevation = parseInt(selectedAirfield.value.ELEV);
-	let patternAltitude = Math.round(fieldElevation / 100) * 100 + 1500;
-	if (icao.value.toUpperCase() === "OMAM") {
-		patternAltitude = 1_500; // Defined by ADAB LRE standards
-	}
+const illh = computed((): string => airfieldData.selectedRunwayDirection?.heading.mag.toLocaleString() ?? "--");
+const patternAltitude = computed((): string => {
+	if (!airfieldData.airfield) return "--";
+	let patternAltitude = Math.round(airfieldData.airfield.elevation / 100) * 100 + 1500;
 	return patternAltitude.toLocaleString();
 });
 
@@ -631,7 +608,7 @@ function windComponents(runwayHeading: number): [number, number, string, string]
 function isBestWind(runwayHeading: number): boolean {
 	let bestHeadwind = -Infinity;
 	let bestHeading = NaN;
-	for (let direction of selectedAirfieldRunways.value.flatMap(runway => [runway.LOW_HDG, runway.HIGH_HDG]).map(parseFloat)) {
+	for (let direction of airfieldData.runways?.flatMap(runway => [runway.high.heading.mag, runway.low.heading.mag]) ?? []) {
 		let wind = windComponents(direction);
 		if (wind[1] > bestHeadwind) {
 			bestHeading = direction;
@@ -653,7 +630,7 @@ const takeOffStats = computed(() => {
 
 const distanceStats = computed(() => {
 	return [
-		{ name: "Takeoff Ground Rolll", icon: ChevronDoubleRightBigIcon, color: "bg-slate-500", stat: takeoffRoll.value, unit: "ft" },
+		{ name: "Takeoff Ground Roll", icon: ChevronDoubleRightBigIcon, color: "bg-slate-500", stat: takeoffRoll.value, unit: "ft" },
 		// TODO: Fill in and compute this data
 		// { name: "Distance to Clear 50ft Obstacle", icon: CubeTransparentIcon, color: "bg-slate-600", stat: "--", unit: "ft" },
 		{ name: "Landing Roll", icon: ChevronDoubleLeftIcon, color: "bg-orange-900", stat: landingRoll.value, unit: "ft" },
@@ -686,16 +663,16 @@ const runwaysDropdown = ref([
 
 const selectedDropdown = ref(runwaysDropdown.value[0]);
 watchEffect(() => {
-	if (!selectedAirfieldRunways.value) return;
+	if (!airfieldData.runways) return;
 	if (selectedDropdown.value.name === "Loading...") return;
-	for (let runway of selectedAirfieldRunways.value) {
-		if (runway.HIGH_IDENT === selectedDropdown.value.name) {
-			selectedRunway.value = runway;
-			selectedRunwayEnd.value = "HIGH";
+	for (let runway of airfieldData.runways) {
+		if (runway.high.name === selectedDropdown.value.name) {
+			airfieldData.selectedRunway = runway;
+			airfieldData.selectedRunwayDirection = runway.high;
 		}
-		if (runway.LOW_IDENT === selectedDropdown.value.name) {
-			selectedRunway.value = runway;
-			selectedRunwayEnd.value = "LOW";
+		if (runway.low.name === selectedDropdown.value.name) {
+			airfieldData.selectedRunway = runway;
+			airfieldData.selectedRunwayDirection = runway.low;
 		}
 	}
 
@@ -705,19 +682,25 @@ watchEffect(() => {
 // Input error detector
 let errors: Ref<string[]> = ref([]);
 watchEffect(() => {
-	if (!selectedAirfield.value || !selectedRunway.value) return;
+	if (!airfieldData.airfield || !airfieldData.selectedRunway || !airfieldData.selectedRunwayDirection) return;
 	errors.value = [];
 
 	// Wind limitations
-	let [crosswind, headwind] = windComponents(parseFloat(selectedRunwayEnd.value === "HIGH" ? selectedRunway.value.HIGH_HDG : selectedRunway.value.LOW_HDG));
+	let [crosswind, headwind] = windComponents(airfieldData.selectedRunwayDirection.heading.mag);
 	if (Math.max(windSpeed.value) > 30) {
 		errors.value.push(`Total wind of <b>${Math.abs(headwind)} kts</b> exceeds 30 kt limit`);
 	}
 	if (headwind < -10) {
 		errors.value.push(`Tailwind of <b>${Math.abs(headwind)} kts</b> exceeds 10 kt limit`);
 	}
-	if (Math.abs(crosswind) > 15) {
-		errors.value.push(`Crosswind of <b>${Math.abs(crosswind)} kts</b> exceeds 15 kt limit (dirty wing)`);
+	if (windGust.value - windSpeed.value > 20) {
+		errors.value.push(`Gust factor of <b>${windGust.value - windSpeed.value} kts</b> exceeds 20 kt limit`);
+	}
+	if (Math.abs(crosswind) > 20) {
+		errors.value.push(`Crosswind of <b>${Math.abs(crosswind)} kts</b> exceeds 20 kt limit (clean wing)`);
+	}
+	else if (Math.abs(crosswind) > 15) {
+		errors.value.push(`Crosswind of <b>${Math.abs(crosswind)} kts</b> exceeds 15 kt limit (dirty wing with munitions, ER tanks, or external payloads)`);
 	}
 
 	// Runway limitations
@@ -727,8 +710,8 @@ watchEffect(() => {
 	if (parseInt(landingRoll.value.replace(",", "")) > parseInt(lda.value.replace(",", ""))) {
 		errors.value.push(`Landing roll of <b>${landingRoll.value} ft</b> exceeds landing distance available (${lda.value} ft)`);
 	}
-	if (parseInt(selectedRunway.value.LENGTH) < 5000) {
-		errors.value.push(`Selected runway length of <b>${parseInt(selectedRunway.value.LENGTH).toLocaleString()} ft</b> is too short (5,000 ft required)`);
+	if (airfieldData.selectedRunway.length < 5000) {
+		errors.value.push(`Selected runway length of <b>${airfieldData.selectedRunway.length.toLocaleString()} ft</b> is too short (5,000 ft required)`);
 	}
 
 	// Weight limitations
@@ -743,11 +726,11 @@ watchEffect(() => {
 	}
 
 	// Weather limitations
-	if (ATLCPerformance.deltaISA_F(parseInt(selectedAirfield.value.ELEV), temperature.value) > 70) {
+	if (ATLCPerformance.deltaISA_F(airfieldData.airfield.elevation, temperature.value) > 70) {
 		errors.value.push(`Airfield temperature exceeds +70 °F ISA. Performance calculations are not valid.`);
 	}
 	if (ATLCPerformance.cToF(temperature.value) >= 95) {
-		errors.value.push(`Airfield temperature exceeds 95 °F. ATLC operations should not be performed due to risk of aircraft overheating.`);
+		errors.value.push(`Airfield temperature of ${ATLCPerformance.cToF(temperature.value)} exceeds 95 °F. Use caution when performing ATLC operations due to risk of aircraft overheating.`);
 	}
 });
 
@@ -841,7 +824,7 @@ async function pullWeatherData() {
 		}
 		wxUpdateText.value = `Last updated ${lastUpdateText} ago`;
 
-		windDirection.value = (latestMETAR.wind.direction ?? 0) - Math.round(getMagVar()); // Convert true heading to magnetic
+		windDirection.value = (latestMETAR.wind.direction ?? 0) - Math.round(airfieldData.airfield?.magVar ?? 0); // Convert true heading to magnetic
 		windSpeed.value = latestMETAR.wind.speed ?? 0;
 		windGust.value = latestMETAR.wind.gust ?? 0;
 		temperature.value = latestMETAR.temperature ?? 15;
@@ -882,7 +865,7 @@ async function pullWeatherData() {
 			if (desiredTime.valueOf() >= tafLine.valid_time * 1000) {
 				if (tafLine.type !== "TEMPO" || tafLine.valid_range.to * 1000 > desiredTime.valueOf()) {
 					if (tafLine.wind) {
-						windDirection.value = (tafLine.wind.direction ?? 0) - Math.round(getMagVar()); // Convert true heading to magnetic
+						windDirection.value = (tafLine.wind.direction ?? 0) - Math.round(airfieldData.airfield?.magVar ?? 0); // Convert true heading to magnetic
 						if (windDirection.value <= 0) {
 							windDirection.value += 360;
 						}
@@ -942,13 +925,16 @@ watchEffect(() => {
 	localStorage.setItem("temperature", temperature.value.toString());
 	localStorage.setItem("altimeter", altimeter.value.toString());
 	localStorage.setItem("aircraftWeight", aircraftWeight.value.toString());
+	if (dafifCycle.value !== null) {
+		localStorage.setItem("dafifCycle", dafifCycle.value);
+	}
 });
 
 ///////////////////////////////////////////
 const map: Ref<HTMLCanvasElement | null> = ref(null);
 
 function drawAirfieldDiagram() {
-	if (!selectedAirfield.value || !selectedRunway.value || !map.value) return;
+	if (!airfieldData.airfield || !airfieldData.runways || !map.value) return;
 
 	let { width, height } = map.value.getBoundingClientRect();
 	let deviceScale = window.devicePixelRatio;
@@ -961,9 +947,9 @@ function drawAirfieldDiagram() {
 	ctx.scale(deviceScale, deviceScale);
 	ctx.clearRect(0, 0, width, height);
 
-	let runwayCoordinates = selectedAirfieldRunways.value.flatMap(runway => [
-		[parseFloat(runway.HE_WGS_DLONG), parseFloat(runway.HE_WGS_DLAT)],
-		[parseFloat(runway.LE_WGS_DLONG), parseFloat(runway.LE_WGS_DLAT)],
+	let runwayCoordinates = airfieldData.runways.flatMap(runway => [
+		[runway.high.position.long, runway.high.position.lat],
+		[runway.low.position.long, runway.low.position.lat],
 	]);
 
 	let minX = NaN, maxX = NaN, minY = NaN, maxY = NaN;
@@ -997,10 +983,10 @@ function drawAirfieldDiagram() {
 	}
 
 	// Draw runways
-	for (let runway of selectedAirfieldRunways.value.sort(a => a.HIGH_IDENT === selectedRunway.value?.HIGH_IDENT && a.LOW_IDENT === selectedRunway.value.LOW_IDENT ? 1 : -1)) {
-		let isSelected = runway.HIGH_IDENT === selectedRunway.value.HIGH_IDENT && runway.LOW_IDENT === selectedRunway.value.LOW_IDENT;
-		let highEnd = mapCoordinateToFrame([parseFloat(runway.HE_WGS_DLONG), parseFloat(runway.HE_WGS_DLAT)], 0.8);
-		let lowEnd  = mapCoordinateToFrame([parseFloat(runway.LE_WGS_DLONG), parseFloat(runway.LE_WGS_DLAT)], 0.8);
+	for (let runway of [...airfieldData.runways].sort(a => a.high.name === airfieldData.selectedRunway?.high.name && a.low.name === airfieldData.selectedRunway?.low.name ? 1 : -1)) {
+		let isSelected = runway.high.name === airfieldData.selectedRunway?.high.name && runway.low.name === airfieldData.selectedRunway?.low.name;
+		let highEnd = mapCoordinateToFrame([runway.high.position.long, runway.high.position.lat], 0.8);
+		let lowEnd  = mapCoordinateToFrame([runway.low.position.long, runway.low.position.lat], 0.8);
 
 		ctx.lineWidth = 5;
 		ctx.strokeStyle = isSelected ? "#0284c7" : "black";
@@ -1020,25 +1006,25 @@ function drawAirfieldDiagram() {
 			ctx.restore();
 		};
 		ctx.font = "16px sans-serif";
-		if (isSelected && selectedRunwayEnd.value === "HIGH") {
+		if (isSelected && airfieldData.selectedRunwayDirection?.name === runway.high.name) {
 			ctx.fillStyle = "#0284c7";
 		}
 		else {
 			ctx.fillStyle = "black";
 		}
-		drawAngleText(runway.HIGH_IDENT, highEnd, parseFloat(runway.HE_TRUE_HDG));
-		if (isSelected && selectedRunwayEnd.value === "LOW") {
+		drawAngleText(runway.high.name, highEnd, runway.high.heading.true);
+		if (isSelected && airfieldData.selectedRunwayDirection?.name === runway.low.name) {
 			ctx.fillStyle = "#0284c7";
 		}
 		else {
 			ctx.fillStyle = "black";
 		}
-		drawAngleText(runway.LOW_IDENT, lowEnd, parseFloat(runway.LE_TRUE_HDG));
+		drawAngleText(runway.low.name, lowEnd, runway.low.heading.true);
 	}
 
 	// Draw wind marker
 	const windMarkerLength = 40;
-	let correctedWindDirection = windDirection.value - 90 + getMagVar();
+	let correctedWindDirection = windDirection.value - 90 + airfieldData.airfield.magVar;
 
 	let windMarkerCenter = [35, 35];
 	windMarkerCenter[0] -= Math.cos(correctedWindDirection * (Math.PI / 180)) * windMarkerLength / 2;
@@ -1090,22 +1076,22 @@ const resizeObserver = new ResizeObserver(entries => {
 	drawAirfieldDiagram();
 });
 onMounted(() => resizeObserver.observe(map.value!));
-watch([windDirection, windSpeed, windGust, selectedRunway, selectedRunwayEnd], () => drawAirfieldDiagram());
+watch([windDirection, windSpeed, windGust, airfieldData], () => drawAirfieldDiagram());
 
 function selectBestWindRunway(useSaved: boolean = true) {
+	if (!airfieldData.runways) return;
 	let bestWindIndex = NaN;
-	runwaysDropdown.value = selectedAirfieldRunways.value
+	runwaysDropdown.value = airfieldData.runways
 		.flatMap(runway => [
-			{ name: runway.HIGH_IDENT, heading: runway.HIGH_HDG, length: runway.LENGTH },
-			{ name: runway.LOW_IDENT, heading: runway.LOW_HDG, length: runway.LENGTH }
+			{ name: runway.high.name, heading: runway.high.heading.mag, length: runway.length },
+			{ name: runway.low.name, heading: runway.low.heading.mag, length: runway.length },
 		])
 		.sort((a, b) => a.name.localeCompare(b.name))
 		.map((runway, index) => {
-			let length = parseInt(runway.length);
-			if (isBestWind(parseFloat(runway.heading)) && isNaN(bestWindIndex)) {
+			if (isBestWind(runway.heading) && isNaN(bestWindIndex)) {
 				bestWindIndex = index;
 			}
-			return { name: runway.name, notes: `${length.toLocaleString()} ft` }
+			return { name: runway.name, notes: `${runway.length.toLocaleString()} ft` }
 		});
 
 	let savedRunway = runwaysDropdown.value.find(rwy => rwy.name === localStorage.getItem("runwayName"));
@@ -1120,6 +1106,8 @@ function selectBestWindRunway(useSaved: boolean = true) {
 async function updateAirfield() {
 	if (!openAlert || !icao.value) return;
 
+	const icaoIdentifier = icao.value.toUpperCase();
+
 	// Do a simplified path replacement on this path (without the callsign logic and the date always set to today)
 	function simplePathReplacement(path: string): string {
 		const date = dayjs();
@@ -1133,8 +1121,17 @@ async function updateAirfield() {
 	}
 	let dafifLocation = simplePathReplacement(props.dafifLocation);
 
+	// Check on-disk DAFIF version against what's loaded in the browser
+	// TODO: show loading indication
+	let currentVersion = await getDAFIFVersion(dafifLocation);
+	if (currentVersion.cycle !== dafifCycle.value) {
+		// If cycles don't match, re-import the DAFIF data into the database
+		await importDAFIF(dafifLocation);
+		dafifCycle.value = currentVersion.cycle;
+	}
+
 	// These airfields have different weather station identifiers run by the DoD
-	switch (icao.value.toUpperCase()) {
+	switch (icaoIdentifier) {
 		case "OMAM":
 			weatherStation.value = "KQGX";
 			break;
@@ -1154,32 +1151,32 @@ async function updateAirfield() {
 			weatherStation.value = icao.value;
 	}
 
-	let airport: DAFIF.Airport | null = selectedAirfield.value;
-	selectedAirfield.value = null; // Shows loading text
-	try {
-		airport = await DAFIF.getAirportInfo(dafifLocation, icao.value);
+	const db = await getDB();
+
+	let airfield = await db.getFromIndex("airport", "icaoId", icaoIdentifier);
+	if (!airfield) {
+		airfield = await db.getFromIndex("airport", "faaId", icaoIdentifier);
 	}
-	catch (err) {
-		await openAlert("Airport not found", `The identifier ${icao.value.toUpperCase()} could not be found in the DAFIF database. Make sure it's a valid ICAO or FAA location identifier.`);
-		selectedAirfield.value = airport;
+	if (!airfield) {
+		console.warn(`No airport with identifier "${icaoIdentifier}"`);
+		await openAlert("Airport not found", `The identifier ${icaoIdentifier} could not be found in the DAFIF database. Make sure it's a valid ICAO or FAA location identifier.`);
 		return;
 	}
-	selectedAirfieldRunways.value = await DAFIF.getRunwayInfo(dafifLocation, airport.ARPT_IDENT);
-	selectedAirfield.value = airport;
 
+	let runways = await db.getAllFromIndex("runway", "airportId", airfield.id);
+	if (runways.length === 0) {
+		console.warn("No runways found for identifier", icaoIdentifier);
+		await openAlert("No runways found", `No runways could be found for the identifier ${icaoIdentifier} in the DAFIF database.`);
+		return;
+	}
+	let airportComm = await db.getAllFromIndex("airportComm", "airportId", airfield.id);
+	let airportCommRemarks = await db.getAllFromIndex("airportCommRemark", "airportId", airfield.id);
+
+	airfieldData.airfield = airfield;
+	airfieldData.runways = runways;
+	airfieldData.comm = airportComm;
+	airfieldData.commRemarks = airportCommRemarks;
 	selectBestWindRunway();
-
-	selectedAirfieldComms.value = (await DAFIF.getCommInfo(dafifLocation, airport.ARPT_IDENT))
-		.filter(freq => freq.FREQ_1)
-		.map(freq => {
-			freq.FREQ_1 = freq.FREQ_1.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_1;
-			freq.FREQ_2 = freq.FREQ_2.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_2;
-			freq.FREQ_3 = freq.FREQ_3.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_3;
-			freq.FREQ_4 = freq.FREQ_4.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_4;
-			freq.FREQ_5 = freq.FREQ_5.match(/(.*?)(0?0?M)$/)?.[1] ?? freq.FREQ_5;
-			return freq;
-		});
-
 	drawAirfieldDiagram();
 }
 updateAirfield();
