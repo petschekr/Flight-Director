@@ -1124,15 +1124,15 @@ function selectBestWindRunway(useSaved: boolean = true) {
 	let bestWindIndex = NaN;
 	runwaysDropdown.value = airfieldData.runways
 		.flatMap(runway => [
-			{ name: runway.high.name, heading: runway.high.heading.mag, length: runway.length },
-			{ name: runway.low.name, heading: runway.low.heading.mag, length: runway.length },
+			{ name: runway.high.name, heading: runway.high.heading.mag, length: runway.length, slope: runway.high.slope ?? 0 },
+			{ name: runway.low.name, heading: runway.low.heading.mag, length: runway.length, slope: runway.low.slope ?? 0 },
 		])
 		.sort((a, b) => a.name.localeCompare(b.name))
 		.map((runway, index) => {
 			if (isBestWind(runway.heading) && isNaN(bestWindIndex)) {
 				bestWindIndex = index;
 			}
-			return { name: runway.name, notes: `${runway.length.toLocaleString()} ft` }
+			return { name: runway.name, notes: `${runway.length.toLocaleString()} ft | ${runway.slope}° ${runway.slope > 0 ? "↗" : ""}${runway.slope < 0 ? "↘" : ""}` }
 		});
 
 	let savedRunway = runwaysDropdown.value.find(rwy => rwy.name === localStorage.getItem("runwayName"));
