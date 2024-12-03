@@ -80,14 +80,20 @@
 										<p>{{ runway.surface }}</p>
 									</td>
 									<td class="px-3 py-3 text-sm text-gray-600">
-										<p class="text-gray-900 font-medium">Rwy {{ runway.low.name }} <span v-if="isBestWind(runway.low.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
+										<p class="text-gray-900 font-medium">
+											<span :class="runway.low.name === airfieldData.selectedRunwayDirection?.name ? 'underline': ''">Rwy {{ runway.low.name }}</span>
+											<span v-if="isBestWind(runway.low.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span>
+										</p>
 										<p class="leading-8">
 											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(runway.low.heading.mag)[0] > 0 ? 'rotate-90' : '-rotate-90']" />
 											<span class="ml-1 text-gray-500">{{ windComponents(runway.low.heading.mag)[2] }} kts</span>
 											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(runway.low.heading.mag)[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
 											<span :class="['ml-1', windComponents(runway.low.heading.mag)[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(runway.low.heading.mag)[3] }} kts</span>
 										</p>
-										<p class="text-gray-900 font-medium">Rwy {{ runway.high.name }} <span v-if="isBestWind(runway.high.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span></p>
+										<p class="text-gray-900 font-medium">
+											<span :class="runway.high.name === airfieldData.selectedRunwayDirection?.name ? 'underline': ''">Rwy {{ runway.high.name }}</span>
+											<span v-if="isBestWind(runway.high.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span>
+										</p>
 										<p class="leading-8">
 											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(runway.high.heading.mag)[0] > 0 ? 'rotate-90' : '-rotate-90']" />
 											<span class="ml-1 text-gray-500">{{ windComponents(runway.high.heading.mag)[2] }} kts</span>
@@ -1173,7 +1179,7 @@ async function updateAirfield() {
 	let airportCommRemarks = await db.getAllFromIndex("airportCommRemark", "airportId", airfield.id);
 
 	airfieldData.airfield = airfield;
-	airfieldData.runways = runways;
+	airfieldData.runways = runways.sort((a, b) => a.low.name.localeCompare(b.low.name)); // Runways are shown low name first so sort using that
 	airfieldData.comm = airportComm;
 	airfieldData.commRemarks = airportCommRemarks;
 	selectBestWindRunway();
