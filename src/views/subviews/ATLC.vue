@@ -80,41 +80,44 @@
 			<div v-if="currentAirfieldTab === AirfieldTabs.Runways" class="mt-2 flow-root">
 				<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
 					<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-					<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
-						<table class="min-w-full divide-y divide-gray-300">
-							<tbody class="divide-y divide-gray-200 bg-white">
-								<tr v-for="runway in airfieldData.runways" class="divide-x">
-									<td class="py-3 pl-4 pr-3 text-sm sm:pl-6 text-center w-32">
-										<p class="text-lg font-medium text-gray-900">{{ runway.low.name }} - {{ runway.high.name }}</p>
-										<p class="font-medium">{{ runway.length.toLocaleString() }}' x {{ runway.width.toLocaleString() }}'</p>
-										<p>{{ runway.surface }}</p>
-									</td>
-									<td class="px-3 py-3 text-sm text-gray-600">
-										<p class="text-gray-900 font-medium">
-											<span :class="runway.low.name === airfieldData.selectedRunwayDirection?.name ? 'underline': ''">Rwy {{ runway.low.name }}</span>
-											<span v-if="isBestWind(runway.low.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span>
-										</p>
-										<p class="leading-8">
-											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(runway.low.heading.mag)[0] > 0 ? 'rotate-90' : '-rotate-90']" />
-											<span class="ml-1 text-gray-500">{{ windComponents(runway.low.heading.mag)[2] }} kts</span>
-											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(runway.low.heading.mag)[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
-											<span :class="['ml-1', windComponents(runway.low.heading.mag)[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(runway.low.heading.mag)[3] }} kts</span>
-										</p>
-										<p class="text-gray-900 font-medium">
-											<span :class="runway.high.name === airfieldData.selectedRunwayDirection?.name ? 'underline': ''">Rwy {{ runway.high.name }}</span>
-											<span v-if="isBestWind(runway.high.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span>
-										</p>
-										<p class="leading-8">
-											<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(runway.high.heading.mag)[0] > 0 ? 'rotate-90' : '-rotate-90']" />
-											<span class="ml-1 text-gray-500">{{ windComponents(runway.high.heading.mag)[2] }} kts</span>
-											<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(runway.high.heading.mag)[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
-											<span :class="['ml-1', windComponents(runway.high.heading.mag)[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(runway.high.heading.mag)[3] }} kts</span>
-										</p>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
+						<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded">
+							<table class="min-w-full divide-y divide-gray-300">
+								<tbody class="divide-y divide-gray-200 bg-white">
+									<tr v-for="runway in airfieldData.runways" class="divide-x">
+										<td class="py-3 pl-4 pr-3 text-sm sm:pl-6 text-center w-32">
+											<p class="text-lg font-medium text-gray-900">{{ runway.low.name }} - {{ runway.high.name }}</p>
+											<p class="font-medium">{{ runway.length.toLocaleString() }}' x {{ runway.width.toLocaleString() }}'</p>
+											<p>{{ runway.surface }}</p>
+										</td>
+										<td class="px-3 py-3 text-sm text-gray-600">
+											<p class="text-gray-900 font-medium">
+												<span :class="runway.low.name === airfieldData.selectedRunwayDirection?.name ? 'underline': ''">Rwy {{ runway.low.name }}</span>
+												<span v-if="isBestWind(runway.low.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span>
+											</p>
+											<p class="leading-8">
+												<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(runway.low.heading.mag)[0] > 0 ? 'rotate-90' : '-rotate-90']" />
+												<span class="ml-1 text-gray-500">{{ windComponents(runway.low.heading.mag)[2] }} kts</span>
+												<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(runway.low.heading.mag)[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
+												<span :class="['ml-1', windComponents(runway.low.heading.mag)[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(runway.low.heading.mag)[3] }} kts</span>
+											</p>
+											<p class="text-gray-900 font-medium">
+												<span :class="runway.high.name === airfieldData.selectedRunwayDirection?.name ? 'underline': ''">Rwy {{ runway.high.name }}</span>
+												<span v-if="isBestWind(runway.high.heading.mag)" class="bg-sky-200 ml-1 px-1 py-0.5 rounded">Best Wind</span>
+											</p>
+											<p class="leading-8">
+												<ArrowUpCircleIcon :class="['inline w-6 h-6 text-gray-500', windComponents(runway.high.heading.mag)[0] > 0 ? 'rotate-90' : '-rotate-90']" />
+												<span class="ml-1 text-gray-500">{{ windComponents(runway.high.heading.mag)[2] }} kts</span>
+												<ArrowUpCircleIcon :class="['ml-1 inline w-6 h-6', windComponents(runway.high.heading.mag)[1] >= 0 ? 'rotate-180 text-green-500' : 'rotate-0 text-red-500']" />
+												<span :class="['ml-1', windComponents(runway.high.heading.mag)[1] >= 0 ? 'text-green-500' : 'text-red-500']">{{ windComponents(runway.high.heading.mag)[3] }} kts</span>
+											</p>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="flex justify-center mt-2">
+							<button @click="runwaySurveyOpen = true" class="self-end inline-flex rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 transition ease-in-out duration-150 disabled:cursor-not-allowed disabled:opacity-70">Generate ATLC runway survey</button>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -437,6 +440,8 @@
 		</div>
 	</div>
 	<p class="text-center text-sm mt-4">All performance values for aircraft equipped with 4-blade prop and ATLC active</p>
+
+	<RunwaySurvey :open="runwaySurveyOpen" @closed="runwaySurveyOpen = false" />
 </template>
 
 <script setup lang="ts">
@@ -458,6 +463,8 @@ import {
 } from "@heroicons/vue/24/outline";
 import { ArrowUpCircleIcon } from "@heroicons/vue/24/solid";
 
+import RunwaySurvey from "@/components/RunwaySurvey.vue";
+
 import { CAVOK_MANAGER, OPEN_ALERT } from "@/types/keys"
 
 import * as drag from "@/performance/drag";
@@ -477,6 +484,7 @@ const props = defineProps<{
 
 const openAlert = inject(OPEN_ALERT);
 const cavokManager = inject(CAVOK_MANAGER);
+const runwaySurveyOpen = ref(false);
 
 const icao = ref(localStorage.getItem("icao") ?? "");
 const windDirection = ref(parseInt(localStorage.getItem("windDirection") ?? "0"));
