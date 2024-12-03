@@ -660,7 +660,7 @@ function isBestWind(runwayHeading: number): boolean {
 }
 
 const takeOffStats = computed(() => {
-	let deemphasizeRefusalSpeed = typeof refusalSpeed.value === "number" && typeof rotateSpeed.value === "number" && refusalSpeed.value <= rotateSpeed.value;
+	let deemphasizeRefusalSpeed = parseInt(refusalSpeed.value) <= parseInt(rotateSpeed.value);
 	return [
 		{ name: "Accel Check", icon: ClockIcon, color: "bg-amber-500", stat: accelCheckTime.value, unit: "Sec" },
 		{ name: "Refusal", icon: FlagIcon, color: deemphasizeRefusalSpeed ? "bg-red-500" : "bg-red-200", stat: refusalSpeed.value, unit: "KIAS" },
