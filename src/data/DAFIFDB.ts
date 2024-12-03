@@ -15,7 +15,7 @@ export async function getDAFIFVersion(dafifLocation: string): Promise<{ start: D
 		let year = s.substring(startIndex + 4, startIndex + 8);
 
 		let date = new Date();
-		date.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+		date.setUTCFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
 		return date;
 	}
 	let startDate = dateAtIndex(versionInfo, 4);
@@ -172,7 +172,7 @@ export async function importDAFIF(dafifLocation: string): Promise<void> {
 				airportId: record.ARPT_IDENT,
 				name: record.COMM_NAME,
 				type: record.COMM_TYPE,
-				sector: record.SEC,
+				sector: record.SEC.replace(/�/gi, "°"), // Encoding error in DAFIF?
 				operatingHours: record.S_OPR_H,
 				freqs: [record.FREQ_1, record.FREQ_2, record.FREQ_3, record.FREQ_4, record.FREQ_5]
 					.filter(freq => freq !== "")

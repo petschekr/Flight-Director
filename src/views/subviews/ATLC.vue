@@ -45,7 +45,17 @@
 			<h1 v-if="airfieldData.airfield" class="mt-1 capitalize font-bold">{{ airfieldData.airfield.name.toLowerCase().replace(/\bAB\b/ig, "AB").replace(/\bAFB\b/ig, "AFB") }}</h1>
 			<h1 v-else-if="icao.trim().length > 0" class="mt-1 capitalize italic">Loading...</h1>
 			<h1 v-else class="mt-1 capitalize italic">No airfield selected</h1>
-			<canvas ref="map" class="mt-1 mb-3 bg-white w-full h-60 rounded-md"></canvas>
+			<canvas v-if="!isLoadingDAFIF" ref="map" class="mt-1 mb-3 bg-white w-full h-60 rounded-md"></canvas>
+			<div v-else class="flex flex-col justify-center items-center mt-1 mb-3 bg-white w-full h-60 rounded-md">
+				<svg class="animate-spin h-14 w-14 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+					<path class="opacity-75" fill="currentColor"
+						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+					</path>
+				</svg>
+				<h3 class="mt-4 text-xl">Importing DAFIF...</h3>
+				<p class="text-sm">(takes about 10 seconds)</p>
+			</div>
 
 			<div>
 				<div class="sm:hidden">
@@ -149,8 +159,8 @@
 									<tr v-for="freq in airfieldData.comm">
 										<td class="py-3 pl-4 pr-3 text-sm sm:pl-6">
 											<p class="font-medium text-gray-900">{{ freq.name }}</p>
-											<p class="italic">{{ freq.sector }}</p>
-											<p>{{ freq.operatingHours }}</p>
+											<p class="font-light italic">{{ freq.sector }}</p>
+											<p class="font-light">{{ freq.operatingHours }}</p>
 											<p class="font-light">{{ airfieldData.commRemarks?.find(remark => remark.type === freq.type)?.remark ?? "" }}</p>
 										</td>
 										<td class="px-3 py-3 text-sm text-gray-600 text-center">
@@ -378,26 +388,49 @@
 			<div class="md:col-span-1">
 				<div class="flex justify-between">
 					<h3 class="text-lg font-medium leading-6 text-gray-900">DAFIF</h3>
-					<span class="inline-flex items-center gap-x-1.5 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
+					<span v-if="Date.now() - (currentDAFIFInfo?.start.valueOf() ?? 0) < 0"
+						class="inline-flex items-center gap-x-1.5 rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">
+						<svg class="h-1.5 w-1.5 fill-yellow-500" viewBox="0 0 6 6" aria-hidden="true">
+							<circle cx="3" cy="3" r="3" />
+						</svg>
+						Not yet valid
+					</span>
+					<span v-if="Date.now() - (currentDAFIFInfo?.start.valueOf() ?? 0) >= 0 && Date.now() - (currentDAFIFInfo?.end.valueOf() ?? 0) < 0"
+						class="inline-flex items-center gap-x-1.5 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+						<svg class="h-1.5 w-1.5 fill-green-500" viewBox="0 0 6 6" aria-hidden="true">
+							<circle cx="3" cy="3" r="3" />
+						</svg>
+						Valid
+					</span>
+					<span v-if="Date.now() - (currentDAFIFInfo?.end.valueOf() ?? 0) >= 0"
+						class="inline-flex items-center gap-x-1.5 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
 						<svg class="h-1.5 w-1.5 fill-red-500" viewBox="0 0 6 6" aria-hidden="true">
 							<circle cx="3" cy="3" r="3" />
 						</svg>
-						Expireddd
+						Expired
 					</span>
 				</div>
-				<p class="mt-1 text-sm text-gray-500">Current DAFIF cycle information loaded in this browser</p>
+				<p class="mt-1 text-sm text-gray-500">Current DAFIF cycle information cached in this browser.</p>
+				<p class="mt-1 text-sm text-gray-500">Flight Director will update the cached copy with a newer copy from the share drive if one is available.</p>
 			</div>
 			<div class="mt-5 space-y-6 md:col-span-3 md:mt-0">
-				<dl class="mx-auto grid grid-cols-1 gap-px bg-gray-200 sm:grid-cols-3 lg:grid-cols-3">
+				<dl class="h-full mx-auto grid grid-cols-1 gap-px bg-gray-200 sm:grid-cols-3 lg:grid-cols-3">
 					<div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-4 sm:px-6 xl:px-8">
 						<dt class="text-sm/6 font-medium text-gray-500">Cycle</dt>
-						<!-- <dd class="text-rose-600 text-xs font-medium">Expires soon</dd> -->
-						<dd class="w-full flex-none text-3xl/10 font-medium tracking-tight text-gray-900">2412</dd>
+						<dd class="w-full flex-none text-3xl/10 font-medium tracking-tight text-gray-900">{{ currentDAFIFInfo?.cycle ?? "--" }}</dd>
 					</div>
 					<div class="flex flex-wrap items-baseline justify-between col-span-2 gap-x-4 gap-y-2 bg-white px-4 py-4 sm:px-6 xl:px-8">
 						<dt class="text-sm/6 font-medium text-gray-500">Valid</dt>
-						<!-- <dd class="text-rose-600 text-xs font-medium">Expires soon</dd> -->
-						<dd class="w-full flex-none text-3xl/10 font-medium tracking-tight text-gray-900">31 Oct 24 <span class="text-lg text-gray-500 font-normal mx-1">until</span> 15 Nov 24</dd>
+						<dd v-if="(currentDAFIFInfo?.end.valueOf() ?? 0) - Date.now() <= 0" class="text-rose-600 text-sm font-medium">Expired</dd>
+						<dd v-else-if="(currentDAFIFInfo?.end.valueOf() ?? 0) - Date.now() < 1000 * 60 * 60 * 24 * 3" class="text-amber-600 text-sm font-medium">Expires soon</dd>
+						<dd v-else-if="Date.now() >= (currentDAFIFInfo?.start.valueOf() ?? 0)" class="text-green-700 text-sm font-medium">
+							Expires in {{ Math.round(((currentDAFIFInfo?.end.valueOf() ?? 0) - Date.now()) / 1000 / 60 / 60 / 24) }} days
+						</dd>
+						<dd class="w-full flex-none text-3xl/10 font-medium tracking-tight text-gray-900">
+							{{ dayjs(currentDAFIFInfo?.start).format("DD MMM YY") }}
+							<span class="text-lg text-gray-500 font-normal mx-1">until</span>
+							{{ dayjs(currentDAFIFInfo?.end).format("DD MMM YY") }}
+						</dd>
 					</div>
 				</dl>
 			</div>
@@ -454,6 +487,8 @@ const temperature = ref(parseInt(localStorage.getItem("temperature") ?? "15"));
 const altimeter = ref(parseFloat(localStorage.getItem("altimeter") ?? "29.92"));
 const aircraftWeight = ref(parseInt(localStorage.getItem("aircraftWeight") ?? "11000"));
 const dafifCycle = ref(localStorage.getItem("dafifCycle") ?? null);
+const currentDAFIFInfo = ref<{ start: Date, end: Date, cycle: string } | null>(null);
+const isLoadingDAFIF = ref(false);
 
 const isAirborne = ref(false);
 watchEffect(() => {
@@ -1128,12 +1163,13 @@ async function updateAirfield() {
 	let dafifLocation = simplePathReplacement(props.dafifLocation);
 
 	// Check on-disk DAFIF version against what's loaded in the browser
-	// TODO: show loading indication
-	let currentVersion = await getDAFIFVersion(dafifLocation);
-	if (currentVersion.cycle !== dafifCycle.value) {
+	currentDAFIFInfo.value = await getDAFIFVersion(dafifLocation);
+	if (currentDAFIFInfo.value.cycle !== dafifCycle.value) {
 		// If cycles don't match, re-import the DAFIF data into the database
+		isLoadingDAFIF.value = true;
 		await importDAFIF(dafifLocation);
-		dafifCycle.value = currentVersion.cycle;
+		isLoadingDAFIF.value = false;
+		dafifCycle.value = currentDAFIFInfo.value.cycle;
 	}
 
 	// These airfields have different weather station identifiers run by the DoD
