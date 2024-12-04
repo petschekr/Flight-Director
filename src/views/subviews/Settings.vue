@@ -12,9 +12,10 @@
 			</Switch>
 		</SwitchGroup>
 		<div class="text-center text-lg mt-2">
-			<code>Flight Director v0.12.2 @ {{commitHash}}</code>
+			<code>Flight Director v0.13.0 @ {{commitHash}}</code>
 		</div>
 		<div class="mt-2">
+			<p><code>v0.13.0</code>: Cache DAFIF data in a local database for much faster lookups and to support future features</p>
 			<p><code>v0.12.0</code>: Better first-time set-up experience (all settings now UI configurable), 400 DI best range numbers, fixes for Cavok auto-reconnect</p>
 			<p><code>v0.11.0</code>: Cavok integration pulls live aircraft data for the performance calculators automatically, implement best rate of climb calculation, improve search algorithm</p>
 			<p><code>v0.10.0</code>: Add best range calculator to the Performance tab, implement METAR/TAF pull from AF weather</p>
