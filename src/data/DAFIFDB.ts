@@ -34,7 +34,10 @@ export async function importDAFIF(dafifLocation: string): Promise<void> {
 
     function importContents<
 		DAFIFType,
-		DBType extends DB.Airport | DB.Runway | DB.AirportComm | DB.AirportCommRemark
+		DBType extends
+			DB.Airport |
+			DB.Runway | DB.RunwayBarrier | DB.RunwayBarrierType |
+			DB.AirportComm | DB.AirportCommRemark
 	>(
 		url: string,
 		storeName: StoreNames<DAFIFDB>,
@@ -164,6 +167,33 @@ export async function importDAFIF(dafifLocation: string): Promise<void> {
 						long: parseFloat(record.LE_WGS_DLONG),
 					},
 				},
+			};
+		}),
+
+		importContents<DAFIF.RunwayBarrier, DB.RunwayBarrier>(`/api/download/${dafifLocation}/DAFIFT/ARPT/AGEAR.TXT`, "runwayBarrier", record => {
+			return {
+				airportId: record.ARPT_IDENT,
+				runwayName: record.RWY_IDENT,
+				distanceFromThreshold: parseInt(record.LOCATION),
+				energyAbsorbingSystem: record.TYPE.substring(0, 2),
+				engagingDevice: record.TYPE.substring(2, 4),
+			};
+		}),
+
+		importContents<DAFIF.RunwayBarrierType, DB.RunwayBarrierType>(`/api/download/${dafifLocation}/DAFIFT/APPC/APPC_ENGAGING_DEV.TXT`, "runwayBarrierType", record => {
+			if (!record.EN_CODE) return;
+			return {
+				code: record.EN_CODE,
+				type: record.TYPE,
+				description: record.DESCRIPTION,
+			};
+		}),
+		importContents<DAFIF.RunwayBarrierType, DB.RunwayBarrierType>(`/api/download/${dafifLocation}/DAFIFT/APPC/APPC_ABSORBING_SYS.TXT`, "runwayBarrierType", record => {
+			if (!record.AB_CODE) return;
+			return {
+				code: record.AB_CODE,
+				type: record.TYPE,
+				description: record.DESCRIPTION,
 			};
 		}),
 

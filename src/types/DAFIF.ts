@@ -8,6 +8,18 @@ export namespace DB {
 		elevation: number;
 		magVar: number;
 	}
+	export interface RunwayBarrier {
+		airportId: string;
+		runwayName: string;
+		distanceFromThreshold: number;
+		energyAbsorbingSystem: string;
+		engagingDevice: string;
+	}
+	export interface RunwayBarrierType {
+		code: string;
+		type: string;
+		description: string;
+	}
 	export interface RunwayDirection {
 		name: string;
 		heading: {
@@ -101,6 +113,18 @@ export namespace DAFIF {
 		LE_WGS_DLAT: string;
 		LE_WGS_DLONG: string;
 		LE_TRUE_HDG: string;
+	}
+	export interface RunwayBarrier {
+		ARPT_IDENT: string;
+		RWY_IDENT: string;
+		LOCATION: string;
+		TYPE: string;
+	}
+	export interface RunwayBarrierType {
+		EN_CODE?: string; // For engaging systems
+		AB_CODE?: string; // For absorbing systems
+		TYPE: string;
+		DESCRIPTION: string;
 	}
 	export interface AirportComm {
 		ARPT_IDENT: string;
