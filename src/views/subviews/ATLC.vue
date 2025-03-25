@@ -1162,8 +1162,12 @@ async function updateAirfield() {
 	}
 	let dafifLocation = simplePathReplacement(props.dafifLocation);
 
-	// Check on-disk DAFIF version against what's loaded in the browser
+	// Performs DB schema upgrades if required. Schema changes trigger a DAFIF re-import.
+	const db = await getDB();
+
+	// Check on-disk DAFIF version against what's been loaded into the browser
 	currentDAFIFInfo.value = await getDAFIFVersion(dafifLocation);
+	dafifCycle.value = localStorage.getItem("dafifCycle") ?? null;
 	if (currentDAFIFInfo.value.cycle !== dafifCycle.value) {
 		// If cycles don't match, re-import the DAFIF data into the database
 		isLoadingDAFIF.value = true;
@@ -1192,8 +1196,6 @@ async function updateAirfield() {
 		default:
 			weatherStation.value = icao.value;
 	}
-
-	const db = await getDB();
 
 	let airfield = await db.getFromIndex("airport", "icaoId", icaoIdentifier);
 	if (!airfield) {

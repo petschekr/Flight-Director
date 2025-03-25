@@ -52,8 +52,15 @@ export interface DAFIFDB extends DBSchema {
 
 export function getDB(): Promise<IDBPDatabase<DAFIFDB>> {
 	return openDB<DAFIFDB>("DAFIF", 2, {
-		upgrade(db, oldVersion, newVersion, transaction, event) {
+		async upgrade(db, oldVersion, newVersion, transaction, event) {
 			if (newVersion === null) return;
+			if (newVersion !== oldVersion) {
+				// Delete all content to trigger a re-import
+				localStorage.removeItem("dafifCycle");
+				await Promise.all([...db.objectStoreNames].map(storeName => {
+					return db.clear(storeName);
+				}));
+			}
 
 			if (oldVersion < 1 && newVersion >= 1) {
 				let airportStore = db.createObjectStore("airport", { keyPath: "id" });
