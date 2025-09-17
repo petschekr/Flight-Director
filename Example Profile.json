@@ -1,0 +1,91 @@
+{
+	"name": "Example Profile",
+	"feedbackLocation": "",
+	"callsigns": [],
+	"sidebarTab": [
+		{
+			"component": "FileList",
+			"name": "Getting Started",
+			"description": "How to set up and use Flight Director",
+			"href": "/getting-started",
+			"icon": "HomeIcon"
+		},
+		{
+			"component": "Spacer"
+		},
+		{
+			"component": "Performance",
+			"icon": "GlobeAmericasIcon",
+			"name": "Enroute",
+			"href": "/enroute"
+		},
+		{
+			"component": "ATLC",
+			"icon": "PaperAirplaneIcon",
+			"name": "ATLC",
+			"href": "/atlc",
+			"dafifLocation": "/dist/DAFIF8_1"
+		},
+		{
+			"component": "Spacer"
+		},
+		{
+			"component": "Settings",
+			"name": "Settings",
+			"href": "/settings",
+			"icon": "Cog6ToothIcon"
+		},
+		{
+			"component": "Cavok",
+			"icon": "MapIcon",
+			"name": "Cavok",
+			"href": "/cavok",
+			"cavokDomain": "vlsb-cav-01.acc.accroot.ds.af.smil.mil",
+			"cavokChannel": "50th ATKS"
+		},
+		{
+			"component": "AllFiles",
+			"icon": "ArchiveBoxIcon",
+			"name": "All Files",
+			"href": "/all-files"
+		}
+	],
+	"tabs": {
+		"Getting Started": {
+			"Step-by-step": [
+				{
+					"name": "Server Configuration",
+					"description": "How to set up Flight Director's PowerShell server",
+					"color": "bg-blue-700",
+					"abbreviation": "1.",
+					"type": "Markdown",
+					"markdown": {
+						"template": "Flight Director is split into two major components: the web user interface that runs in your browser and the PowerShell server that interfaces with Windows on your behalf to interact with the filesystem and make web requests.\n\nMost of Flight Director's configuration can be done through the web user interface, but there are still a few key settings that must be set before you can get started.\n\n1. Right click `Flight Director Server.ps1` and click `Edit`.\n2. There are four settings you can tweak here. These are likely set-and-forget. See the comments within the file for an explanation of what they do.\n    1. Root directory location\n    2. Default profile location\n    3. Program file location\n    4. Port number that the server listens on\n3. Once you've made your tweaks, save the `.ps1` file.\n4. Test your changes by right clicking on the `.ps1` file and selecting `Run with PowerShell`\n5. The Flight Director server should start and the Flight Director GUI will open in your default browser.\n6. If the server fails to start, go back and double check your changes. The location settings should be strings with exactly one leading quote (`\"`) and exactly one ending quote."
+					}
+				},
+				{
+					"name": "Example Card",
+					"description": "Example card description",
+					"color": "bg-emerald-600",
+					"abbreviation": "2.",
+					"type": "Local",
+					"path": "HelloWorld.pdf"
+				},
+				{
+					"name": "Example Card 2",
+					"description": "Example card description",
+					"color": "bg-orange-400",
+					"abbreviation": "3.",
+					"type": "Markdown",
+					"markdown": {
+						"template": "Hello world from *Markdown*."
+					}
+				}
+			]
+		},
+		"All Files": {},
+		"Enroute": {},
+		"ATLC": {},
+		"Cavok": {}
+	}
+}

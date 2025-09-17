@@ -2,23 +2,36 @@
 # If you're reading this, you probably meant to right click > Run with PowerShell
 #################################################################################
 
-$hostLocation = "http://localhost:5050/"
+# Root path of the share drive folder. Flight Director cannot access any file or folder above this path.
+# Typically just the share drive letter:
+# Example: "Z:\" or "Z:\Your Squadron\"
+$SHARE_DRIVE_ROOT = "Z:\Your\Folder"
+# This is the path to the Flight Director core files required to function like "Flight Director.html". Not visible to users.
+# Choose a folder on your share drive that users are unlikely to change or delete.
+$FLIGHT_DIRECTOR_CORE = "50. Other\Flight Director"
+# Path to the default profile that will be displayed when Flight Director is opened for the first time on a new machine.
+# This profile is created by editing the layout and then saving from the dropdown in the top left. It should point to a .json file.
+$DEFAULT_PROFILE = "50. Other\Flight Director\Example Profile.json"
+$PORT = 5050 # Change to whatever number you'd like as long it is greater than 1024.
+
+#################################################################################
 
 Add-Type -AssemblyName System.Security
 Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName Microsoft.VisualBasic
 
+$hostLocation = "http://localhost:$PORT/"
 $http = [System.Net.HttpListener]::New()
 $http.Prefixes.Add($hostLocation)
 # $http.AuthenticationSchemes = [System.Net.AuthenticationSchemes]::IntegratedWindowsAuthentication
 $http.Start()
 
-New-PSDrive -Name FileServe -PSProvider FileSystem -Root "C:\Users"
+New-PSDrive -Name FileServe -PSProvider FileSystem -Root "$SHARE_DRIVE_ROOT" -ErrorAction Stop
 # [System.Diagnostics.Process]::Start("msedge", $hostLocation) # Or "chrome"
 Start-Process $hostLocation
 
 if ($http.IsListening) {
-	Write-Host "Flight Director started on http://localhost:5050"
+	Write-Host "Flight Director started on http://localhost:$PORT/"
 	Write-Host "Stop Flight Director by closing this window"
 }
 
@@ -38,7 +51,7 @@ try {
 		try {
 			# Serve default config file
 			if ($path.StartsWith("/api/config")) {
-				$item = Get-Item -LiteralPath "FileServe:\flightdirector.json" -Force -ErrorAction Stop
+				$item = Get-Item -LiteralPath "FileServe:\$DEFAULT_PROFILE" -Force -ErrorAction Stop
 				$res.ContentType = "text/plain"
 				$content = [System.IO.File]::ReadAllBytes($item)
 			}
@@ -258,7 +271,7 @@ try {
 			else {
 				# Serve app at root URL
 				# The Vue router handles user-facing, non-API URLs
-				$item = Get-Item -LiteralPath "FileServe:\Flight Director.html" -Force -ErrorAction Stop
+				$item = Get-Item -LiteralPath "FileServe:\$FLIGHT_DIRECTOR_CORE\Flight Director.html" -Force -ErrorAction Stop
 				$res.ContentType = "text/html"
 				$content = [System.IO.File]::ReadAllBytes($item)
 			}
