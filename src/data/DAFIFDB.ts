@@ -41,7 +41,7 @@ export async function importDAFIF(dafifLocation: string): Promise<void> {
 	>(
 		url: string,
 		storeName: StoreNames<DAFIFDB>,
-		mapper: (record: DAFIFType) => DBType
+		mapper: (record: DAFIFType) => DBType | undefined,
 	): Promise<void> {
 		return new Promise<void>(async (resolve, reject) => {
 			let tsv = await fetch(url);
@@ -54,7 +54,10 @@ export async function importDAFIF(dafifLocation: string): Promise<void> {
 			parser.on("readable", () => {
 				let record: DAFIFType;
 				while ((record = parser.read()) !== null) {
-					tx.store.put(mapper(record));
+					let mappedRecord = mapper(record);
+					if (!mappedRecord) continue;
+
+					tx.store.put(mappedRecord);
 				}
 			});
 			parser.on("end", async () => {
